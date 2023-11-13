@@ -21,6 +21,13 @@ The ESP_IOT supports adding and sharing between can use the #ifdef to add or rem
 ![ESP_IOT Diagram](KSNetworking.004.jpeg)
 ![ESP_IOT Modules](ESP_IOT_Modules.png)
 
+# M5 Display
+
+<img src="https://SemanticMarker.org/vision/M5onMicrowave.jpg" width="300">
+
+# Networking with the Semantic Marker REST API and Messaging Capabilities
+<img src="https://semanticmarker.org/KSNetworking/KSNetworking.014.jpeg" width="300">
+
 ```objc
 #ifdef USE_MQTT_NETWORKING
 #include "src/MQTTModule/MQTTNetworking.h"
