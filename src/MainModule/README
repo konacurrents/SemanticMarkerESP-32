@@ -1,0 +1,6 @@
+
+All the files in MainModule are treated as globals to all the other modules.
+
+The attempt was that everyone travels through Main, so they don't have to include other modules.
+
+But some things got too complicated, so there are ifdef around say MQTTNetworking.
