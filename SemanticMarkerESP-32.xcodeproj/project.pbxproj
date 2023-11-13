@@ -90,6 +90,8 @@
 		D2E430C22B02DC5900E2C80B /* PTTimer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PTTimer.h; sourceTree = "<group>"; };
 		D2E430C32B02DC8400E2C80B /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		D2E430C42B02DD8000E2C80B /* SemanticMarkerESP-32.ino */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "SemanticMarkerESP-32.ino"; sourceTree = "<group>"; };
+		D2E430C52B02E00100E2C80B /* output */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
+		D2E430C62B02E00100E2C80B /* GreyGoose.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = GreyGoose.jpg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -98,6 +100,8 @@
 			children = (
 				D2E430C42B02DD8000E2C80B /* SemanticMarkerESP-32.ino */,
 				D2E430C32B02DC8400E2C80B /* README.md */,
+				D2E430C62B02E00100E2C80B /* GreyGoose.jpg */,
+				D2E430C52B02E00100E2C80B /* output */,
 				D2E4306A2B02DC5900E2C80B /* src */,
 				D2E430662B02DC4F00E2C80B /* Defines.h */,
 				D2E430692B02DC4F00E2C80B /* ESP_IOT_Modules.png */,
