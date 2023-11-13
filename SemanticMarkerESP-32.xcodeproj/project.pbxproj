@@ -9,7 +9,6 @@
 /* Begin PBXFileReference section */
 		D2E430632B02DC4F00E2C80B /* KSNetworking.004.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = KSNetworking.004.jpeg; sourceTree = "<group>"; };
 		D2E430642B02DC4F00E2C80B /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; };
-		D2E430652B02DC4F00E2C80B /* ESP_IOT.ino */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = ESP_IOT.ino; sourceTree = "<group>"; };
 		D2E430662B02DC4F00E2C80B /* Defines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Defines.h; sourceTree = "<group>"; };
 		D2E430672B02DC4F00E2C80B /* IOT_Backend.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = IOT_Backend.png; sourceTree = "<group>"; };
 		D2E430682B02DC4F00E2C80B /* IOT_MQTT_Namespace.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = IOT_MQTT_Namespace.png; sourceTree = "<group>"; };
@@ -90,17 +89,18 @@
 		D2E430C12B02DC5900E2C80B /* StepperModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StepperModule.h; sourceTree = "<group>"; };
 		D2E430C22B02DC5900E2C80B /* PTTimer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PTTimer.h; sourceTree = "<group>"; };
 		D2E430C32B02DC8400E2C80B /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		D2E430C42B02DD8000E2C80B /* SemanticMarkerESP-32.ino */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "SemanticMarkerESP-32.ino"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		D2E430582B02DB7F00E2C80B = {
 			isa = PBXGroup;
 			children = (
+				D2E430C42B02DD8000E2C80B /* SemanticMarkerESP-32.ino */,
 				D2E430C32B02DC8400E2C80B /* README.md */,
 				D2E4306A2B02DC5900E2C80B /* src */,
 				D2E430662B02DC4F00E2C80B /* Defines.h */,
 				D2E430692B02DC4F00E2C80B /* ESP_IOT_Modules.png */,
-				D2E430652B02DC4F00E2C80B /* ESP_IOT.ino */,
 				D2E430672B02DC4F00E2C80B /* IOT_Backend.png */,
 				D2E430682B02DC4F00E2C80B /* IOT_MQTT_Namespace.png */,
 				D2E430632B02DC4F00E2C80B /* KSNetworking.004.jpeg */,

@@ -1,6 +1,6 @@
-# ESP_IOT Framework v2.0
+# Semantic Marker for ESP-32 IOT Framework v2.0
 
-The goal of ESP_IOT is to have a set of modules that can be included in the loop and setup. Adding them will add and manipulate
+The goal of Semantic Marker for ESP-32 IOT is to have a set of modules that can be included in the loop and setup. Adding them will add and manipulate
 various IoT capabilities, while using the ESP_IOT framework to connect the various devices. The ESP-32 devices support bluetooth and 
 wifi but have a limited user interface. The M5 based ESP-32 extends with a display, speaker, temperature, axcelerometor sensers. Other devices 
 such as M5 V2 incorporate a camera with machine learning functionality.
@@ -9,6 +9,9 @@ When incorporated with the network through WIFI and a pub/sub engine like MQTT, 
 collaboration supports the IoT suite of applications.
 
 The ESP_IOT supports adding and sharing between can use the #ifdef to add or remove capalities. And each has a setup() and loop() for the various functional modules. 
+
+# To build type "make"
+## Modify the Defines.h for the different ESP configurations
 
 <a href="https://KnowledgeShark.me/docs/ESP_IOT/html">Documented Architecture and Code</a>
 \ref DisplayModule
