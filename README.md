@@ -12,6 +12,10 @@ The ESP_IOT supports adding and sharing between can use the #ifdef to add or rem
 
 # To build type "make"
 ## Modify the Defines.h for the different ESP configurations
+## Install arduino-cli first
+[arduino-cli homebrew](https://formulae.brew.sh/formula/arduino-cli)
+
+# Architecture Document
 
 <a href="https://KnowledgeShark.me/docs/ESP_IOT/html">Documented Architecture and Code</a>
 \ref DisplayModule
@@ -21,7 +25,7 @@ The ESP_IOT supports adding and sharing between can use the #ifdef to add or rem
 ![ESP_IOT Diagram](KSNetworking.004.jpeg)
 ![ESP_IOT Modules](ESP_IOT_Modules.png)
 
-# M5 Display
+## M5 Display
 
 <img src="https://SemanticMarker.org/vision/M5onMicrowave.jpg" width="300">
 
