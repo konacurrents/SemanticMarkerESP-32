@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		D24B006E2B1A8B0B00D29C0A /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 		D2E430632B02DC4F00E2C80B /* KSNetworking.004.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = KSNetworking.004.jpeg; sourceTree = "<group>"; };
 		D2E430642B02DC4F00E2C80B /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; };
 		D2E430662B02DC4F00E2C80B /* Defines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Defines.h; sourceTree = "<group>"; };
@@ -80,6 +81,7 @@
 			children = (
 				D2E430C42B02DD8000E2C80B /* SemanticMarkerESP-32.ino */,
 				D2E430C32B02DC8400E2C80B /* README.md */,
+				D24B006E2B1A8B0B00D29C0A /* LICENSE.md */,
 				D2E430C62B02E00100E2C80B /* GreyGoose.jpg */,
 				D2E4306A2B02DC5900E2C80B /* src */,
 				D2E430662B02DC4F00E2C80B /* Defines.h */,
