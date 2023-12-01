@@ -1,19 +1,29 @@
 # Semantic Marker for ESP-32 IOT Framework v2.0
 
-The goal of Semantic Marker for ESP-32 IOT is to have a set of modules that can be included in the loop and setup. Adding them will add and manipulate
+The goal of Semantic Marker for ESP-32 IOT is to have a generic framework for communicating with the various messaging API's (API Document)[https://github.com/konacurrents/SemanticMarkerAPI]
+
+This set of modules that can be included and invoked by the runtime kernel. 
+
+Conditionally including them (with #ifdef statements) will add and manipulate
 various IoT capabilities, while using the ESP_IOT framework to connect the various devices. The ESP-32 devices support bluetooth and 
-wifi but have a limited user interface. The M5 based ESP-32 extends with a display, speaker, temperature, axcelerometor sensers. Other devices 
+WIFI but have a limited user interface. The M5 based ESP-32 extends with a display, speaker, temperature, axcelerometor sensers. Other devices 
 such as M5 V2 incorporate a camera with machine learning functionality.
 
 When incorporated with the network through WIFI and a pub/sub engine like MQTT, using JSON formatted messages, a powerful
 collaboration supports the IoT suite of applications.
 
-The ESP_IOT supports adding and sharing between can use the #ifdef to add or remove capalities. And each has a setup() and loop() for the various functional modules. 
 
-# To build type "make"
-## Modify the Defines.h for the different ESP configurations
-## Install arduino-cli first
+## To build type "make"
+### Modify the Defines.h for the different ESP configurations
+### Install arduino-cli first
+
+Download from:
 [arduino-cli homebrew](https://formulae.brew.sh/formula/arduino-cli)
+# API Document
+
+The following is the API for interfacing with the ESP-32 IOT Framework.
+
+(API Document)[https://github.com/konacurrents/SemanticMarkerAPI]
 
 # Architecture Document
 
@@ -21,18 +31,31 @@ The ESP_IOT supports adding and sharing between can use the #ifdef to add or rem
 \ref DisplayModule
 \ref MQTTModule
 
+An example use of the ESP-32 software is the Pet Tutor capability. This is shown here:
 ![PetTutor Mini](GreyGoose.jpg))
+
+The Networking architecture is shown here:
 ![ESP_IOT Diagram](KSNetworking.004.jpeg)
+
+The complexity of the ESP-IOT framework is shown here:
 ![ESP_IOT Modules](ESP_IOT_Modules.png)
 
 ## M5 Display
 
+The small M5 display has been leveraged to create a small footprint of information, including using the buttons
+to move around like menues. As this display is so small, the Semantic Marker&trade; is used to abstract information
+into a small image - the Semantic Marker&trade; as shown here stuck to a common household microwave (the M5 has a magnet). 
 <img src="https://SemanticMarker.org/vision/M5onMicrowave.jpg" width="300">
+
+Here the Semantic Marker&trade; is continually changing to reflect the sensor information. For example of the sensor information
+follow thie (SMART Button Sensor Status)[https://semanticmarker.org/bot/status?v=v2&dev=Fibi&b=87&temp=10&c=0&t=0&W=on&M=on&A=off&T=off&S=on&bleS=PTFeeder&Z=on&G=off]
 
 # Networking with the Semantic Marker REST API and Messaging Capabilities
 <img src="https://semanticmarker.org/KSNetworking/KSNetworking.014.jpeg" width="300">
 
-```objc
+To optionally include specific code, the various MODULE are included in a scheme like the following:
+
+```c
 #ifdef USE_MQTT_NETWORKING
 #include "src/MQTTModule/MQTTNetworking.h"
 #endif
@@ -111,8 +134,7 @@ defined as the <b>Barklet Language</b>. The format is a mix of original Barklet 
 and the newer JSON Format messages.
 
 Many of the messages described in the following BNF Grammer can be run
-through the shell commands at: [Example curl commands](curlCommands)
-To run, doload the scripts and run with a valid username and password.
+through the shell commands described in the API manual: [SemanticMarkerAPI Manual](https://github.com/konacurrents/SemanticMarkerAPI)
 
 ## BNF Grammer for Barklet Language
 
@@ -354,64 +376,21 @@ int processJSONMessage(char *message);
   "mqtt_port":"1883",
   "mqtt_topic":"userP/bark/test",
   "mqtt_user":"test",
-  "mqtt_password":"test",
-  "mqtt_guestPassword": "test"
+  "mqtt_password":"password",
+  "mqtt_guestPassword": "password"
   "deviceName": "Name of feeder",
   "name":"iDogWatch MQTT Configuration",
   "uuid":"scott",
   "mqtt_status":"Success"
 }
 ```
-## Bootstrapping by hardcoding info
 
-In testing, or otherwise bootstrapping the device, a BOOTSTRAP ifdef is used.
-
-
-```objc
-#define BOOTSTRAP
-#ifdef BOOTSTRAP
-    //note: this could be a 'rebootstrap' message via MQTT .. in the future..
-    {
-        
-        SerialDebug.println("BOOTSTRAP device with our own WIFI and MQTT");
-        char* BOOT_mqtt_server = "idogwatch.com";
-        
-        char* BOOT_mqtt_port = "1883";
-
-		  //The SSID information:
-        char* BOOT_ssid = "ssidName";
-        char* BOOT_ssid_password = "ssidPassword";
-
-		  //MQTT Info
-        char *BOOT_mqtt_user = "test";
-        char *BOOT_mqtt_password = "test";
-        char *BOOT_mqtt_topic = "usersP/bark/test";
-
-		  //Info to name the device itself (eg. Test Feeder)
-		  char *BOOT_deviceName = "Test Feeder";
-        char *BOOT_uuidString = "unused";
-        char *BOOT_jsonHeaderString = "WIFI+MQTT";
-        char *BOOT_jsonVersionString ="BOOTSTRAP 1.1";
-        
-		  // store in the JSONVar .. (not shown)
-
-        SerialDebug.print("Writing EPROM JSON = ");
-        
-        SerialDebug.println(myObject);
-        _preferences.putString(_preferencesJSONName, myObject);
-        
-        // Close the Preferences
-        _preferences.end();
-    }
-    return;
-#endif //BOOTSTRAP
-```
 
 # BLEServerNetworking
 
 ## Header of BLEServerNetworking
 
-```objc
+```c
 #define BLEServerNetworking
 
 //!defines the operations on BLE Server Networking
@@ -442,7 +421,7 @@ void sendBLEMessageACKMessage();
 ## Example
 
 To use the MQTTNetwork module, the same setup and loop of the main application is used, but in that loop are calls to:
-```objc
+```c
   setupBLEServerNetworking("PTFeeder", getDeviceName(), PT_SERVICE_UUID, PT_CHARACTERISTIC_UUID);
 
    loopBLEServerNetworking()
@@ -450,7 +429,7 @@ To use the MQTTNetwork module, the same setup and loop of the main application i
 
 ## Callbacks
 
-```objc
+```c
 
  //*** The callback for "onWrite" of the bluetooth "onWrite'
   registerCallbackBLEServer(BLE_SERVER_CALLBACK_ONWRITE, &onWriteBLEServerCallback);
@@ -460,7 +439,7 @@ To use the MQTTNetwork module, the same setup and loop of the main application i
 
 ## Header of BLEClientNetworking
 
-```objc
+```c
 #define BLEClientNetworking
 
 #define BLE_CLIENT_CALLBACK_ONREAD 0
@@ -493,127 +472,11 @@ void sendFeedCommandBLEClient();
 ```
 ## Callbacks
 
-```objc
+```c
     registerCallbackBLEClient(BLE_CLIENT_CALLBACK_BLINK_LIGHT, &blinkBlueLight);
 ```
 
 
-## BNF Grammer for Barklet Language
-
-```objc
-/*
- * @discussion
- * Description = Grammer for Barklet communication
- @code
- * --- BNF: NOTE: {} are part of language not BNF
- * --NOTE: <guest ID> ":"  -- created by chat-room, not user messages
- *   message          ::= [<guest ID> ":"] <payload> <player_name> [<time>]
- *   payload          ::= <request> [<deviceInfo>] | <reply>
- *   request          ::= #STATUS | #TEMP | #CAPTURE | #FEED | #VERSION
- *   reply            ::=  <connection>
- *                       | <location>
- *                   | <biometrics> <bot_name>
- *                   | <ack>
- *                   | <chat>
- *                   | <version>
- *                   | <distanceTo< <bot_name>
- *   connection       ::= <connectionStatus> <status>
- *   connectionStatus ::= <connectionPhase> <bot_name> | #REMOTE
- *   connectionPhase  ::= #CONNECTED | #WAITING | #DISCONNECTED
- *   status           ::= {I,F,remote}   //Inside network, Foreground  || Outside, background
- *   location         ::= #GPS <loc>
- *   loc              ::= {nil} | {<lat:float>,<lon:float>,<alt-feet:float>}
- *   chat             ::= #CHAT_CONNECTED | #CHAT_DISCONNECTED
- *   ack              ::= #ACK <ack_kind>
- *   ack_kind         ::= <ack_feed>
- *   ack_feed         ::= "Fed" <bot_name>
- *   biometrics       ::= <temp> | <acceleration>
- *   temp             ::= {TempF=<float>}
- *   acceleration     ::= {Acc=<floatX>,<floatY>,<floatZ>}
- *   deviceInfo       ::= <identity> | {"deviceName":<name>}
- *   bot_name         ::= <identity>
- *   player_name      ::= <identity>
- *   identity         ::= {<name> [<UUID>]}
- *   UUID             ::= <32 bit name>
- *   float            ::= <int> : <int>
- *   time             ::= {hh:mm:ss}
- *   version          ::= {ver=x.x}
- @endcode
- */
-```
-
-## MQTT Namespace
-
-![IOT MQTT_Namespace](IOT_MQTT_Namespace.png)
-
-The MQTT topic namespace architecture.
-
-## IOT Backend
-
-![IOT_Backend](IOT_Backend.png)
-
-The nodered backend.
-
-## ESP Stability
-
-Testing as of 2.2.22 has the following observations:
-
-1. Sending a FEED command at 5 second intervals, seems to overload the WIFI of the ESP after 12 hours. It still listens on BLE but cannot connect to WIFI. 
-
-2. Sending FEED at 1 minute intervals results in the ESP running for much longer.
-
-3. The MQTT backend (mosquitto) is working nicely so far. 
-
-## MQTT Scalability
-
-According the a 2015 benchmark, MQTT can handle 60,000 publishers running Mosquitto. 
-
-http://www.scalagent.com/IMG/pdf/Benchmark_MQTT_servers-v1-1.pdf
-
-## OTA Image Sizes
-
-```
-ESP-32
-----
-With DebugDebug
-Full:                1040206 bytes (79%)
-Without WIFI_AP:      75%
-Without BLE_SERVER   836042  bytes (63%)
-Without MQTT         1000690 bytes (76%)
-Without Buttons      1039706 bytes (79%)
-
-(basically anyone includes BLE code .. it adds 15%)
-
-```
-
-```
-Without DebugDebug  
-Full: 1030010 bytes (78%) -- 10204 less bytes
-Without WIFI_AP:     979246 bytes (74%)
-Without BLE_SERVER   817038 bytes (62%)
-Without MQTT         994870 bytes (75%)
-Without either MQTT or WIFI (<WiFi.h>): 
-                     568866 bytes (43%)
-
-```
-
-```
-ESP_M5
-----
-With DebugDebug  
-Full:               1108922 bytes (84%) 
-Without DebugDebug  
-Full:               1087725 bytes (82%)
-Without WIFI_AP:    1040309 bytes (79%)
-Without BLE_SERVER  1082581 bytes (82%) 
-Without BLE_CLIENT  1068765 bytes (81%) 
-Without BLE both    843785  bytes (64%)   
-Without MQTT        1051605 bytes (80%)
-Without either MQTT or WIFI (<WiFi.h>): 
-                    645349  bytes (49%)
-
-```
-(basically anyone includes BLE code .. it adds 20%)
 ## Author
 
 konacurrents, scott@konacurrents.com
