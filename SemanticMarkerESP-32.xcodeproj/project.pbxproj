@@ -31,18 +31,8 @@
 		D2E4307C2B02DC5900E2C80B /* brand.base64 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = brand.base64; sourceTree = "<group>"; };
 		D2E4307D2B02DC5900E2C80B /* WIFI_APModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WIFI_APModule.cpp; sourceTree = "<group>"; };
 		D2E4307E2B02DC5900E2C80B /* IMG_3936.PNG */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = IMG_3936.PNG; sourceTree = "<group>"; };
-		D2E4307F2B02DC5900E2C80B /* brand.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = brand.png; sourceTree = "<group>"; };
 		D2E430812B02DC5900E2C80B /* BLEServerNetworking.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BLEServerNetworking.cpp; sourceTree = "<group>"; };
 		D2E430822B02DC5900E2C80B /* BLEServerNetworking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BLEServerNetworking.h; sourceTree = "<group>"; };
-		D2E430842B02DC5900E2C80B /* WiFi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WiFi.h; sourceTree = "<group>"; };
-		D2E430852B02DC5900E2C80B /* battery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = battery.h; sourceTree = "<group>"; };
-		D2E430862B02DC5900E2C80B /* esp_camera.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = esp_camera.h; sourceTree = "<group>"; };
-		D2E430872B02DC5900E2C80B /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
-		D2E430882B02DC5900E2C80B /* battery.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = battery.c; sourceTree = "<group>"; };
-		D2E430892B02DC5900E2C80B /* PubSubClient.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PubSubClient.cpp; sourceTree = "<group>"; };
-		D2E4308A2B02DC5900E2C80B /* NimBLEDevice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NimBLEDevice.h; sourceTree = "<group>"; };
-		D2E4308B2B02DC5900E2C80B /* PubSubClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PubSubClient.h; sourceTree = "<group>"; };
-		D2E4308C2B02DC5900E2C80B /* Update.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Update.h; sourceTree = "<group>"; };
 		D2E4308D2B02DC5900E2C80B /* iDogWatch.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = iDogWatch.png; sourceTree = "<group>"; };
 		D2E4308F2B02DC5900E2C80B /* GreyGooseSM.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = GreyGooseSM.png; sourceTree = "<group>"; };
 		D2E430902B02DC5900E2C80B /* IMG_4616.PNG */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = IMG_4616.PNG; sourceTree = "<group>"; };
@@ -60,7 +50,6 @@
 		D2E4309D2B02DC5900E2C80B /* MQTTNetworking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MQTTNetworking.h; sourceTree = "<group>"; };
 		D2E4309F2B02DC5900E2C80B /* BLEClientNetworking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BLEClientNetworking.h; sourceTree = "<group>"; };
 		D2E430A02B02DC5900E2C80B /* BLEClientNetworking.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BLEClientNetworking.cpp; sourceTree = "<group>"; };
-		D2E430A12B02DC5900E2C80B /* PetTutor.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = PetTutor.jpeg; sourceTree = "<group>"; };
 		D2E430A32B02DC5900E2C80B /* ButtonModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ButtonModule.h; sourceTree = "<group>"; };
 		D2E430A42B02DC5900E2C80B /* ButtonProcessing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ButtonProcessing.h; sourceTree = "<group>"; };
 		D2E430A52B02DC5900E2C80B /* ButtonProcessing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ButtonProcessing.cpp; sourceTree = "<group>"; };
@@ -80,17 +69,8 @@
 		D2E430B52B02DC5900E2C80B /* PreferencesController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PreferencesController.h; sourceTree = "<group>"; };
 		D2E430B72B02DC5900E2C80B /* AudioModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AudioModule.cpp; sourceTree = "<group>"; };
 		D2E430B82B02DC5900E2C80B /* AudioModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioModule.h; sourceTree = "<group>"; };
-		D2E430BA2B02DC5900E2C80B /* UI.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UI.cpp; sourceTree = "<group>"; };
-		D2E430BB2B02DC5900E2C80B /* UI.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UI.h; sourceTree = "<group>"; };
-		D2E430BD2B02DC5900E2C80B /* PTStepper.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PTStepper.cpp; sourceTree = "<group>"; };
-		D2E430BE2B02DC5900E2C80B /* PTStepper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PTStepper.h; sourceTree = "<group>"; };
-		D2E430BF2B02DC5900E2C80B /* StepperModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = StepperModule.cpp; sourceTree = "<group>"; };
-		D2E430C02B02DC5900E2C80B /* PTTimer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PTTimer.cpp; sourceTree = "<group>"; };
-		D2E430C12B02DC5900E2C80B /* StepperModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StepperModule.h; sourceTree = "<group>"; };
-		D2E430C22B02DC5900E2C80B /* PTTimer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PTTimer.h; sourceTree = "<group>"; };
 		D2E430C32B02DC8400E2C80B /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		D2E430C42B02DD8000E2C80B /* SemanticMarkerESP-32.ino */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "SemanticMarkerESP-32.ino"; sourceTree = "<group>"; };
-		D2E430C52B02E00100E2C80B /* output */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = output; sourceTree = "<group>"; };
 		D2E430C62B02E00100E2C80B /* GreyGoose.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = GreyGoose.jpg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -101,7 +81,6 @@
 				D2E430C42B02DD8000E2C80B /* SemanticMarkerESP-32.ino */,
 				D2E430C32B02DC8400E2C80B /* README.md */,
 				D2E430C62B02E00100E2C80B /* GreyGoose.jpg */,
-				D2E430C52B02E00100E2C80B /* output */,
 				D2E4306A2B02DC5900E2C80B /* src */,
 				D2E430662B02DC4F00E2C80B /* Defines.h */,
 				D2E430692B02DC4F00E2C80B /* ESP_IOT_Modules.png */,
@@ -118,18 +97,14 @@
 				D2E4306B2B02DC5900E2C80B /* ATOM_QRCode_Module */,
 				D2E430722B02DC5900E2C80B /* WIFI_APModule */,
 				D2E430802B02DC5900E2C80B /* BLEServerModule */,
-				D2E430832B02DC5900E2C80B /* Libraries */,
 				D2E4308D2B02DC5900E2C80B /* iDogWatch.png */,
 				D2E4308E2B02DC5900E2C80B /* DisplayModule */,
 				D2E430972B02DC5900E2C80B /* MQTTModule */,
 				D2E4309E2B02DC5900E2C80B /* BLEClientModule */,
-				D2E430A12B02DC5900E2C80B /* PetTutor.jpeg */,
 				D2E430A22B02DC5900E2C80B /* ButtonModule */,
 				D2E430A72B02DC5900E2C80B /* CameraModule */,
 				D2E430AA2B02DC5900E2C80B /* MainModule */,
 				D2E430B62B02DC5900E2C80B /* AudioModule */,
-				D2E430B92B02DC5900E2C80B /* UIModule */,
-				D2E430BC2B02DC5900E2C80B /* StepperModule */,
 			);
 			path = src;
 			sourceTree = "<group>";
@@ -162,7 +137,6 @@
 				D2E4307C2B02DC5900E2C80B /* brand.base64 */,
 				D2E4307D2B02DC5900E2C80B /* WIFI_APModule.cpp */,
 				D2E4307E2B02DC5900E2C80B /* IMG_3936.PNG */,
-				D2E4307F2B02DC5900E2C80B /* brand.png */,
 			);
 			path = WIFI_APModule;
 			sourceTree = "<group>";
@@ -174,22 +148,6 @@
 				D2E430822B02DC5900E2C80B /* BLEServerNetworking.h */,
 			);
 			path = BLEServerModule;
-			sourceTree = "<group>";
-		};
-		D2E430832B02DC5900E2C80B /* Libraries */ = {
-			isa = PBXGroup;
-			children = (
-				D2E430842B02DC5900E2C80B /* WiFi.h */,
-				D2E430852B02DC5900E2C80B /* battery.h */,
-				D2E430862B02DC5900E2C80B /* esp_camera.h */,
-				D2E430872B02DC5900E2C80B /* README */,
-				D2E430882B02DC5900E2C80B /* battery.c */,
-				D2E430892B02DC5900E2C80B /* PubSubClient.cpp */,
-				D2E4308A2B02DC5900E2C80B /* NimBLEDevice.h */,
-				D2E4308B2B02DC5900E2C80B /* PubSubClient.h */,
-				D2E4308C2B02DC5900E2C80B /* Update.h */,
-			);
-			path = Libraries;
 			sourceTree = "<group>";
 		};
 		D2E4308E2B02DC5900E2C80B /* DisplayModule */ = {
@@ -274,28 +232,6 @@
 				D2E430B82B02DC5900E2C80B /* AudioModule.h */,
 			);
 			path = AudioModule;
-			sourceTree = "<group>";
-		};
-		D2E430B92B02DC5900E2C80B /* UIModule */ = {
-			isa = PBXGroup;
-			children = (
-				D2E430BA2B02DC5900E2C80B /* UI.cpp */,
-				D2E430BB2B02DC5900E2C80B /* UI.h */,
-			);
-			path = UIModule;
-			sourceTree = "<group>";
-		};
-		D2E430BC2B02DC5900E2C80B /* StepperModule */ = {
-			isa = PBXGroup;
-			children = (
-				D2E430BD2B02DC5900E2C80B /* PTStepper.cpp */,
-				D2E430BE2B02DC5900E2C80B /* PTStepper.h */,
-				D2E430BF2B02DC5900E2C80B /* StepperModule.cpp */,
-				D2E430C02B02DC5900E2C80B /* PTTimer.cpp */,
-				D2E430C12B02DC5900E2C80B /* StepperModule.h */,
-				D2E430C22B02DC5900E2C80B /* PTTimer.h */,
-			);
-			path = StepperModule;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
