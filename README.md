@@ -2,7 +2,7 @@
 
 This repository contains the software for buliding capability for the ESP-32 set of boards, while supporting the Semantic Marker&trade; vision. This includes displays and internet messaging. 
 
-To implement this vision, the Semantic Marker&trade; for ESP-32 IOT designed and implemented a generic framework for communicating with the various messaging API's (API Document)[https://github.com/konacurrents/SemanticMarkerAPI].
+To implement this vision, the Semantic Marker&trade; for ESP-32 IOT designed and implemented a generic framework for communicating with the various messaging API's [API Document[(https://github.com/konacurrents/SemanticMarkerAPI)].
 
 This set of modules that can be included and invoked by the runtime kernel. 
 
@@ -16,7 +16,7 @@ collaboration supports the IoT suite of applications.
 
 After cloning or downloading follow these steps.
 
-1. The arduino runtime must be installed. For example: (ardunio-cli)[https://www.arduino.cc].
+1. The arduino runtime must be installed. For example: [ardunio-cli](https://www.arduino.cc).
 2. The runtime for the M5stack is required in the <b>Additional Boards Manager URLs</b of the <b>settings</b>
 For example comma seperated json files URL's
 ```url
@@ -27,15 +27,18 @@ https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_in
 
 4. Modify the (Defines.h)[Defines.h] to reflect the build target. For example the M5 devices ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION or ESP_M5_SMART_CLICKER_CONFIGURATION
 5. Then build using the arduino compiler and install using the USB cable. Note, that the <b>Partition Scheme</b> should be default including OTA support.
-6. Alternately, the Over the Air (OTA), can be used. Currently for this software base these are located at the (http://KnowledgeShark.org)(http://KnowledgeShark.org) site. Note that this is <b>http</b> not <b>https</b> as the ESP32 devices cannot currently communicate using the secure connection.
+6. Alternately, the Over the Air (OTA), can be used. Currently for this software base these are located at the [http://KnowledgeShark.org](http://KnowledgeShark.org) site. Note that this is <b>http</b> not <b>https</b> as the ESP32 devices cannot currently communicate using the secure connection.
 
 ## Build Targets
 
 Currently there are 3 M5 builds and 1 ESP-32 base build.
 This includes:
-1.  ESP_M5_SMART_CLICKER_CONFIGURATION (M5 with a display) !(M5 display)[https://semanticmarker.org/vision/M5SM.jpeg]
-2.  ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION (M5 connected to the ATOM QR Code Scanner) !(M5 Atom)[QRAtom.jpeg]
-3.  ESP_M5_CAMERA (M5 with a built in camera) !(M5 Camera)[M5Camera.jpeg]
+1.  ESP_M5_SMART_CLICKER_CONFIGURATION (M5 with a display) 
+![M5 display](https://semanticmarker.org/vision/M5SM.jpeg)
+2.  ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION (M5 connected to the ATOM QR Code Scanner) 
+![M5 Atom](QRAtom.jpeg)
+3.  ESP_M5_CAMERA (M5 with a built in camera) 
+![M5 Camera](M5Camera.jpeg)
 4.  ESP_32_FEEDER (a simple ESP-32 chip with the 2 lights). If this chip is connected via the PINs then
     additional configurations and code are required. These are outside the open-source aspects of this software.
 
@@ -43,7 +46,7 @@ This includes:
 
 The following is the API for interfacing with the ESP-32 IOT Framework.
 
-(API Document)[https://github.com/konacurrents/SemanticMarkerAPI]
+[API Document](https://github.com/konacurrents/SemanticMarkerAPI)
 
 # Architecture Document
 
@@ -53,7 +56,8 @@ The following is the API for interfacing with the ESP-32 IOT Framework.
 ## Semantic Marker&trade; and M5 Display
 
 The power of the small M5 display as it expands it's visual capabilities by leveraging the Semantic Marker&trade; as shown in the following diagram. Here the M5 (as built above) interacts through the MQTT messaging to perform numerous operations and acting like a display capability (by intelligent decoding of the visual Semantic Marker&trade;)
-!(M5 Semantic Marker Vision)[https://semanticmarker.org/KSNetworking/KSNetworking.018.jpeg]
+
+![M5 Semantic Marker Vision](https://semanticmarker.org/KSNetworking/KSNetworking.018.jpeg)
 
 The small M5 display has been leveraged to create a small footprint of information, including using the buttons
 to move around like menues. As this display is so small, the Semantic Marker&trade; is used to abstract information
@@ -61,17 +65,17 @@ into a small image - the Semantic Marker&trade; as shown here stuck to a common 
 <img src="https://SemanticMarker.org/vision/M5onMicrowave.jpg" width="300">
 
 Here the Semantic Marker&trade; is continually changing to reflect the sensor information. For example of the sensor information
-follow this (SMART Button Sensor Status)[https://semanticmarker.org/bot/status?v=v2&dev=Fibi&b=87&temp=10&c=0&t=0&W=on&M=on&A=off&T=off&S=on&bleS=PTFeeder&Z=on&G=off]
+follow this [SMART Button Sensor Status](https://semanticmarker.org/bot/status?v=v2&dev=Fibi&b=87&temp=10&c=0&t=0&W=on&M=on&A=off&T=off&S=on&bleS=PTFeeder&Z=on&G=off)
 ```url
 https://semanticmarker.org/bot/status?v=v2&dev=Fibi&b=87&temp=10&c=0&t=0&W=on&M=on&A=off&T=off&S=on&bleS=PTFeeder&Z=on&G=off
 ```
 
 
 ## Semantic Marker&trade; in-situ and scanned by a user
-Another Semantic Marker&trade; example is to send messages to a device with the embedded ESP-32 device. (This version, called a PetTutor, if from (Smart Animal Training)[https://smartanimaltraining.com]. In this example, a Semantic Marker&trade; has been printed and attached to the device. Users can then scan the Semantic Marker&trade; which will effectively connect to this device and perform the desired operation.
+Another Semantic Marker&trade; example is to send messages to a device with the embedded ESP-32 device. (This version, called a PetTutor, if from [Smart_Animal_Training](https://smartanimaltraining.com). In this example, a Semantic Marker&trade; has been printed and attached to the device. Users can then scan the Semantic Marker&trade; which will effectively connect to this device and perform the desired operation.
 ![PetTutor Mini](GreyGoose.jpg))
 
-A nice short clip that shows this scanning in action is at: !(M5 in action)[https://semanticmarker.org/vision/AR_SM.mov]
+A nice short clip that shows this scanning in action is at: ![M5 in action](https://semanticmarker.org/vision/AR_SM.mov)
 
 # Semantic Marker&trade; Architecture Documents
 
