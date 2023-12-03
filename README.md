@@ -2,7 +2,7 @@
 
 This repository contains the software for buliding capability for the ESP-32 set of boards, while supporting the Semantic Marker&trade; vision described at [https://SemanticMarker.org](https://SemanticMarker.org). This includes displays and internet messaging. 
 
-To implement this vision, the Semantic Marker&trade; for ESP-32 IOT designed and implemented a generic framework for communicating with the various messaging API's [API Document[(https://github.com/konacurrents/SemanticMarkerAPI)].
+To implement this vision, the Semantic Marker&trade; for ESP-32 IOT designed and implemented a generic framework for communicating with the various messaging API's [API Document](https://github.com/konacurrents/SemanticMarkerAPI).
 
 This set of modules that can be included and invoked by the runtime kernel. 
 
@@ -79,7 +79,7 @@ https://semanticmarker.org/bot/status?v=v2&dev=Fibi&b=87&temp=10&c=0&t=0&W=on&M=
 Another Semantic Marker&trade; example is to send messages to a device with the embedded ESP-32 device. (This version, called a PetTutor, if from [Smart_Animal_Training](https://smartanimaltraining.com). In this example, a Semantic Marker&trade; has been printed and attached to the device. Users can then scan the Semantic Marker&trade; which will effectively connect to this device and perform the desired operation.
 ![PetTutor Mini](GreyGoose.jpg))
 
-A nice short clip that shows this scanning in action is at: ![M5 in action](https://semanticmarker.org/vision/AR_SM.mov)
+A nice short clip that shows this scanning in action is at: [M5 in action video](https://semanticmarker.org/vision/AR_SM.mov)
 
 # Semantic Marker&trade; Architecture Documents
 
@@ -90,7 +90,7 @@ The complexity of the ESP-IOT framework is shown here:
 ![ESP_IOT Modules](ESP_IOT_Modules.png)
 
 # Networking with the Semantic Marker REST API and Messaging Capabilities
-<img src="https://semanticmarker.org/KSNetworking/KSNetworking.014.jpeg" width="300">
+![Networking](https://semanticmarker.org/KSNetworking/KSNetworking.014.jpeg)
 
 ------------------------------------------------------------------------------------------
 # Messaging BNF Grammer 
