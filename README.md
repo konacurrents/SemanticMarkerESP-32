@@ -33,18 +33,18 @@ https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_in
 
 Currently there are 3 M5 builds and 1 ESP-32 base build.
 This includes:
-1.  ESP_M5_SMART_CLICKER_CONFIGURATION (M5 with a display) 
+1.  <b>ESP_M5_SMART_CLICKER_CONFIGURATION</b> (M5 with a display) 
 ![M5 display](https://semanticmarker.org/vision/M5SM.jpeg)
-2.  ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION (M5 connected to the ATOM QR Code Scanner) 
+2.  <b>ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION</b> (M5 connected to the ATOM QR Code Scanner) 
 <img src="QRAtom.jpeg" width=300>
-3.  ESP_M5_CAMERA (M5 with a built in camera) 
+3.  <b>ESP_M5_CAMERA</b> (M5 with a built in camera)
 <img src="M5Camera.jpeg" width=300>
-4.  ESP_32_FEEDER (a simple ESP-32 chip with the 2 lights). If this chip is connected via the PINs then
+4.  <b>ESP_32_FEEDER</b> (a simple ESP-32 chip with the 2 lights). If this chip is connected via the PINs then
     additional configurations and code are required. These are outside the open-source aspects of this software.
 
 # API Document
 
-Another GitHub repository describes the API aspects of the Semantic Marker&trade; framework for the ESP-32 IoT devices.
+Another GitHub repository describes the API aspects of the Semantic Marker&trade; framework leveraged by the ESP-32 IoT devices.
 
 [API Document](https://github.com/konacurrents/SemanticMarkerAPI)
 
@@ -66,6 +66,7 @@ The power of the small M5 display as it expands it's visual capabilities by leve
 The small M5 display has been leveraged to create a small footprint of information, including using the buttons
 to move around like menues. As this display is so small, the Semantic Marker&trade; is used to abstract information
 into a small image - the Semantic Marker&trade; as shown here stuck to a common household microwave (the M5 has a magnet). 
+
 <img src="https://SemanticMarker.org/vision/M5onMicrowave.jpg" width="300">
 
 Here the Semantic Marker&trade; is continually changing to reflect the sensor information. For example of the sensor information
@@ -76,8 +77,8 @@ https://semanticmarker.org/bot/status?v=v2&dev=Fibi&b=87&temp=10&c=0&t=0&W=on&M=
 
 
 ## Semantic Marker&trade; in-situ and scanned by a user
-Another Semantic Marker&trade; example is to send messages to a device with the embedded ESP-32 device. (This version, called a PetTutor, if from [Smart_Animal_Training](https://smartanimaltraining.com). In this example, a Semantic Marker&trade; has been printed and attached to the device. Users can then scan the Semantic Marker&trade; which will effectively connect to this device and perform the desired operation.
-![PetTutor Mini](GreyGoose.jpg))
+Another Semantic Marker&trade; example is to send messages to a device with the embedded ESP-32 device. (This version, called a PetTutor, is from [Smart_Animal_Training](https://smartanimaltraining.com). In this example, a Semantic Marker&trade; has been printed and attached to the device. Users can then scan the Semantic Marker&trade; which will effectively connect to this device and perform the desired operation.
+![PetTutor Mini](GreyGoose.jpg)
 
 A nice short clip that shows this scanning in action is at: [M5 in action video](https://semanticmarker.org/vision/AR_SM.mov)
 
