@@ -36,9 +36,9 @@ This includes:
 1.  <b>ESP_M5_SMART_CLICKER_CONFIGURATION</b> (M5 with a display) 
 ![M5 display](https://semanticmarker.org/vision/M5SM.jpeg)
 2.  <b>ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION</b> (M5 connected to the ATOM QR Code Scanner) 
-<img src="QRAtom.jpeg" width=300>
+<img src="images/QRAtom.jpeg" width=300>
 3.  <b>ESP_M5_CAMERA</b> (M5 with a built in camera)
-<img src="M5Camera.jpeg" width=300>
+<img src="images/M5Camera.jpeg" width=300>
 4.  <b>ESP_32_FEEDER</b> (a simple ESP-32 chip with the 2 lights). If this chip is connected via the PINs then
     additional configurations and code are required. These are outside the open-source aspects of this software.
 
@@ -78,17 +78,17 @@ https://semanticmarker.org/bot/status?v=v2&dev=Fibi&b=87&temp=10&c=0&t=0&W=on&M=
 
 ## Semantic Marker&trade; in-situ and scanned by a user
 Another Semantic Marker&trade; example is to send messages to a device with the embedded ESP-32 device. (This version, called a PetTutor, is from [Smart_Animal_Training](https://smartanimaltraining.com). In this example, a Semantic Marker&trade; has been printed and attached to the device. Users can then scan the Semantic Marker&trade; which will effectively connect to this device and perform the desired operation.
-![PetTutor Mini](GreyGoose.jpg)
+![PetTutor Mini](images/GreyGoose.jpg)
 
 A nice short clip that shows this scanning in action is at: [M5 in action video](https://semanticmarker.org/vision/AR_SM.mov)
 
 # Semantic Marker&trade; Architecture Documents
 
 The Networking architecture is shown here:
-![ESP_IOT Diagram](KSNetworking.004.jpeg)
+![ESP_IOT Diagram](images/KSNetworking.004.jpeg)
 
 The complexity of the ESP-IOT framework is shown here:
-![ESP_IOT Modules](ESP_IOT_Modules.png)
+![ESP_IOT Modules](images/ESP_IOT_Modules.png)
 
 # Networking with the Semantic Marker REST API and Messaging Capabilities
 ![Networking](https://semanticmarker.org/KSNetworking/KSNetworking.014.jpeg)
