@@ -1,6 +1,6 @@
 # Semantic Marker&trade; for ESP-32 IOT Framework v2.0
 
-This repository contains the software for buliding capability for the ESP-32 set of boards, while supporting the Semantic Marker&trade; vision. This includes displays and internet messaging. 
+This repository contains the software for buliding capability for the ESP-32 set of boards, while supporting the Semantic Marker&trade; vision described at [https://SemanticMarker.org](https://SemanticMarker.org). This includes displays and internet messaging. 
 
 To implement this vision, the Semantic Marker&trade; for ESP-32 IOT designed and implemented a generic framework for communicating with the various messaging API's [API Document[(https://github.com/konacurrents/SemanticMarkerAPI)].
 
@@ -17,7 +17,7 @@ collaboration supports the IoT suite of applications.
 After cloning or downloading follow these steps.
 
 1. The arduino runtime must be installed. For example: [ardunio-cli](https://www.arduino.cc).
-2. The runtime for the M5stack is required in the <b>Additional Boards Manager URLs</b of the <b>settings</b>
+2. The runtime for the M5stack is required in the <b>Additional Boards Manager URLs</b> of the <b>settings</b>
 For example comma seperated json files URL's
 ```url
 https://dl.espressif.com/dl/package_esp32_index.json
@@ -25,7 +25,7 @@ https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_in
 ```
 3. Set the appropriate Board (under Tools->Board). For the M5 use <b>M5Stick-C-Plus</b> and for the ESP-32 base use <b>ESP32 Dev Module</b>.
 
-4. Modify the (Defines.h)[Defines.h] to reflect the build target. For example the M5 devices ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION or ESP_M5_SMART_CLICKER_CONFIGURATION
+4. Modify the [Defines.h](Defines.h) to reflect the build target. For example the M5 devices ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION or ESP_M5_SMART_CLICKER_CONFIGURATION
 5. Then build using the arduino compiler and install using the USB cable. Note, that the <b>Partition Scheme</b> should be default including OTA support.
 6. Alternately, the Over the Air (OTA), can be used. Currently for this software base these are located at the [http://KnowledgeShark.org](http://KnowledgeShark.org) site. Note that this is <b>http</b> not <b>https</b> as the ESP32 devices cannot currently communicate using the secure connection.
 
@@ -36,23 +36,27 @@ This includes:
 1.  ESP_M5_SMART_CLICKER_CONFIGURATION (M5 with a display) 
 ![M5 display](https://semanticmarker.org/vision/M5SM.jpeg)
 2.  ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION (M5 connected to the ATOM QR Code Scanner) 
-![M5 Atom](QRAtom.jpeg)
+<img src="QRAtom.jpeg" width=300>
 3.  ESP_M5_CAMERA (M5 with a built in camera) 
-![M5 Camera](M5Camera.jpeg)
+<img src="M5Camera.jpeg" width=300>
 4.  ESP_32_FEEDER (a simple ESP-32 chip with the 2 lights). If this chip is connected via the PINs then
     additional configurations and code are required. These are outside the open-source aspects of this software.
 
 # API Document
 
-The following is the API for interfacing with the ESP-32 IOT Framework.
+Another GitHub repository describes the API aspects of the Semantic Marker&trade; framework for the ESP-32 IoT devices.
 
 [API Document](https://github.com/konacurrents/SemanticMarkerAPI)
 
 # Architecture Document
 
+Another aspect of the Semantic Marker&trade; Architecture document is included as follows:
 <a href="https://KnowledgeShark.me/docs/ESP_IOT/html">Documented Architecture and Code</a>
 
 # Semantic Marker&trade; Examples
+
+Numerous examples are described that show the use of ESP-32/M5 IoT Devices to spport the Semantic Marker&trade; vision.
+
 ## Semantic Marker&trade; and M5 Display
 
 The power of the small M5 display as it expands it's visual capabilities by leveraging the Semantic Marker&trade; as shown in the following diagram. Here the M5 (as built above) interacts through the MQTT messaging to perform numerous operations and acting like a display capability (by intelligent decoding of the visual Semantic Marker&trade;)
