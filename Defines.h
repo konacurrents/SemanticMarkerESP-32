@@ -10,14 +10,14 @@
 
 //turn on or off which configuration is desired..  
 //BOARD = M5Stick-C-Plus,  type : make uploadFlashM5TEST
-//#define ESP_M5_SMART_CLICKER_CONFIGURATION
+#define ESP_M5_SMART_CLICKER_CONFIGURATION
 
 //original feeder: (and any without PetTutor board. Otherwise Blue light doesn't flash)
 //BOARD = ESP32 Dev Modulef   type: make uploadFlashOrigTEST
 //#define ESP_32_FEEDER
 
 //When testing the new board, define _WITH_BOARD  -- make uploadFlashBoardTEST
-#define ESP_32_FEEDER_WITH_BOARD
+//#define ESP_32_FEEDER_WITH_BOARD
 
 //original feeder: (or any) that also pairs with a GEN3 only, and gateways messages.
 //#define ESP_32_FEEDER_BLE_GEN3

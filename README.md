@@ -1,24 +1,44 @@
-# Semantic Marker for ESP-32 IOT Framework v2.0
+# Semantic Marker&trade; for ESP-32 IOT Framework v2.0
 
-The goal of Semantic Marker for ESP-32 IOT is to have a generic framework for communicating with the various messaging API's (API Document)[https://github.com/konacurrents/SemanticMarkerAPI]
+This repository contains the software for buliding capability for the ESP-32 set of boards, while supporting the Semantic Marker&trade; vision. This includes displays and internet messaging. 
+
+To implement this vision, the Semantic Marker&trade; for ESP-32 IOT designed and implemented a generic framework for communicating with the various messaging API's (API Document)[https://github.com/konacurrents/SemanticMarkerAPI].
 
 This set of modules that can be included and invoked by the runtime kernel. 
 
-Conditionally including them (with #ifdef statements) will add and manipulate
-various IoT capabilities, while using the ESP_IOT framework to connect the various devices. The ESP-32 devices support bluetooth and 
-WIFI but have a limited user interface. The M5 based ESP-32 extends with a display, speaker, temperature, axcelerometor sensers. Other devices 
+Conditionally including them (with #ifdef statements) will add and manipulate various IoT capabilities, while using the ESP_IOT framework to connect the various devices. The ESP-32 devices support bluetooth and WIFI but have a limited user interface. The M5 based ESP-32 extends with a display, speaker, temperature, axcelerometor sensers. Other devices 
 such as M5 V2 incorporate a camera with machine learning functionality.
 
 When incorporated with the network through WIFI and a pub/sub engine like MQTT, using JSON formatted messages, a powerful
 collaboration supports the IoT suite of applications.
 
+# Building the SemanticMarkerESP executable
 
-## To build type "make"
-### Modify the Defines.h for the different ESP configurations
-### Install arduino-cli first
+After cloning or downloading follow these steps.
 
-Download from:
-[arduino-cli homebrew](https://formulae.brew.sh/formula/arduino-cli)
+1. The arduino runtime must be installed. For example: (ardunio-cli)[https://www.arduino.cc].
+2. The runtime for the M5stack is required in the <b>Additional Boards Manager URLs</b of the <b>settings</b>
+For example comma seperated json files URL's
+```url
+https://dl.espressif.com/dl/package_esp32_index.json
+https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
+```
+3. Set the appropriate Board (under Tools->Board). For the M5 use <b>M5Stick-C-Plus</b> and for the ESP-32 base use <b>ESP32 Dev Module</b>.
+
+4. Modify the (Defines.h)[Defines.h] to reflect the build target. For example the M5 devices ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION or ESP_M5_SMART_CLICKER_CONFIGURATION
+5. Then build using the arduino compiler and install using the USB cable. Note, that the <b>Partition Scheme</b> should be default including OTA support.
+6. Alternately, the Over the Air (OTA), can be used. Currently for this software base these are located at the (http://KnowledgeShark.org)(http://KnowledgeShark.org) site. Note that this is <b>http</b> not <b>https</b> as the ESP32 devices cannot currently communicate using the secure connection.
+
+## Build Targets
+
+Currently there are 3 M5 builds and 1 ESP-32 base build.
+This includes:
+1.  ESP_M5_SMART_CLICKER_CONFIGURATION (M5 with a display) !(M5 display)[https://semanticmarker.org/vision/M5SM.jpeg]
+2.  ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION (M5 connected to the ATOM QR Code Scanner) !(M5 Atom)[QRAtom.jpeg]
+3.  ESP_M5_CAMERA (M5 with a built in camera) !(M5 Camera)[M5Camera.jpeg]
+4.  ESP_32_FEEDER (a simple ESP-32 chip with the 2 lights). If this chip is connected via the PINs then
+    additional configurations and code are required. These are outside the open-source aspects of this software.
+
 # API Document
 
 The following is the API for interfacing with the ESP-32 IOT Framework.
@@ -28,19 +48,12 @@ The following is the API for interfacing with the ESP-32 IOT Framework.
 # Architecture Document
 
 <a href="https://KnowledgeShark.me/docs/ESP_IOT/html">Documented Architecture and Code</a>
-\ref DisplayModule
-\ref MQTTModule
 
-An example use of the ESP-32 software is the Pet Tutor capability. This is shown here:
-![PetTutor Mini](GreyGoose.jpg))
+# Semantic Marker&trade; Examples
+## Semantic Marker&trade; and M5 Display
 
-The Networking architecture is shown here:
-![ESP_IOT Diagram](KSNetworking.004.jpeg)
-
-The complexity of the ESP-IOT framework is shown here:
-![ESP_IOT Modules](ESP_IOT_Modules.png)
-
-## M5 Display
+The power of the small M5 display as it expands it's visual capabilities by leveraging the Semantic Marker&trade; as shown in the following diagram. Here the M5 (as built above) interacts through the MQTT messaging to perform numerous operations and acting like a display capability (by intelligent decoding of the visual Semantic Marker&trade;)
+!(M5 Semantic Marker Vision)[https://semanticmarker.org/KSNetworking/KSNetworking.018.jpeg]
 
 The small M5 display has been leveraged to create a small footprint of information, including using the buttons
 to move around like menues. As this display is so small, the Semantic Marker&trade; is used to abstract information
@@ -48,84 +61,29 @@ into a small image - the Semantic Marker&trade; as shown here stuck to a common 
 <img src="https://SemanticMarker.org/vision/M5onMicrowave.jpg" width="300">
 
 Here the Semantic Marker&trade; is continually changing to reflect the sensor information. For example of the sensor information
-follow thie (SMART Button Sensor Status)[https://semanticmarker.org/bot/status?v=v2&dev=Fibi&b=87&temp=10&c=0&t=0&W=on&M=on&A=off&T=off&S=on&bleS=PTFeeder&Z=on&G=off]
+follow this (SMART Button Sensor Status)[https://semanticmarker.org/bot/status?v=v2&dev=Fibi&b=87&temp=10&c=0&t=0&W=on&M=on&A=off&T=off&S=on&bleS=PTFeeder&Z=on&G=off]
+```url
+https://semanticmarker.org/bot/status?v=v2&dev=Fibi&b=87&temp=10&c=0&t=0&W=on&M=on&A=off&T=off&S=on&bleS=PTFeeder&Z=on&G=off
+```
+
+
+## Semantic Marker&trade; in-situ and scanned by a user
+Another Semantic Marker&trade; example is to send messages to a device with the embedded ESP-32 device. (This version, called a PetTutor, if from (Smart Animal Training)[https://smartanimaltraining.com]. In this example, a Semantic Marker&trade; has been printed and attached to the device. Users can then scan the Semantic Marker&trade; which will effectively connect to this device and perform the desired operation.
+![PetTutor Mini](GreyGoose.jpg))
+
+A nice short clip that shows this scanning in action is at: !(M5 in action)[https://semanticmarker.org/vision/AR_SM.mov]
+
+# Semantic Marker&trade; Architecture Documents
+
+The Networking architecture is shown here:
+![ESP_IOT Diagram](KSNetworking.004.jpeg)
+
+The complexity of the ESP-IOT framework is shown here:
+![ESP_IOT Modules](ESP_IOT_Modules.png)
 
 # Networking with the Semantic Marker REST API and Messaging Capabilities
 <img src="https://semanticmarker.org/KSNetworking/KSNetworking.014.jpeg" width="300">
 
-To optionally include specific code, the various MODULE are included in a scheme like the following:
-
-```c
-#ifdef USE_MQTT_NETWORKING
-#include "src/MQTTModule/MQTTNetworking.h"
-#endif
-
-#ifdef USE_BLE_SERVER_NETWORKING
-#include "src/BLEServerModule/BLEServerNetworking.h"
-#endif
-
-#ifdef USE_BLE_CLIENT_NETWORKING
-#include "src/BLEClientModule/BLEClientNetworking.h"
-#endif
-
-#ifdef USE_BUTTON_MODULE
-#include "src/ButtonModule/ButtonModule.h"
-#endif
-
-#ifdef USE_WIFI_AP_MODULE
-#include "src/WIFI_APModule/WIFI_APModule.h"
-#endif
-
-
-//!functions to call, like blinkBlueLight..
-void blinkBlueLight(char *message);
-
-//! main setup of the executable
-void setup()
-{
-
-#ifdef MQTTNetworking
-	//register callbacks..
-	//then call setup
-   setupMQTTNetworking(parms..);
-#endif
-
-#ifdef BLEServerNetworking
-	//register callbacks..
-	//then call setup
-   setupBLEServerNetworking(parms..);
-#endif
-
-#ifdef BLEClientNetworking
-   //register callbacks..
-   registerCallbackBLEClient(BLE_CLIENT_CALLBACK_BLINK_LIGHT, &blinkBlueLight);
-
-   //then call setup
-   setupBLEClientNetworking(parms..);
-#endif
-} //setup
-
-```
-
-And the main loop of the executable (from the Arduino runtime).
-
-```objc
-//! main loop of the executable
-void loop()
-{
-#ifdef MQTTNetworking
-   loopMQTTNetworking();
-#endif
-
-#ifdef BLEServerNetworking
-   loopBLEServerNetworking();
-#endif
-
-#ifdef BLEClientNetworking
-   loopBLECLientNetworking();
-#endif
-} //loop
-```
 ------------------------------------------------------------------------------------------
 # Messaging BNF Grammer 
 
@@ -134,7 +92,8 @@ defined as the <b>Barklet Language</b>. The format is a mix of original Barklet 
 and the newer JSON Format messages.
 
 Many of the messages described in the following BNF Grammer can be run
-through the shell commands described in the API manual: [SemanticMarkerAPI Manual](https://github.com/konacurrents/SemanticMarkerAPI)
+through the shell commands described in the API manual: [SemanticMarkerAPI Manual](https://github.com/konacurrents/SemanticMarkerAPI).
+To run, download the scripts and run with a valid username and password.
 
 ## BNF Grammer for Barklet Language
 
@@ -270,6 +229,85 @@ through the shell commands described in the API manual: [SemanticMarkerAPI Manua
 
 ------------------------------------------------------------------------------------------
 
+# Module design
+While not going into detail on it's capabilities, the following short description shows how the build can be 
+configured through the use of conditional module compiling.
+
+To optionally include specific code, the various MODULE are included in a scheme like the following:
+
+```c
+#ifdef USE_MQTT_NETWORKING
+#include "src/MQTTModule/MQTTNetworking.h"
+#endif
+
+#ifdef USE_BLE_SERVER_NETWORKING
+#include "src/BLEServerModule/BLEServerNetworking.h"
+#endif
+
+#ifdef USE_BLE_CLIENT_NETWORKING
+#include "src/BLEClientModule/BLEClientNetworking.h"
+#endif
+
+#ifdef USE_BUTTON_MODULE
+#include "src/ButtonModule/ButtonModule.h"
+#endif
+
+#ifdef USE_WIFI_AP_MODULE
+#include "src/WIFI_APModule/WIFI_APModule.h"
+#endif
+
+
+//!functions to call, like blinkBlueLight..
+void blinkBlueLight(char *message);
+
+//! main setup of the executable
+void setup()
+{
+
+#ifdef MQTTNetworking
+	//register callbacks..
+	//then call setup
+   setupMQTTNetworking(parms..);
+#endif
+
+#ifdef BLEServerNetworking
+	//register callbacks..
+	//then call setup
+   setupBLEServerNetworking(parms..);
+#endif
+
+#ifdef BLEClientNetworking
+   //register callbacks..
+   registerCallbackBLEClient(BLE_CLIENT_CALLBACK_BLINK_LIGHT, &blinkBlueLight);
+
+   //then call setup
+   setupBLEClientNetworking(parms..);
+#endif
+} //setup
+
+```
+
+And the main loop of the executable (from the Arduino runtime).
+
+```objc
+//! main loop of the executable
+void loop()
+{
+#ifdef MQTTNetworking
+   loopMQTTNetworking();
+#endif
+
+#ifdef BLEServerNetworking
+   loopBLEServerNetworking();
+#endif
+
+#ifdef BLEClientNetworking
+   loopBLECLientNetworking();
+#endif
+} //loop
+```
+
+------------------------------------------------------------------------------------------
 ## Mixing module functionality
 
 The interesting part is when the modules are mixed since they perform different functions. 
@@ -483,5 +521,5 @@ konacurrents, scott@konacurrents.com
 
 ## License
 
-KSNetworking is available GNU GENERAL PUBLIC LICENSE. See the LICENSE file for more info.
+KSNetworking is available MIT PUBLIC LICENSE. See the LICENSE file for more info.
 
