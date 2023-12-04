@@ -95,20 +95,20 @@ The complexity of the ESP-IOT framework is shown here:
 ![Networking](https://semanticmarker.org/KSNetworking/KSNetworking.014.jpeg)
 
 ------------------------------------------------------------------------------------------
-# Messaging BNF Grammer 
+# Messaging BNF Grammar 
 
 These are the Websocket and MQTT messaging formats. This includes the legacy websocket interface
 defined as the <b>Barklet Language</b>. The format is a mix of original Barklet Language used with WebSockets,
 and the newer JSON Format messages.
 
-Many of the messages described in the following BNF Grammer can be run
+Many of the messages described in the following BNF Grammar can be run
 through the shell commands described in the API manual: [SemanticMarkerAPI Manual](https://github.com/konacurrents/SemanticMarkerAPI).
 To run, download the scripts and run with a valid username and password.
 
-## BNF Grammer for Barklet Language
+## BNF Grammar for Barklet Language
 
 ```ebnf
-  Description ::= Grammer for Barklet communication
+  Description ::= Grammar for Barklet communication
    NOTE ::= {} are part of language not BNF
    NOTE ::= : <guest ID> ":"  created by chat-room, not user messages
 
