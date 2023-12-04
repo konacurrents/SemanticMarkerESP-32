@@ -41,6 +41,7 @@ This includes:
 <img src="images/M5Camera.jpeg" width=300>
 4.  <b>ESP_32_FEEDER</b> (a simple ESP-32 chip with the 2 lights). If this chip is connected via the PINs then
     additional configurations and code are required. These are outside the open-source aspects of this software.
+<img src="images/ESP.jpg" width=300>
 
 # API Document
 
