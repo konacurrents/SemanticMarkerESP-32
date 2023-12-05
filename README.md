@@ -1,16 +1,16 @@
 # Semantic Marker&trade; for ESP-32 IOT Framework v2.0
 
-This repository contains the software for buliding capability for the ESP-32 set of boards, while supporting the Semantic Marker&trade; vision described at [https://SemanticMarker.org](https://SemanticMarker.org). This includes displays and internet messaging. 
+This repository contains the software for building the runtime capability for the ESP-32 set of boards. In particular this repository supports the Semantic Marker&trade; vision described at [https://SemanticMarker.org](https://SemanticMarker.org). This includes displays and internet messaging. 
 
-To implement this vision, the Semantic Marker&trade; for ESP-32 IOT designed and implemented a generic framework for communicating with the various messaging API's [API Document](https://github.com/konacurrents/SemanticMarkerAPI).
+> [!NOTE]
+> To implement this vision, the Semantic Marker&trade; for ESP-32 IOT designed and implemented a generic framework for communicating with the various messaging API's [API Document](https://github.com/konacurrents/SemanticMarkerAPI).
 
-This set of modules that can be included and invoked by the runtime kernel. 
+Conditionally including modules (with #ifdef statements) will add and manipulate various IoT capabilities. These will leverate the Semantic Marker&trade; cloud messaging framework to connect the various devices. The ESP-32 devices support bluetooth and WIFI but have a limited user interface. The M5 based ESP-32 extends with a display, speaker, temperature, axcelerometor sensers. Other devices such as M5 V2 incorporate a camera with machine learning functionality.
 
-Conditionally including them (with #ifdef statements) will add and manipulate various IoT capabilities, while using the ESP_IOT framework to connect the various devices. The ESP-32 devices support bluetooth and WIFI but have a limited user interface. The M5 based ESP-32 extends with a display, speaker, temperature, axcelerometor sensers. Other devices 
-such as M5 V2 incorporate a camera with machine learning functionality.
+![Module Configuration Options](https://knowledgeshark.me/docs/ESP_IOT/html/dir_68267d1309a1af8e8297ef4c3efbcdba_dep.png)
 
-When incorporated with the network through WIFI and a pub/sub engine like MQTT, using JSON formatted messages, a powerful
-collaboration supports the IoT suite of applications.
+> [!IMPORTANT]
+> When incorporated with the network through WIFI and a pub/sub engine like MQTT, using JSON formatted messages, a powerful collaboration supports the IoT suite of applications.
 
 # Building the SemanticMarkerESP executable
 
@@ -54,6 +54,9 @@ Another GitHub repository describes the API aspects of the Semantic Marker&trade
 Another aspect of the Semantic Marker&trade; Architecture document is included as follows:
 <a href="https://KnowledgeShark.me/docs/ESP_IOT/html">Documented Architecture and Code</a>
 
+This Architecture Document provides valuable diagrams to help users understand the flow, for example this diagram.
+![Main Loop](https://knowledgeshark.me/docs/ESP_IOT/html/_e_s_p___i_o_t_8ino_afe461d27b9c48d5921c00d521181f12f_cgraph.png)
+
 # Semantic Marker&trade; Examples
 
 Numerous examples are described that show the use of ESP-32/M5 IoT Devices to spport the Semantic Marker&trade; vision.
@@ -88,10 +91,10 @@ A nice short clip that shows this scanning in action is at: [M5 in action video]
 The Networking architecture is shown here:
 ![ESP_IOT Diagram](images/KSNetworking.004.jpeg)
 
-The complexity of the ESP-IOT framework is shown here:
+The complexity of the ESP-32 software architecture is shown here:
 ![ESP_IOT Modules](images/ESP_IOT_Modules.png)
 
-# Networking with the Semantic Marker REST API and Messaging Capabilities
+# Networking with the Semantic Marker REST API and MQTT Messaging Capabilities
 ![Networking](https://semanticmarker.org/KSNetworking/KSNetworking.014.jpeg)
 
 ------------------------------------------------------------------------------------------
@@ -103,7 +106,9 @@ and the newer JSON Format messages.
 
 Many of the messages described in the following BNF Grammar can be run
 through the shell commands described in the API manual: [SemanticMarkerAPI Manual](https://github.com/konacurrents/SemanticMarkerAPI).
-To run, download the scripts and run with a valid username and password.
+
+> [!NOTE]
+> To run, download the scripts and run with a valid username and password.
 
 ## BNF Grammar for Barklet Language
 
@@ -404,7 +409,7 @@ void blinkMessageCallback(char *message)
 
 ## Setup via Bluetooth JSON Message
 
-Since the device must be configured, the processJSONMesage() is called when a bluetooth message arrives (or other ways the information is gathered). This returns a boolan stating which if true means the message was processed, otherwise the caller does what it wants with the bluetooth message.
+Since the device must be configured, the **processJSONMesage()** is called when a bluetooth message arrives (or other ways the information is gathered). This returns a boolan stating which if true means the message was processed, otherwise the caller does what it wants with the bluetooth message.
 
 ```objc
 //!process the JSON message, which can be configuration information. This is called from outside on things like a Bluetooth message..

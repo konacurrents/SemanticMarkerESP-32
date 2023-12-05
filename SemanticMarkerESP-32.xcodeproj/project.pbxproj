@@ -8,12 +8,16 @@
 
 /* Begin PBXFileReference section */
 		D24B006E2B1A8B0B00D29C0A /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
-		D2E430632B02DC4F00E2C80B /* KSNetworking.004.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = KSNetworking.004.jpeg; sourceTree = "<group>"; };
+		D24B00702B1EA0EA00D29C0A /* M5Camera.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = M5Camera.jpeg; sourceTree = "<group>"; };
+		D24B00712B1EA0EA00D29C0A /* IOT_MQTT_Namespace.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = IOT_MQTT_Namespace.png; sourceTree = "<group>"; };
+		D24B00722B1EA0EA00D29C0A /* IOT_Backend.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = IOT_Backend.png; sourceTree = "<group>"; };
+		D24B00732B1EA0EA00D29C0A /* QRAtom.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = QRAtom.jpeg; sourceTree = "<group>"; };
+		D24B00742B1EA0EA00D29C0A /* GreyGoose.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = GreyGoose.jpg; sourceTree = "<group>"; };
+		D24B00752B1EA0EA00D29C0A /* ESP_IOT_Modules.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ESP_IOT_Modules.png; sourceTree = "<group>"; };
+		D24B00762B1EA0EB00D29C0A /* KSNetworking.004.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = KSNetworking.004.jpeg; sourceTree = "<group>"; };
+		D24B00772B1EA0EB00D29C0A /* ESP.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = ESP.jpg; sourceTree = "<group>"; };
 		D2E430642B02DC4F00E2C80B /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; };
 		D2E430662B02DC4F00E2C80B /* Defines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Defines.h; sourceTree = "<group>"; };
-		D2E430672B02DC4F00E2C80B /* IOT_Backend.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = IOT_Backend.png; sourceTree = "<group>"; };
-		D2E430682B02DC4F00E2C80B /* IOT_MQTT_Namespace.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = IOT_MQTT_Namespace.png; sourceTree = "<group>"; };
-		D2E430692B02DC4F00E2C80B /* ESP_IOT_Modules.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ESP_IOT_Modules.png; sourceTree = "<group>"; };
 		D2E4306C2B02DC5900E2C80B /* ATOMQRButtons.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ATOMQRButtons.cpp; sourceTree = "<group>"; };
 		D2E4306D2B02DC5900E2C80B /* ATOMQR_UART_CMD.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ATOMQR_UART_CMD.cpp; sourceTree = "<group>"; };
 		D2E4306E2B02DC5900E2C80B /* ATOMQRButtons.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ATOMQRButtons.h; sourceTree = "<group>"; };
@@ -72,23 +76,33 @@
 		D2E430B82B02DC5900E2C80B /* AudioModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioModule.h; sourceTree = "<group>"; };
 		D2E430C32B02DC8400E2C80B /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		D2E430C42B02DD8000E2C80B /* SemanticMarkerESP-32.ino */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "SemanticMarkerESP-32.ino"; sourceTree = "<group>"; };
-		D2E430C62B02E00100E2C80B /* GreyGoose.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = GreyGoose.jpg; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		D24B006F2B1EA0EA00D29C0A /* images */ = {
+			isa = PBXGroup;
+			children = (
+				D24B00702B1EA0EA00D29C0A /* M5Camera.jpeg */,
+				D24B00712B1EA0EA00D29C0A /* IOT_MQTT_Namespace.png */,
+				D24B00722B1EA0EA00D29C0A /* IOT_Backend.png */,
+				D24B00732B1EA0EA00D29C0A /* QRAtom.jpeg */,
+				D24B00742B1EA0EA00D29C0A /* GreyGoose.jpg */,
+				D24B00752B1EA0EA00D29C0A /* ESP_IOT_Modules.png */,
+				D24B00762B1EA0EB00D29C0A /* KSNetworking.004.jpeg */,
+				D24B00772B1EA0EB00D29C0A /* ESP.jpg */,
+			);
+			path = images;
+			sourceTree = "<group>";
+		};
 		D2E430582B02DB7F00E2C80B = {
 			isa = PBXGroup;
 			children = (
+				D24B006F2B1EA0EA00D29C0A /* images */,
 				D2E430C42B02DD8000E2C80B /* SemanticMarkerESP-32.ino */,
 				D2E430C32B02DC8400E2C80B /* README.md */,
 				D24B006E2B1A8B0B00D29C0A /* LICENSE.md */,
-				D2E430C62B02E00100E2C80B /* GreyGoose.jpg */,
 				D2E4306A2B02DC5900E2C80B /* src */,
 				D2E430662B02DC4F00E2C80B /* Defines.h */,
-				D2E430692B02DC4F00E2C80B /* ESP_IOT_Modules.png */,
-				D2E430672B02DC4F00E2C80B /* IOT_Backend.png */,
-				D2E430682B02DC4F00E2C80B /* IOT_MQTT_Namespace.png */,
-				D2E430632B02DC4F00E2C80B /* KSNetworking.004.jpeg */,
 				D2E430642B02DC4F00E2C80B /* makefile */,
 			);
 			sourceTree = "<group>";
