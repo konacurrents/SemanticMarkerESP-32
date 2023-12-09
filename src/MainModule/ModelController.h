@@ -66,12 +66,18 @@ typedef struct
     //! what is the state of the pairing..
     PairedDeviceStateEnum pairedDeviceStateEnum;
     
-    //!Timer info (placeholder)
-    unsigned long delayStartMillis;
+    //!Timer info  - When the timer was started
+    int delayStartMillis;
+    //!the value returned from random .. the diff is taken off this number
+    //! but this number doesn't change except next random call
+    int counterLoopAbsoluteSeconds;
     //! true if still waiting for delay to finish
     boolean delayRunning = false;
     //! length of delay (changable..)
     int delaySeconds;
+    //! 11.29.23 max Delay Seconds .. if different than delay then next delay will be random() * (max-min) + min
+    int delaySecondsMax;
+    
     //! finished flag (let user know .. then restart)
     boolean finishedTimer;
     //! current seconds (<= delaySeconds)
@@ -118,6 +124,10 @@ void initModelStructs_ModelController();
 //!! TIMER Remote control set delay seconds
 //!MQTT:  set: timerdelay, val:seconds
 void setTimerDelaySeconds_mainModule(int delaySeconds);
+
+//!! TIMER Remote control set delay seconds
+//!MQTT:  set: timerdelayMax, val:seconds
+void setTimerDelaySecondsMax_mainModule(int delaySecondsMax);
 
 //!! TIMER Remote control start
 //! MQTT:  set: starttimer, val: true/false  (true == start timer, false = stop timer)

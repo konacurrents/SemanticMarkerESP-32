@@ -68,7 +68,7 @@ void initMenuToSMMode()
         }
     }
 }
-//! 
+//!
 //!create state variables for the ModelKindEnum entries
 ModelStateStruct _modelStateStructs[ModelKindEnumMax];
 char _timerBuffer[10];
@@ -107,13 +107,18 @@ void initModelStructs_ModelController()
                 _modelStateStructs[i].SM_Mode = SM_home_simple_3;
                 break;
             case timerModel:
+                //!initialize the random:
+                //!@see https://www.arduino.cc/reference/en/language/functions/random-numbers/random/
+                randomSeed(101010);
+                
                 _modelStateStructs[i].perfersBigText = false;
                 _modelStateStructs[i].SM_Mode = SM_timer;
                 //! true if still waiting for delay to finish
                 _modelStateStructs[i].delayRunning = false;
                 //! length of delay
                 //!get from in EPROM
-                _modelStateStructs[i].delaySeconds = getPreferenceInt_mainModule(PREFERENCE_TIMER_INT_SETTING);;
+                _modelStateStructs[i].delaySeconds = getPreferenceInt_mainModule(PREFERENCE_TIMER_INT_SETTING);
+                _modelStateStructs[i].delaySecondsMax = getPreferenceInt_mainModule(PREFERENCE_TIMER_MAX_INT_SETTING);
                 _modelStateStructs[i].currentCounterSeconds = _modelStateStructs[i].delaySeconds;
                 SerialCall.printf("initTimer: sec = %d\n", _modelStateStructs[i].currentCounterSeconds);
 #if defined(ESP_M5_CAMERA) || defined(ESP_32)
@@ -134,13 +139,45 @@ void initModelStructs_ModelController()
 void setTimerDelaySeconds_mainModule(int delaySeconds)
 {
     SerialDebug.printf("setTimerDelaySeconds_mainModule(%d)\n", delaySeconds);
-
+    
     ModelStateStruct *timerModelStruct = getModel(timerModel);
     timerModelStruct->delaySeconds = delaySeconds;
     timerModelStruct->currentCounterSeconds = delaySeconds;
     //!save in EPROM
     savePreferenceInt_mainModule(PREFERENCE_TIMER_INT_SETTING, delaySeconds);
+    
+}
 
+//!! TIMER Remote control set delay seconds
+//!MQTT:  set: timerdelay,Max val:seconds
+void setTimerDelaySecondsMax_mainModule(int delaySeconds)
+{
+    SerialDebug.printf("setTimerDelaySecondsMax_mainModule(%d)\n", delaySeconds);
+    
+    ModelStateStruct *timerModelStruct = getModel(timerModel);
+    timerModelStruct->delaySecondsMax = delaySeconds;
+    timerModelStruct->currentCounterSeconds = delaySeconds;
+    //!save in EPROM
+    savePreferenceInt_mainModule(PREFERENCE_TIMER_MAX_INT_SETTING, delaySeconds);
+    
+}
+
+//! set the next random time .. since called from a couple places
+//! will set the model->delayStartMillis  == currentCounterSeconds
+void setNextRandomTime()
+{
+    ModelStateStruct *timerModelStruct = getModel(timerModel);
+    
+    // calculate a random
+    int nextRandomTimeSeconds = random(timerModelStruct->delaySeconds, timerModelStruct->delaySecondsMax);
+    timerModelStruct->delayStartMillis = millis();   // when started
+    timerModelStruct->currentCounterSeconds = nextRandomTimeSeconds;
+    
+    //!the value returned from random .. the diff is taken off this number
+    //! but this number doesn't change except next random call
+    timerModelStruct->counterLoopAbsoluteSeconds = nextRandomTimeSeconds;
+    
+    SerialCall.printf("nextRandomTimeSeconds(%d,%d)     = %d\n", timerModelStruct->delaySeconds, timerModelStruct->delaySecondsMax, nextRandomTimeSeconds);
 }
 
 //!! TIMER Remote control start
@@ -150,14 +187,18 @@ void startStopTimer_mainModule(boolean startTimer)
     ModelStateStruct *timerModelStruct = getModel(timerModel);
     timerModelStruct->delayRunning = startTimer;
     
-    SerialDebug.printf("startStopTimer_mainModule(%d, %d)\n", startTimer, timerModelStruct->delaySeconds);
-
+    if (startTimer)
+    {
+        setNextRandomTime();
+    }
+    SerialDebug.printf("startStopTimer_mainModule(%d, %d)\n", startTimer, timerModelStruct->currentCounterSeconds);
+    
 }
 
 //!print it out..
 void printDeviceState(ModelStateStruct *deviceState)
 {
-//#define PRINT_THIS
+    //#define PRINT_THIS
 #ifdef PRINT_THIS
     ModelKindEnum modelKind = deviceState->modelKindEnum;
     switch (modelKind)
@@ -228,7 +269,7 @@ ModelStateStruct *getModel(ModelKindEnum modelKind)
     ModelStateStruct *model = &_modelStateStructs[modelKind];
     SerialCall.printf("getModel(%d) = %d\n", modelKind, model);
     printDeviceState(model);
-
+    
     return model;
 }
 
@@ -246,7 +287,7 @@ ModelStateStruct *hasModelForSM_Mode(int SM_Mode)
         }
     }
     SerialCall.printf("hasModelForSM_Mode(%d) == NO\n", SM_Mode);
-
+    
     return NULL;
 }
 
@@ -351,7 +392,7 @@ void invokePair_ModelController()
     boolean isGEN3 = connectedBLEDeviceIsGEN3_mainModule();
     
     SerialLots.printf("invokePair(%s, gen3=%d)\n", deviceName, isGEN3);
-
+    
     //TODO...
     
     //!this is where it needs to know if GEN3. If so, then if their is a paired name .. If GEN3, don't overreight the device name
@@ -372,9 +413,9 @@ void invokePair_ModelController()
 void invokeSkip_ModelController(char *nameOrAddress)
 {
 #ifdef USE_BLE_CLIENT_NETWORKING
-
+    
     skipNameOrAddress_BLEClientNetworking(nameOrAddress);
-
+    
     //TODO: look to see if the Address can be used to not connect right away to same one...
     disconnect_BLEClientNetworking();
 #endif
@@ -385,7 +426,7 @@ void invokeToggleGen3_ModelController()
 {
     //!change GEN3 preference
     togglePreferenceBoolean_mainModule(PREFERENCE_ONLY_GEN3_CONNECT_SETTING);
-
+    
     //!if connected and not a GEN3 but want only GEN3 .. then disconnect, otherwise keep connected
     if (!connectedBLEDeviceIsGEN3_mainModule() && getPreferenceBoolean_mainModule(PREFERENCE_ONLY_GEN3_CONNECT_SETTING))
     {
@@ -429,7 +470,7 @@ void updateMenuState(ModelKindEnum modelKind)
             boolean gatewayOn = getPreferenceBoolean_mainModule(PREFERENCE_MAIN_GATEWAY_VALUE);
             if (gatewayOn)
                 SerialLots.printf("gatewayOn(%d)\n", gatewayOn);
-
+            
             //! name of paired device (if any) in EPROM
             char *pairedDeviceTemp = getPairedDevice_mainModule();
             strcpy(pairedDeviceString, pairedDeviceTemp);
@@ -437,22 +478,22 @@ void updateMenuState(ModelKindEnum modelKind)
             
             char *pairedDeviceAddressTemp = getPreferenceString_mainModule(PREFERENCE_PAIRED_DEVICE_ADDRESS_SETTING);
             strcpy(pairedDeviceAddressString, pairedDeviceAddressTemp);
-
+            
             SerialLots.printf("pairedDeviceAddress(%s)\n", pairedDeviceAddressString);
             
-                      //!name of connected device, or "" if not specified, which means not pairable
+            //!name of connected device, or "" if not specified, which means not pairable
             char *connectedBLEDeviceName = connectedBLEDeviceName_mainModule();
             SerialLots.printf("connectedBLEDeviceName(%s)\n", connectedBLEDeviceName);
             //!compare to what's connected ..
             char *connectedBLEDeviceNameAddress = connectedBLEDeviceNameAddress_mainModule();
             SerialLots.printf("connectedBLEDeviceNameAddress(%s)\n", connectedBLEDeviceNameAddress);
-
+            
             //!is paired and connected (to that pair .. if BLECLient working right)
             boolean pairedAndConnected = false;
             boolean pairedButNotConnected = false;
             boolean pairableAndConnected = false;
             boolean unpaired = false;
-
+            
             //!if connectedBLE then either paired or not-paired
             if (isConnectedBLE)
             {
@@ -514,7 +555,7 @@ void updateMenuState(ModelKindEnum modelKind)
                 deviceState->pairedDeviceStateEnum = notConnectedEnum;
                 deviceState->maxItems = 2;
             }
-           
+            
             break;
         }
         case rebootModel:
@@ -545,34 +586,45 @@ void updateMenuState(ModelKindEnum modelKind)
             //updateMenu
         case timerModel:
         {
-            SerialCall.printf("updateMenuState timer(%d)\n", deviceState->delayRunning);
+            SerialCall.printf("updateMenuState timerRunning(%d)\n", deviceState->delayRunning);
             //! calculate the current second counter..
             if (deviceState->delayRunning)
             {
                 //counter.., running
                 deviceState->maxItems = 2;
                 
-                int currentTimeMillis = millis();
-                int delayMillisSeconds = deviceState->delaySeconds * 1000;
-            
-                SerialCall.printf("updateMenuState(%d) \n", modelKind);
-                SerialCall.printf("secondsDelay        = %d\n", deviceState->delaySeconds * 1000);
-                SerialCall.printf("currentAbsoluteTime = %d\n", currentTimeMillis);
-                SerialLots.printf("delayStartMillis    = %d\n", deviceState->delayStartMillis);
-                SerialLots.printf("diffMillis          = %d\n", currentTimeMillis - deviceState->delayStartMillis);
-
-                //!substract the seconds from the set delay
-                deviceState->currentCounterSeconds = deviceState->delaySeconds - (currentTimeMillis - deviceState->delayStartMillis)/1000;
-
-                SerialCall.printf("currentCounterSeconds = %d\n", deviceState->currentCounterSeconds);
+                /*
+                 Design:
+                 currentCounterSeconds == the countdown timer
+                 The problem is this code isn't guarenteed to be run every second. So we need
+                 a way to know the different to subtract seconds from the counter seconds
+                 
+                 delayStartMillis == when the loop started in milis
+                 currentTimeMillis == current time
+                 diff == number of seconds since first time
+                 
+                 So either diff is subtracted from original (random number) -- or
+                 
+                 */
+                
+                long currentTimeMillis = millis();
+                SerialCall.printf("currentTimeMillis    = %d\n", currentTimeMillis);
+                SerialCall.printf("delayStartMillis     = %d\n", deviceState->delayStartMillis);
+                
+                //! the number of seconds since starting the loop
+                float diffSec = (currentTimeMillis - deviceState->delayStartMillis) / 1000;
+                deviceState->currentCounterSeconds = deviceState->counterLoopAbsoluteSeconds - diffSec;
+                
+                SerialCall.printf("currentCounterSeconds = %d\n", deviceState->currentCounterSeconds );
                 
                 //!if count <=0 then finished..
                 if (deviceState->currentCounterSeconds <= 0)
                 {
-                    SerialDebug.printf("delayFinished \n");
-
-                    deviceState->delayStartMillis = millis();   // start delay
-                    deviceState->currentCounterSeconds = deviceState->delaySeconds;
+                    SerialCall.printf("delayFinished \n");
+                    
+                    //! 11.29.23 use a random
+                    //! calculate a new random
+                    setNextRandomTime();
                     
                     //!if local .. send a command directly to the device..
                     if (deviceState->feedLocalOnly)
@@ -589,12 +641,14 @@ void updateMenuState(ModelKindEnum modelKind)
             }
             else
             {
-                    //counter.., running, change time..
-                    deviceState->maxItems = 3;
+                // NOT running..
+                //counter.., running, change time..
+                //! added a max delay
+                deviceState->maxItems = 4;
             }
         }
-           
-         
+            
+            
             break;
     }
     
@@ -761,7 +815,7 @@ char *menuForState(ModelKindEnum modelKind, int item)
                     else
                         menu = (char*)"PTFeeder";
                     break;
-
+                    
                 default:
                     SerialMin.printf("e. **** Invalid item: %d\n",item);
                     break;
@@ -785,7 +839,7 @@ char *menuForState(ModelKindEnum modelKind, int item)
             //! HomePage
             //! /WIFI Feed
             //! WIFI Share
-
+            
             
             switch (item)
             {
@@ -822,20 +876,21 @@ char *menuForState(ModelKindEnum modelKind, int item)
                 case MenusModel_Help:
                     menu = (char*)"Help";
                     break;
-
+                    
                 default:
                     SerialMin.printf("f. **** Invalid item: %d\n",item);
                     break;
             }
         }
             break;
-           
-            //menuForState
+            
+            //menuForState. Max == 2 if running (showing STOP , TIME)
+            //!                       Max == 4 if not running (START, TIME, MAXTIME, DELAY)
         case timerModel:
         {
             switch (item)
             {
-               
+                    
                 case 0:
                     //!draw the state we are in..
                     if (deviceState->delayRunning)
@@ -846,14 +901,26 @@ char *menuForState(ModelKindEnum modelKind, int item)
                 case 1:
                 {
                     //!update menu with seconds countdown
-                    sprintf(_timerBuffer,"%d", deviceState->currentCounterSeconds);
+                    if (deviceState->delayRunning)
+                        sprintf(_timerBuffer,"%d", deviceState->currentCounterSeconds);
+                    else
+                        sprintf(_timerBuffer,"%d", deviceState->delaySeconds);
+                    
                     menu = _timerBuffer;
                 }
                     break;
-                    //! only if stopped...
+                    
+                    //! only if stopped... max == 4, other max == 2
                 case 2:
                 {
-                   
+                    //!show max
+                    sprintf(_timerBuffer,"%d", deviceState->delaySecondsMax);
+                    menu = _timerBuffer;
+                }
+                    break;
+                case 3:
+                {
+                    
                     menu = (char*)"Delay";
                 }
                     break;
@@ -884,7 +951,7 @@ boolean invokeMenuState(ModelKindEnum modelKind)
         case pairedDeviceModel:
         {
             SerialCall.printf("pairedDeviceModel");
-
+            
             switch (deviceState->pairedDeviceStateEnum)
             {
                     //paired to a device, but BLE NOT connected right now
@@ -973,7 +1040,7 @@ boolean invokeMenuState(ModelKindEnum modelKind)
         case rebootModel:
         {
             SerialCall.println("*** rebootModel ***");
-
+            
             switch (item)
             {
                 case 0: // reboot
@@ -1078,14 +1145,14 @@ boolean invokeMenuState(ModelKindEnum modelKind)
                     setDiscoverM5PTClicker(true);
                     break;
                     //! 11.4.22 (after Maggie Bluetic was fed with Pumpking Uno and GreyGoose
-                
-
+                    
+                    
                 default:
                     SerialMin.println("h, *** invalid item ***");
             }
         }
             break;
-       
+            
         case menusModel:
         {
             modelChanged = true;
@@ -1111,36 +1178,41 @@ boolean invokeMenuState(ModelKindEnum modelKind)
         case timerModel:
         {
             //invokeMenuState
-            SerialCall.printf("*** timerModel *** %d\n", deviceState->delayRunning);
+            SerialTemp.printf("*** timerModel (%d) *** %d\n", item, deviceState->delayRunning);
+            
+            /*
+             When running 0 == STOP, and 1 == current time (and a long press will reset it..)
+             When not running 0 == START, 1 = min, 2 = max , 3 = DELAY ??
+             */
             switch (item)
             {
-               
                 case 0:
+                    // stop the timer..
                     //start stop..
                     deviceState->delayRunning = !deviceState->delayRunning;
-                    
                     if (deviceState->delayRunning)
                     {
-                        deviceState->delayStartMillis = millis();   // start delay
-                        deviceState->currentCounterSeconds = deviceState->delaySeconds;
+                        // just started..
+                        setNextRandomTime();
                     }
                     break;
                 case 1:
-                    //menu = (char*)"TimerTBD";
-                    // how about reset ... to delay..
                     if (deviceState->delayRunning)
                     {
-                        deviceState->delayStartMillis = millis();   // start delay
+                        //! This will restart the timer..
+                        setNextRandomTime();
+                        break;
                     }
-                    //!reset to default
-                    deviceState->currentCounterSeconds = deviceState->delaySeconds;
-
-                    break;
+                    //otherwise fall through..
                 case 2:
                 {
                     //menu = (char*)"Bounds";  .. change timer  5 .. 30 .. 60 .. 120 .. 5
-                    int currentDelay = deviceState->delaySeconds;
-
+                    int currentDelay;
+                    if (item == 1)
+                        currentDelay = deviceState->delaySeconds;
+                    else
+                        currentDelay = deviceState->delaySecondsMax;
+                    //!same login for each
                     if (currentDelay == 5)
                         currentDelay = 30;
                     else if (currentDelay == 30)
@@ -1152,17 +1224,45 @@ boolean invokeMenuState(ModelKindEnum modelKind)
                     else
                         currentDelay = 5;
                     SerialTemp.printf(".. change delay = %d\n", currentDelay);
-                    deviceState->delaySeconds = currentDelay;
-                    deviceState->currentCounterSeconds = deviceState->delaySeconds;
-                    //save in EPROM
-                    savePreferenceInt_mainModule(PREFERENCE_TIMER_INT_SETTING, currentDelay);
+                    if (item == 1)
+                    {
+                        deviceState->delaySeconds = currentDelay;
+                        //save in EPROM
+                        savePreferenceInt_mainModule(PREFERENCE_TIMER_INT_SETTING, currentDelay);
+                        
+                        //! make sure the max is >= min
+                        if (deviceState->delaySecondsMax < currentDelay)
+                        {
+                            deviceState->delaySecondsMax = currentDelay;
+                            //save in EPROM
+                            savePreferenceInt_mainModule(PREFERENCE_TIMER_MAX_INT_SETTING, currentDelay);
+                        }
+                    }
+                    else
+                    {
+                        //! 11.29.23 add the random feed
+                        if (currentDelay < deviceState->delaySeconds)
+                            currentDelay = deviceState->delaySeconds;
+                        deviceState->delaySecondsMax = currentDelay;
+                        deviceState->currentCounterSeconds = deviceState->delaySeconds;
+                        //save in EPROM
+                        savePreferenceInt_mainModule(PREFERENCE_TIMER_MAX_INT_SETTING, currentDelay);
+                    }
+                    
+                    //!now use those values to create a new random time..
+                    //!not needed until the START above
+                    //setNextRandomTime();
                 }
                     break;
+                case 3:
+                    //! Delay .. no-opp
+                    break;
                 default:
-                    SerialMin.println("i.  *** invalid item ***");
+                    SerialMin.println("i2.  *** invalid item ***");
+                    
             }
-            break;
         }
+            break;
     }
     return modelChanged;
 }
@@ -1180,7 +1280,7 @@ char *getModelSemanticMarker(ModelKindEnum modelKind)
     
 #ifdef NOTHING_YET_SAVE_SOME_MEMORY
     int item = deviceState->currentItem;
-
+    
     switch (modelKind)
     {
         case rebootModel:
@@ -1188,8 +1288,8 @@ char *getModelSemanticMarker(ModelKindEnum modelKind)
             switch (item)
             {
                 case 0: // reboot
-                    //REboot the device
-                    //sprintf(_semanticMarkerString,"%s/%s/%s", "https://SemanticMarker.org/bot/reboot", _mqttUserString?_mqttUserString:"NULL", guestPassword?guestPassword:"NULL");
+                        //REboot the device
+                        //sprintf(_semanticMarkerString,"%s/%s/%s", "https://SemanticMarker.org/bot/reboot", _mqttUserString?_mqttUserString:"NULL", guestPassword?guestPassword:"NULL");
                     break;
                 case 1: // poweroff
                         // poweroff.. but send MQTT first..

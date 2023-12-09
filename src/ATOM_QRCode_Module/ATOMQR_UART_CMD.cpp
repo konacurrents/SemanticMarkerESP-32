@@ -2,7 +2,6 @@
 
 /*
  *******************************************************************************
- * Copyright (c) 2021 by M5Stack
  *                  Equipped with Atom-Lite/Matrix sample source code
  *                          配套  Atom-Lite/Matrix 示例源代码
  * Visit for more information: https://docs.m5stack.com/en/atom/atomic_qr

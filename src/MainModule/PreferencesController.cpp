@@ -122,6 +122,9 @@ char _preferenceBufferString[100];
 //!9.28.23 #272   only show Semantic Markers that are sent directly to the device
 #define EPROM_DEV_ONLY_SM_SETTING "38dsm"
 
+//! 11.29.23 add the max time .. so a random can be used
+#define EPROM_PREFERENCE_TIMER_MAX_INT_SETTING "39x"
+
 //!the EPROM is in preferences.h
 #include <Preferences.h>
 //!name of main prefs eprom
@@ -162,7 +165,7 @@ void savePreference_mainModule(int preferenceID, String preferenceValue)
     
     // Close the Preferences
     _preferencesMainModule.end();
-
+    
 }
 
 //! special preference string for saving and printing back later..
@@ -194,7 +197,7 @@ void appendPreference_mainModule(int preferenceID, String preferenceValue)
 void storePreference_mainModule(int preferenceID, String preferenceValue)
 {
     appendPreference_mainModule(preferenceID, preferenceValue);
-   // SerialDebug.printf("storePref(%d): %s\n", _appendingPreferenceString.length(), _appendingPreferenceString.c_str());
+    // SerialDebug.printf("storePref(%d): %s\n", _appendingPreferenceString.length(), _appendingPreferenceString.c_str());
     savePreference_mainModule(preferenceID, _appendingPreferenceString);
 }
 
@@ -412,7 +415,7 @@ void readPreferences_mainModule()
             case PREFERENCE_SENSOR_TILT_VALUE:
             case PREFERENCE_USE_DOC_FOLLOW_SETTING:
             case PREFERENCE_DEV_ONLY_SM_SETTING:
-
+                
                 //SerialLots.printf("setting Cached[%d] = %s\n", i, preferenceValue);
                 _isCachedPreferenceBoolean[i] = true;
                 _cachedPreferenceBooleanValues[i] = (preferenceValue.compareTo("1")==0)?true:false;
@@ -421,6 +424,8 @@ void readPreferences_mainModule()
             case PREFERENCE_SCREEN_COLOR_SETTING:
             case PREFERENCE_STEPPER_KIND_VALUE:
             case PREFERENCE_TIMER_INT_SETTING:
+            case PREFERENCE_TIMER_MAX_INT_SETTING:
+                
                 _isCachedPreferenceInt[i] = true;
                 _cachedPreferenceIntValues[i] = atoi(&preferenceValue[0]);
                 break;
@@ -438,7 +443,7 @@ void readPreferences_mainModule()
 }
 
 //!initialize the _preferencesMainLookup with EPROM lookup names
-//!BUT these are not stored in EPROM. The next method 
+//!BUT these are not stored in EPROM. The next method
 void initPreferencesMainModule()
 {
     
@@ -479,7 +484,7 @@ void initPreferencesMainModule()
 #ifdef ESP_M5
 #ifdef ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION
                 _preferenceMainModuleLookupDefaults[i] = (char*)"0";
-
+                
 #else
                 _preferenceMainModuleLookupDefaults[i] = (char*)"1";
 #endif // ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION
@@ -552,12 +557,17 @@ void initPreferencesMainModule()
                 //! 3.28.23 change default to 5 (from 30)
                 _preferenceMainModuleLookupDefaults[i] = (char*)"5";
                 break;
+            case PREFERENCE_TIMER_MAX_INT_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] = (char*) EPROM_PREFERENCE_TIMER_MAX_INT_SETTING;
+                //! 11.29.23 add a max so random can be used
+                _preferenceMainModuleLookupDefaults[i] = (char*)"5";
+                break;
             case PREFERENCE_STEPPER_KIND_VALUE:
                 _preferenceMainModuleLookupEPROMNames[i] = (char*) EPROM_STEPPER_KIND_VALUE;
                 /*
-#define STEPPER_IS_UNO 1
-#define STEPPER_IS_MINI 2
-#define STEPPER_IS_TUMBLER 3
+                 #define STEPPER_IS_UNO 1
+                 #define STEPPER_IS_MINI 2
+                 #define STEPPER_IS_TUMBLER 3
                  per issue @269, default is now Tumbler
                  */
                 _preferenceMainModuleLookupDefaults[i] = (char*)"3";
@@ -686,7 +696,7 @@ void initPreferencesMainModule()
                 _preferenceMainModuleLookupEPROMNames[i] =
                 (char*)EPROM_PAIRED_DEVICE_ADDRESS_SETTING;
                 _preferenceMainModuleLookupDefaults[i] = (char*)"";
-
+                
                 break;
                 
                 ///!retreives the motor direction| 0 (false) = default, clockwise; 1 (true) = REVERSE, counterclockwise 9.8.22
@@ -745,7 +755,7 @@ void initPreferencesMainModule()
                 (char*)EPROM_DEV_ONLY_SM_SETTING;
                 _preferenceMainModuleLookupDefaults[i] = (char*)"0";
                 break;
-                                
+                
             default:
                 SerialError.printf(" ** NO default for preference[%d]\n", i);
         }
@@ -783,7 +793,7 @@ void printPreferenceValues_mainModule()
     SerialTemp.printf("PREFERENCE_PAIRED_DEVICE_ADDRESS_SETTING: %s\n", getPreference_mainModule(PREFERENCE_PAIRED_DEVICE_ADDRESS_SETTING));
     SerialTemp.printf("PREFERENCE_DEVICE_NAME_SETTING: %s\n", getPreference_mainModule(PREFERENCE_DEVICE_NAME_SETTING));
     SerialTemp.printf("PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING));
-
+    
     SerialTemp.printf("PREFERENCE_MAIN_BLE_CLIENT_VALUE: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE));
     SerialTemp.printf("PREFERENCE_MAIN_BLE_SERVER_VALUE: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE));
     SerialTemp.printf("PREFERENCE_FIRST_TIME_FEATURE_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_FIRST_TIME_FEATURE_SETTING));
@@ -796,12 +806,12 @@ void printPreferenceValues_mainModule()
     SerialTemp.printf("PREFERENCE_SUPPORT_GROUPS_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_SUPPORT_GROUPS_SETTING));
     SerialTemp.printf("PREFERENCE_GROUP_NAMES_SETTING: %s\n", getPreference_mainModule(PREFERENCE_GROUP_NAMES_SETTING));
     SerialTemp.printf("PREFERENCE_DEV_ONLY_SM_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_DEV_ONLY_SM_SETTING));
-
+    
 #if (SERIAL_DEBUG_CALL)
     // this is many lines long .. so only show in the CALL settting..
     SerialTemp.printf("PREFERENCE_DEBUG_INFO_SETTING: %s\n", getPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING));
 #endif
-  
+    
     
     SerialTemp.printf("WIFI_CREDENTIAL: %s\n", main_JSONStringForWIFICredentials());
     //!retrieve a JSON string for the ssid and ssid_password: {'ssid':<ssid>,'ssidPassword':<pass>"}
@@ -813,8 +823,8 @@ void printPreferenceValues_mainModule()
 //!resets preferences.. Currently only reset all, but eventually reset(groups..)
 void resetAllPreferences_mainModule()
 {
-//    savePreferenceBoolean_mainModule(PREFERENCE_SENDWIFI_WITH_BLE, false);
-//    savePreferenceInt_mainModule(PREFERENCE_TIMER_INT_SETTING, 30);
+    //    savePreferenceBoolean_mainModule(PREFERENCE_SENDWIFI_WITH_BLE, false);
+    //    savePreferenceInt_mainModule(PREFERENCE_TIMER_INT_SETTING, 30);
     
     SerialLots.println("Clean EPROM.. ");
     //! dispatches a call to the command specified. This is run on the next loop()

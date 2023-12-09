@@ -1,6 +1,6 @@
 /**
-* \link MQTTModule \endlink
-*/
+ * \link MQTTModule \endlink
+ */
 
 /** The MQTT + WIFI part
  
@@ -93,7 +93,7 @@ void setupWIFI(char * arg_ssid, char * arg_password);
 int _globalMQTTAttempts = 0;
 //this is the number of times to retry again, after trying WIFI again..
 #define MAXglobalMQTTAttempts  10 //2
-// the number of times to retry MQTT before trying WIFI again (then only MAXglobalMQTTAttemtt
+                                  // the number of times to retry MQTT before trying WIFI again (then only MAXglobalMQTTAttemtt
 #define MAX_MQTT_ATTEMPTS 10 //4
 
 //max times to try the WIFI before attempting again..
@@ -249,7 +249,7 @@ boolean skipMessageProcessing()
 void publishMQTTMessage(char *topic, char *message)
 {
     
-
+    
     SerialMin.printf("Publish message(%s): %s\n",topic, message);
     if (!isConnectedMQTT_MQTTState())
     {
@@ -260,7 +260,7 @@ void publishMQTTMessage(char *topic, char *message)
     
     //!see if this pushs the publish out.. (otherwise a reply might occure .. an break our _fullMessage)
     //_mqttClient.loop();
-
+    
 }
 #endif
 
@@ -293,20 +293,20 @@ void publishBinaryFile(char *topic, uint8_t * buf, size_t len)
 #ifdef NEW_WAY
     //!create a WIFI client that talks to just our upload servlet
     WiFiClient postClient;
-
+    
     String serverName = "knowledgeshark.me";   // REPLACE WITH YOUR Raspberry Pi IP ADDRESS
-                                           //String serverName = "example.com";   // OR REPLACE WITH YOUR DOMAIN NAME
+                                               //String serverName = "example.com";   // OR REPLACE WITH YOUR DOMAIN NAME
     String serverPath = "/examples/servlets/UploadServlet";
     //!tomcat server.. 8080
     int serverPort = 8080;
     SerialDebug.println("2. Connecting to server: " + serverName);
-
+    
     if (postClient.connect(serverName.c_str(), serverPort))
     {
         SerialDebug.printf("Connection successful! len = %d\n", len);
         String filename = "esp32-cam-" + String(getDeviceNameMQTT()) + "-" + String(random(0xffff), HEX) + ".jpg";
         String head = "--KonaCurrents\r\nContent-Disposition: form-data; name=\"imageFile\"; filename=\"" +
-                         filename + "\"\r\nContent-Type: image/jpeg\r\n\r\n";
+        filename + "\"\r\nContent-Type: image/jpeg\r\n\r\n";
         String tail = "\r\n--KonaCurrents--\r\n";
         
         uint32_t imageLen = len;
@@ -342,8 +342,8 @@ void publishBinaryFile(char *topic, uint8_t * buf, size_t len)
         //! WORKS FIRST TIME FROM M5 Camera, to tomcat on KnowledgeShark: 9.17.22
         //!publish location of this file.
         //String fileURL = "http://" + serverName + ":" + String(serverPort) + "/examples/uploads/" + filename;
-       //!send this out as a DOCFOLLOW message (but different syntax)
-       
+        //!send this out as a DOCFOLLOW message (but different syntax)
+        
         sprintf(_semanticMarkerString,"#url {%s} {http://%s:%d/examples/uploads/%s}", getDeviceNameMQTT(), &serverName[0], serverPort, &filename[0]);
         //sendSemanticMarkerDocFollow_mainModule(&fileURL[0]);
         //! for now only send if it start message starts with "#"
@@ -354,7 +354,7 @@ void publishBinaryFile(char *topic, uint8_t * buf, size_t len)
     {
         SerialDebug.printf("Connection NOT successful! ");
     }
-
+    
     
 #endif  //newway
     
@@ -482,7 +482,7 @@ void setLastMessageStatus(char *token)
     SerialLots.print("setLastMessageStatus: ");
     SerialLots.println(token);
     _countSinceLastChangedMessageStatus = 0;
-
+    
     char *deviceName = getDeviceNameMQTT();
     //! add just the version and device name to start, but add the msg=
     sprintf(_lastMessageStatusURL,"status?v=%s&dev=%s&msg=",VERSION_SHORT, deviceName);
@@ -580,7 +580,7 @@ float _WIFI_MQTTStateDelays[] =
     [connectedMQTT]=0,
     [disconnectedWIFI]=0,
     [disconnectedMQTT]=0
-
+    
 };
 
 
@@ -639,7 +639,7 @@ void setup_MQTTNetworking()
     //!init variables..
     initAllArrayStorage();
     
-   // initLastMessageStatusURL();
+    // initLastMessageStatusURL();
     
     SerialDebug.println(" .. continue setup_MQTTNetworking");
     _setupMQTTNetworkingAlready = true;
@@ -658,11 +658,11 @@ void setup_MQTTNetworking()
     SerialTemp.println();
     
     _MQTTRunning = false;
-
+    
     //set the state, then the 'loop' will call setupWIFI(...)
     _WIFI_MQTTState = preSetupWIFI;
     startDelay_WIFI_MQTTState();
-
+    
     //!starts the delay for WIFI  checking, called at startup, and each time the timer finished..
     restartDelayCheckWIFI_MQTTNetworking();
 }
@@ -696,26 +696,26 @@ boolean isConnectedMQTT_MQTTState()
 //! called for the loop() of this plugin
 void loop_MQTTNetworking()
 {
-//#define TRY_AGAIN1  //9.19.23
+    //#define TRY_AGAIN1  //9.19.23
 #ifdef  TRY_AGAIN1
-     if (!_ssidString || (_ssidString && strlen(_ssidString)==0))
-     {
-         SerialDebug.println("loop_MQTTNetworking .. null ssid");
+    if (!_ssidString || (_ssidString && strlen(_ssidString)==0))
+    {
+        SerialDebug.println("loop_MQTTNetworking .. null ssid");
         // setDoneWIFI_APModuleFlag(false); // this would turn off BLE server .. not good
-         _WIFI_MQTTState = preSetupWIFI;
-         //stopDelayCheckWIFI_MQTTNetworking();
-         
-     }
+        _WIFI_MQTTState = preSetupWIFI;
+        //stopDelayCheckWIFI_MQTTNetworking();
+        
+    }
 #endif
     //only check messages if MQTT is running (or want's to run.. )
     if (_MQTTRunning)
     {
         checkMQTTMessages_loop();
     }
-
+    
     //!check if should try to reconnect to WIF
     checkDelaySinceWIFICheck_MQTTNetworking();
-
+    
     //!check if a delay was running.. for the STATE..
     if (delayFinished_WIFI_MQTTState())
     {
@@ -884,7 +884,7 @@ void checkAndReconnectWIFI_MQTTNetworking()
             break;
         default:
             break;
-
+            
     }
     
     //!try reconnecting if not connected (and ssid is available)
@@ -907,9 +907,9 @@ void blinkBlueLightMQTT()
     //call method passed in..
     //  if (_blinkTheLED)
     //      (*_blinkTheLED)();
-//    callCallbackMain(CALLBACKS_MQTT, MQTT_CALLBACK_BLINK, strdup("blink"));
+    //    callCallbackMain(CALLBACKS_MQTT, MQTT_CALLBACK_BLINK, strdup("blink"));
     callCallbackMain(CALLBACKS_MQTT, MQTT_CALLBACK_BLINK, (char*)"blink");
-
+    
 }
 
 
@@ -918,15 +918,15 @@ void setupWIFI(char * arg_ssid, char * arg_password)
 {
     //state preSetupWIFI
     //SerialTemp.printf("setupWIFI(%d)\n", _WIFI_MQTTState);
-
+    
     // We start by connecting to a WiFi network
     SerialDebug.printf("1. Connecting to '%s' password = '%s'\n", arg_ssid?arg_ssid:"NULL", arg_password?arg_password:"NULL");
-
+    
     //!save some reason we are in the AP mode
     appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, " *** WIFI attempt:");
     appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, arg_ssid?arg_ssid:"No SSID");
     storePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, arg_password);
-
+    
     printTimestamp_SPIFFModule();
     print_SPIFFModule((char*)"setupWIFI: ");
     println_SPIFFModule(arg_ssid?arg_ssid:(char*)"empty");
@@ -935,7 +935,7 @@ void setupWIFI(char * arg_ssid, char * arg_password)
     if (!arg_ssid || (arg_ssid && strlen(arg_ssid)==0))
     {
         SerialDebug.println(" NULL SSID in setupWIFI .. so leaving");
-      //  _maxCounterLoop = MAX_WIFI_CONNECT_ATTEMPTS + 1;
+        //  _maxCounterLoop = MAX_WIFI_CONNECT_ATTEMPTS + 1;
 #define TRY_EXIT3
 #ifdef TRY_EXIT3
         //! 9.19.23 before Van Morrison ..
@@ -943,12 +943,12 @@ void setupWIFI(char * arg_ssid, char * arg_password)
             //putting here .. time might have gone too fast..
             _WIFI_MQTTState = disconnectedWIFI;
             //stopDelay_WIFI_MQTTState();
-         //   return;
+            //   return;
         }
 #endif
         stopDelay_WIFI_MQTTState();
-      //  _WIFI_MQTTState = disconnectedWIFI;
-//        return;
+        //  _WIFI_MQTTState = disconnectedWIFI;
+        //        return;
         
     }
 #endif
@@ -976,7 +976,7 @@ void setupWIFI(char * arg_ssid, char * arg_password)
 void setupWIFI_loop()
 {
     //SerialTemp.printf("setupWIFI_loop(%d)\n", _WIFI_MQTTState);
-
+    
     if (WiFi.status() == WL_CONNECTED)
     {
         SerialDebug.println("WiFi.status() == WL_CONNECTED()");
@@ -986,7 +986,7 @@ void setupWIFI_loop()
 #endif
         //stop the timer..
         stopDelay_WIFI_MQTTState();
-    
+        
         //try the autoReconnect (seems default was true .. so no help)
         WiFi.setAutoReconnect(true);
         
@@ -996,7 +996,7 @@ void setupWIFI_loop()
     else if (_maxCounterLoop < MAX_WIFI_CONNECT_ATTEMPTS)
     {
 #ifdef STORE_DEBUG_INFO
-
+        
         //!debug info
         storePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, "WiFi.status() try again");
 #endif
@@ -1021,13 +1021,13 @@ void setupWIFI_loop()
         SerialDebug.println("WIFI **** Cannot connect .. try bluetooth update ... ");
         
 #ifdef STORE_DEBUG_INFO
-
+        
         SerialTemp.println("Before storePref");
-
+        
         //!save some reason we are in the AP mode
-//        appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, get_WIFIInfoString());
+        //        appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, get_WIFIInfoString());
         SerialTemp.println("after 1. storePref");
-
+        
         storePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, "MAX_WIFI_CONNECT_ATTEMPTS .. going to AP mode");
         SerialTemp.println("After storePref");
 #endif
@@ -1058,7 +1058,7 @@ void setupWIFI_loop()
 #endif // original
     }
 }  //
-//#define TRY_GET_WIFI
+   //#define TRY_GET_WIFI
 #ifdef TRY_GET_WIFI
 //! for getting the Debug of the WIFI info
 String _WIFIInfoString;
@@ -1066,12 +1066,12 @@ String _WIFIInfoString;
 String get_WIFIInfoString()
 {
     long rssi = WiFi.RSSI();
-
+    
     _WIFIInfoString = "IP Address: " + WiFi.localIP();
     _WIFIInfoString += "\n WIFI SSID" + String(WiFi.SSID());
     _WIFIInfoString += "\n RSSI" + rssi;
-   // _WIFIInfoString += "\n WIFI Status = " + String(wifiStatus_MQTT());
-
+    // _WIFIInfoString += "\n WIFI Status = " + String(wifiStatus_MQTT());
+    
     SerialDebug.println(_WIFIInfoString.c_str());
     return _WIFIInfoString;
 }
@@ -1102,7 +1102,7 @@ void printWIFIInfo()
 void finishWIFI_Setup()
 {
     SerialMin.println("finishWIFI_Setup()");
-
+    
     //random ??  for the WIFI address?
     randomSeed(micros());
     
@@ -1110,7 +1110,7 @@ void finishWIFI_Setup()
     printWIFIInfo();
     
     addToTextMessages_displayModule("IP ADDRESS");
-
+    
     //NOTE: this is a 192.168.0.130 kind of address. But when the outside MQTT world see it,
     // is like : 72.106.50.236:49205  (The address of my entry to my subdomain point ..)
     
@@ -1132,7 +1132,7 @@ void finishWIFI_Setup()
     
     //lets kick off a delay.. this could be 0 or 1 ?? the first time
     startDelay_WIFI_MQTTState();
-  
+    
     
 }
 
@@ -1140,8 +1140,8 @@ void finishWIFI_Setup()
 void callPreSetupMQTT()
 {
     SerialDebug.printf("callPreSetupMQTT(%d, %s)\n", _WIFI_MQTTState, _deviceNameString?_deviceNameString:"NULL");
-
- //
+    
+    //
     //this would use the values .. and then we save afterwards..
     setupMQTT(_mqttServerString, _mqttPortString, _mqttPasswordString, _mqttUserString, _deviceNameString, _uuidString);
     
@@ -1256,7 +1256,7 @@ void callbackMQTTHandler(char* topic, byte* payload, unsigned int length)
     
     //! too many printouts which actully slows things down.. start with actMe   (or collect a count of #actme and report that??)
     if (!skipMessageProcessing())
-       SerialDebug.printf("MessageArrived: '%s', onTopic=%s\n", _fullMessageIn,  topic);
+        SerialDebug.printf("MessageArrived: '%s', onTopic=%s\n", _fullMessageIn,  topic);
     
     //!classify the topic type
     classifyTopic(topic);
@@ -1272,25 +1272,25 @@ void callbackMQTTHandler(char* topic, byte* payload, unsigned int length)
             return;
         }
     }
-
-
+    
+    
     //!NOTE: This assumes the callbackMQTTHandler is only called once per message processed, as the next time in the loop(), it processes this _fullMessage since the _newMQTTMessageArrived == true
     
 #ifdef TRY_MORE_ASYNC_PROCESSING
     _topic = topic;
     _newMQTTMessageArrived = true;
     SerialLots.printf("MessageArrived: '%s', onTopic=%s\n", _fullMessageIn,  topic);
-
+    
 #else
     //!save some part of this message for later display by SemanticMarker 8.4.22
-   // setLastMessageStatus(_fullMessage);
-
+    // setLastMessageStatus(_fullMessage);
+    
     //process this message (We don't recognize just a JSON config yet..) That arrives on bluetooth
     processBarkletMessage(_fullMessageIn, topic);
     
     //send to the Display .. but truncate
     //! 11.7.22  if it's an #actMe .. don't show
-   if (!skipMessageProcessing())
+    if (!skipMessageProcessing())
         addToTextMessages_displayModule(_fullMessageIn);
     
 #endif
@@ -1304,7 +1304,7 @@ void callbackMQTTHandler(char* topic, byte* payload, unsigned int length)
 void reconnectMQTT_loop()
 {
     //SerialTemp.println("reconnectMQTT_loop()");
-//#define NOTNOW
+    //#define NOTNOW
 #ifdef NOTNOW
     if (isEmptyString(_ssidPasswordString) || isEmptyString(_mqttPasswordString))
     {
@@ -1332,7 +1332,7 @@ void reconnectMQTT_loop()
     else if (_globalMQTTAttempts > MAXglobalMQTTAttempts)
     {
 #ifdef STORE_DEBUG_INFO
-
+        
         //!save some reason we are in the AP mode
         appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, "MQTT_SERVER");
         appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, _mqttServerString?_mqttServerString:"NULL");
@@ -1346,7 +1346,7 @@ void reconnectMQTT_loop()
         
         _WIFI_MQTTState = disconnectedMQTT;
         
-        //! 9.17.23 .. I think the cleaning 
+        //! 9.17.23 .. I think the cleaning
         //! call the callback for cleaning the SSID eprom..
         //callCallbackMain(CALLBACKS_MQTT, MQTT_CLEAN_SSID_EPROM, (char*)"cleanSSID_EPROM");
 #ifdef NOT_IN_ORIGINAL
@@ -1377,17 +1377,17 @@ void reconnectMQTT_loop()
         //Lets try to connect...
         //reset on connection, or new BLE config info...
         _globalMQTTAttempts++;
-       // _WIFI_MQTTState = waitingForMQTT;
+        // _WIFI_MQTTState = waitingForMQTT;
         _WIFI_MQTTState = preSetupMQTT;
-
+        
         SerialDebug.printf("Attempting MQTT connection: '%s' '%s' '%s' count=%d\n", _mqttServerString?_mqttServerString:"NULL", _mqttUserString?_mqttUserString:"NULL", _mqttPasswordString?_mqttPasswordString:"NULL", _globalMQTTAttempts);
 #ifdef STORE_DEBUG_INFO
-
+        
         //!save some reason we are in the AP mode
         appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, "Attempting MQTT connection:");
         appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, _mqttServerString?_mqttServerString:"NULL");
         storePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, _mqttPasswordString?_mqttPasswordString:"NULL");
-
+        
 #endif
         // Create a random client ID
 #ifdef ESP_M5
@@ -1399,7 +1399,7 @@ void reconnectMQTT_loop()
         clientId += String(random(0xffff), HEX);
         
         SerialDebug.printf("attempt _mqttClient.connect(%s)\n", clientId);
- 
+        
         // Attempt to connect   NOTE: this takes time...
         //TODO: use the argments...
         if (_mqttClient.connect(clientId.c_str(), _mqttUserString, _mqttPasswordString))
@@ -1440,7 +1440,7 @@ void reconnectMQTT_loop()
 #ifdef NOT_NOW_ONLY_DOCFOLLOW
 #ifdef TRY_MORE_ASYNC_PROCESSING
             //! NOTE publish on the dawgpack as well so a single user can monitor the events..
-
+            
             publishMQTTMessage((char*)"usersP/dawgpack", _fullMessageOut);
 #else
             _mqttClient.publish("usersP/dawgpack", _fullMessageOut);
@@ -1457,7 +1457,7 @@ void reconnectMQTT_loop()
                 //!get the group names
                 char *groupNames = getPreference_mainModule(PREFERENCE_GROUP_NAMES_SETTING);
                 SerialDebug.printf("Subscribing to groups as PREFERENCE_SUPPORT_GROUPS_SETTING was set: %s\n", groupNames);
-
+                
                 if (strlen(groupNames)==0 || strcmp(groupNames, "#")== 0)
                 {
                     //! 7.15.23  have it's own root "groups" so those that subscribe to 'bark' won't get it unless published 2 times (which it is)
@@ -1522,7 +1522,7 @@ void reconnectMQTT_loop()
         else
         {
 #ifdef STORE_DEBUG_INFO
-
+            
             //!save for debug
             appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, "FAILED MQTT connect:");
             storePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING,  String(_mqttClient.state()));
@@ -1545,7 +1545,7 @@ void setupMQTT(char* mqttServerString, char *mqttPortString, char *mqttPasswordS
 {
     SerialTemp.println("**** setupMQTT *****");
 #ifdef STORE_DEBUG_INFO
-
+    
     appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, "setupMQTT ");
     appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, mqttServerString?String(mqttServerString):"NULL");
     appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, mqttPortString?String(mqttPortString):"NULL");
@@ -1567,14 +1567,14 @@ void setupMQTT(char* mqttServerString, char *mqttPortString, char *mqttPasswordS
         printWIFIInfo();
         
         //!debug
-//        storePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, get_WIFIInfoString());
+        //        storePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, get_WIFIInfoString());
 #ifdef BOMBS
         //debug
         appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, "IP Address: " + WiFi.localIP());
-       // appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, "WIFI SSID" + WiFi.SSID);
-
+        // appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, "WIFI SSID" + WiFi.SSID);
+        
         appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, WiFi.SSID());
-
+        
         storePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, "WIFI Status = " + String(wifiStatus_MQTT() ));
 #endif
     }
@@ -1583,7 +1583,7 @@ void setupMQTT(char* mqttServerString, char *mqttPortString, char *mqttPasswordS
         
 #ifdef STORE_DEBUG_INFO
         //!debug
-
+        
         storePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING,  "*** No MQTT Server/Port Specified ** abort");
 #endif
         SerialInfo.println(" *** No MQTT Server/Port Specified ** abort");
@@ -1591,11 +1591,11 @@ void setupMQTT(char* mqttServerString, char *mqttPortString, char *mqttPasswordS
     }
     
 #ifdef STORE_DEBUG_INFO
-
+    
     SerialTemp.println("done setupMQTT");
     storePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, "done setupMQTT");
 #endif
-
+    
 }
 
 //!check for MQTT messages, called from the main loop()
@@ -1660,10 +1660,10 @@ void sendMessageMQTT(char *message)
         if (containsSubstring(message, "#"))
         {
             sprintf(_fullMessageOut,"%s {%s}", message, _deviceNameString);
-
+            
             //publish this message..
-//            _mqttClient.publish(_mqttTopicString, _fullMessageOut);
-//            SerialTemp.printf("Sending message:%s %s\n",_mqttTopicString,  _fullMessageOut);
+            //            _mqttClient.publish(_mqttTopicString, _fullMessageOut);
+            //            SerialTemp.printf("Sending message:%s %s\n",_mqttTopicString,  _fullMessageOut);
 #ifdef TRY_MORE_ASYNC_PROCESSING
             //publish back on topic
             publishMQTTMessage(_mqttTopicString, _fullMessageOut);
@@ -1685,8 +1685,8 @@ void sendMessageNoChangeMQTT(char *message)
         sprintf(_fullMessageOut,"%s", message);
         
         //publish this message..
-//        _mqttClient.publish(_mqttTopicString, _fullMessageOut);
-//        SerialTemp.printf("Sending message:%s %s\n",_mqttTopicString,  _fullMessageOut);
+        //        _mqttClient.publish(_mqttTopicString, _fullMessageOut);
+        //        SerialTemp.printf("Sending message:%s %s\n",_mqttTopicString,  _fullMessageOut);
 #ifdef TRY_MORE_ASYNC_PROCESSING
         //publish back on topic
         publishMQTTMessage(_mqttTopicString, _fullMessageOut);
@@ -1729,14 +1729,14 @@ void sendDocFollowMessageMQTT(const char *semanticMarker)
 #ifdef ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION
         //! using the followme syntax for now..
         sprintf(_fullMessageOut, "#followMe {AVM=%s}", semanticMarker);
-
+    
 #else
-        sprintf(_fullMessageOut, "#DOCFOLLOW {%s} {AVM=%s}", _deviceNameString, semanticMarker);
+    sprintf(_fullMessageOut, "#DOCFOLLOW {%s} {AVM=%s}", _deviceNameString, semanticMarker);
 #endif
     if   (_MQTTRunning)
     {
-//        _mqttClient.publish(_mqttTopicString, _fullMessageOut);
-//        SerialMin.printf("Sending message: %s\n", _fullMessageOut);
+        //        _mqttClient.publish(_mqttTopicString, _fullMessageOut);
+        //        SerialMin.printf("Sending message: %s\n", _fullMessageOut);
 #ifdef TRY_MORE_ASYNC_PROCESSING
         //publish back on topic
         publishMQTTMessage(_mqttTopicString, _fullMessageOut);
@@ -1768,7 +1768,7 @@ void processBarkletMessage(String message, String topic)
     
     //!debug printout..
     //printTopicType();
-
+    
     //!new 4.12.22  if this is straight JSON .. then sent to the processJSONmessage
     if (processJSONMessageMQTT(messageString, topic?&topic[0]:NULL))
     {
@@ -1793,8 +1793,8 @@ void processBarkletMessage(String message, String topic)
         if (isValidPairedDevice_mainModule())
         {
             strcpy(pairedDevice,getPairedDevice_mainModule());
-//            strcat(pairedDevice,(char*)":");
-//            strcat(pairedDevice,getPairedDeviceAddress_mainModule());
+            //            strcat(pairedDevice,(char*)":");
+            //            strcat(pairedDevice,getPairedDeviceAddress_mainModule());
         }
         else
             strcpy(pairedDevice,"none");
@@ -1828,7 +1828,7 @@ void processBarkletMessage(String message, String topic)
             
             //publish this message..
             SerialTemp.printf("GEN3: Sending message: %s\n", _fullMessageOut);
-
+            
             //_mqttClient.publish(_mqttTopicString, _fullMessageOut);
 #ifdef TRY_MORE_ASYNC_PROCESSING
             //publish back on topic
@@ -1852,7 +1852,7 @@ void processBarkletMessage(String message, String topic)
 #endif
             }
         }
-
+        
         //sprintf(_fullMessageOut, "%s {%s} {%s} {I,F} {T=now}", REMOTE, _deviceNameString, bluetoothOnline() ? CONNECTED : NOT_CONNECTED);
         // Once connected, publish an announcement...
         // sprintf(message, "#STATUS {%s} {%s}", _deviceNameString, chipName);
@@ -1871,11 +1871,11 @@ void processBarkletMessage(String message, String topic)
                 "none",
 #endif
                 VERSION);
-                
+        
         messageValidToSendBack = true;
         
         addToTextMessages_displayModule(_fullMessageOut);
-
+        
         //On demand #STATUS send the statusURL as well (if an M5)
         //this queues the sending of the StatusURL over MQTT.
         // This is async (next loop) since sending 2 MQTT messages can be hard to do in a row ..
@@ -1885,11 +1885,11 @@ void processBarkletMessage(String message, String topic)
     //only use #FEED (the feedme will turn into #FEED)
     else if (containsSubstring(message, "#FEED")  && !isDawgpackTopic())
     {
-      //! flag for whether feed will occur. it won't if a device is specified and it's not our device (unless super topic)
+        //! flag for whether feed will occur. it won't if a device is specified and it's not our device (unless super topic)
         boolean performFeed = true;
         //!check against the super feeder. If super feeder, then feed all devices, otherwise logic below
         if (!isSuperTopic())
-        //if (!stringMatch(topic, "/usersP/bark") && !stringMatch(topic, "/usersP/dawgpack"))
+            //if (!stringMatch(topic, "/usersP/bark") && !stringMatch(topic, "/usersP/dawgpack"))
         {
             //only check this if not the super feed topic "/usersP/bark" ..
             //TODO: not make this hardwired to /usersP/bark
@@ -1918,7 +1918,7 @@ void processBarkletMessage(String message, String topic)
                         SerialDebug.println(" ** Not feeding as not our paired device either ***");
                         performFeed = false;
                     }
-
+                    
                 }
                 else
                 {
@@ -1962,7 +1962,7 @@ void processBarkletMessage(String message, String topic)
                 indexOfEqual++;
             }
             strcat(_lastDocFollowSemanticMarker, "\0");
-
+            
             SerialDebug.printf("SemanticMarker: %s\n", _lastDocFollowSemanticMarker);
             //setLastDocFollowSemanticMarker(_lastDocFollowSemanticMarker);
             
@@ -1972,7 +1972,7 @@ void processBarkletMessage(String message, String topic)
         else
         {
             sprintf(_fullMessageOut,"#ACK {%s} {bad_doc_follow syntax}", _deviceNameString);
-
+            
         }
         messageValidToSendBack = true;
     }
@@ -1980,9 +1980,9 @@ void processBarkletMessage(String message, String topic)
     else if (containsSubstring(message, "#CAPTURE")  && !isDawgpackTopic())
     {
 #ifdef ESP_M5_CAMERA
-       // sprintf(_fullMessageOut, "#TAKING_PIC {%s} {real soon to be implemented 8.11.22}", _deviceNameString);
+        // sprintf(_fullMessageOut, "#TAKING_PIC {%s} {real soon to be implemented 8.11.22}", _deviceNameString);
         takePicture_MainModule();
-
+        
 #else
 #ifdef M5_CAPTURE_SCREEN
         saveScreen_SPIFFModule();
@@ -2005,7 +2005,7 @@ void processBarkletMessage(String message, String topic)
 #endif
         //call the callback specified from the caller (eg. NimBLE_PetTutor_Server .. or others)
         callCallbackMain(CALLBACKS_MQTT, MQTT_CALLBACK_TEMP, messageString);
-
+        
         messageValidToSendBack = true;
     }
     //!3.25.22 -- trying the CLEAN the ePROM SSID
@@ -2025,9 +2025,9 @@ void processBarkletMessage(String message, String topic)
         if (containsSubstring(message, "{v:"))
         {
             //does the installed "VERSION" == the string passed in eg. {v:OUR_VERSION} VERSION=OUR_VERSION
-           // performOTAUpdate = containsSubstring(message, VERSION);
-           performOTAUpdate = containsSubstring(message, VERSION);
-
+            // performOTAUpdate = containsSubstring(message, VERSION);
+            performOTAUpdate = containsSubstring(message, VERSION);
+            
             SerialDebug.printf("#OTA version correct: %d\n", performOTAUpdate);
         }
         else if (containsSubstring(message, "{k:") && !isDawgpackTopic())
@@ -2036,15 +2036,15 @@ void processBarkletMessage(String message, String topic)
 #ifdef ESP_M5
             performOTAUpdate = containsSubstring(message, "ESP_M5");
             SerialDebug.printf("#OTA match ESP_M5: %d\n", performOTAUpdate);
-
+            
 #else
             performOTAUpdate = containsSubstring(message, "ESP_32");
             SerialDebug.printf("#OTA match ESP_32: %d\n", performOTAUpdate);
-
+            
 #endif
-
+            
         }
-       
+        
         
         //parse out the {kind, host, binfile}
         //SOON .. this might be a triple click?? or keep the messaging?
@@ -2059,7 +2059,7 @@ void processBarkletMessage(String message, String topic)
             SerialLots.printf("Sending message: %s\n", _fullMessageOut);
             //blink the light
             blinkBlueLightMQTT();
-
+            
             //! dispatches a call to the command specified. This is run on the next loop()
             main_dispatchAsyncCommand(ASYNC_CALL_OTA_UPDATE);
         }
@@ -2067,16 +2067,16 @@ void processBarkletMessage(String message, String topic)
         {
             sprintf(_fullMessageOut, "over the air NOT updating as not matching string: %s",
 #ifdef ESP_M5
-           "ESP_M5"
+                    "ESP_M5"
 #else
-           "ESP_32"
+                    "ESP_32"
 #endif
-            );
+                    );
             SerialLots.printf("Sending message: %s\n", _fullMessageOut);
             _mqttClient.publish(_mqttTopicString, _fullMessageOut);
             
         }
-
+        
     } //#OTA
     else if (isDawgpackTopic())
     {
@@ -2086,7 +2086,7 @@ void processBarkletMessage(String message, String topic)
     if (messageValidToSendBack)
     {
         //publish this message..
-//        _mqttClient.publish(_mqttTopicString, _fullMessageOut);
+        //        _mqttClient.publish(_mqttTopicString, _fullMessageOut);
         SerialLots.printf("1.Sending message: %s\n", _fullMessageOut);
 #ifdef TRY_MORE_ASYNC_PROCESSING
         //publish back on topic
@@ -2102,7 +2102,7 @@ void processBarkletMessage(String message, String topic)
         {
             SerialTemp.println("2.Sending on DawgPack too..");
             //publish back on topic
-           // _mqttClient.publish("usersP/dawgpack", _fullMessageOut);
+            // _mqttClient.publish("usersP/dawgpack", _fullMessageOut);
 #ifdef TRY_MORE_ASYNC_PROCESSING
             //publish back on topic
             publishMQTTMessage((char*)"usersP/dawgpack", _fullMessageOut);
@@ -2206,8 +2206,8 @@ void performFeedMethod(char *topic)
         sprintf(_fullMessageOut, "%s {%s} {'T':'%d','temp':'%2.0f','topic':'%s','user':'%s','v':'%s','location':'%s'}", ACK_FEED, pairedDevice, time, temp, &topic[0],_mqttUserString, VERSION_SHORT, _jsonLocationString?_jsonLocationString:"somewhere");
         
         //publish this message..
-//        _mqttClient.publish(_mqttTopicString, _fullMessageOut);
-//        SerialTemp.printf("ACK: Sending message: %s\n", _fullMessageOut);
+        //        _mqttClient.publish(_mqttTopicString, _fullMessageOut);
+        //        SerialTemp.printf("ACK: Sending message: %s\n", _fullMessageOut);
 #ifdef TRY_MORE_ASYNC_PROCESSING
         //publish back on topic
         publishMQTTMessage(_mqttTopicString, _fullMessageOut);
@@ -2216,12 +2216,12 @@ void performFeedMethod(char *topic)
 #endif
         //! 5.21.22 WORKS!!
         //!topic is the topic we can in on.. so could be super user..
-       // if (strcmp(&topic[0],"usersP/bark")==0)
+        // if (strcmp(&topic[0],"usersP/bark")==0)
         if (isSuperTopic() || isDawgpackTopic())
         {
-//            SerialLots.println("Sending on DawgPack too..");
-//            //publish back on topic
-//            _mqttClient.publish("usersP/dawgpack", _fullMessageOut);
+            //            SerialLots.println("Sending on DawgPack too..");
+            //            //publish back on topic
+            //            _mqttClient.publish("usersP/dawgpack", _fullMessageOut);
 #ifdef TRY_MORE_ASYNC_PROCESSING
             //publish back on topic
             publishMQTTMessage((char*)"usersP/dawgpack", _fullMessageOut);
@@ -2243,7 +2243,7 @@ void performFeedMethod(char *topic)
         }
         
     }
-    sprintf(_fullMessageOut, "%s {%s} {'T':'%d','temp':'%2.0f','topic':'%s','user':'%s','v':'%s','location':'%s','paired':'%s', 'ble':'%s','gateway':'%s'}", ACK_FEED, _deviceNameString, time, temp, &topic[0]?&topic[0]:"NULL",_mqttUserString, VERSION_SHORT, _jsonLocationString?_jsonLocationString:"somewhere",pairedDevice, isConnectedBLE?"c":"x", isGateway?"on":"off");
+    sprintf(_fullMessageOut, "%s {%s} {'T':'%d','temp':'%2.0f','topic':'%s','user':'%s','v':'%s','location':'%s','paired':'%s', 'ble':'%s','connected':'%s','gateway':'%s'}", ACK_FEED, _deviceNameString, time, temp, &topic[0]?&topic[0]:"NULL",_mqttUserString, VERSION_SHORT, _jsonLocationString?_jsonLocationString:"somewhere",pairedDevice, isConnectedBLE?"c":"x", connectedBLEDeviceName_mainModule()?connectedBLEDeviceName_mainModule():"none", isGateway?"on":"off");
     
     // send the FEED to the display (if any)
     addToTextMessages_displayModule("FEED");
@@ -2252,8 +2252,8 @@ void performFeedMethod(char *topic)
     if (true)
     {
         //publish this message..
-//        _mqttClient.publish(_mqttTopicString, _fullMessageOut);
-//        SerialDebug.printf("Sending message: %s\n", _fullMessageOut);
+        //        _mqttClient.publish(_mqttTopicString, _fullMessageOut);
+        //        SerialDebug.printf("Sending message: %s\n", _fullMessageOut);
 #ifdef TRY_MORE_ASYNC_PROCESSING
         //publish back on topic
         publishMQTTMessage(_mqttTopicString, _fullMessageOut);
@@ -2262,13 +2262,13 @@ void performFeedMethod(char *topic)
 #endif
         //! 5.21.22 WORKS!!
         //!topic is the topic we can in on.. so could be super user..
-       // if (strcmp(&topic[0],"usersP/bark")==0)
+        // if (strcmp(&topic[0],"usersP/bark")==0)
         if (isSuperTopic() || isDawgpackTopic())
-
+            
         {
-//            SerialTemp.println("Sending on DawgPack too..");
-//            //publish back on topic
-//            _mqttClient.publish("usersP/dawgpack", _fullMessageOut);
+            //            SerialTemp.println("Sending on DawgPack too..");
+            //            //publish back on topic
+            //            _mqttClient.publish("usersP/dawgpack", _fullMessageOut);
 #ifdef TRY_MORE_ASYNC_PROCESSING
             //publish back on topic
             publishMQTTMessage((char*)"usersP/dawgpack", _fullMessageOut);
@@ -2301,7 +2301,7 @@ void performFeedMethod(char *topic)
 void MQTTModule_readPreferences()
 {
     SerialDebug.println("MQTT.readPreferences");
-     //#define BOOTSTRAP
+    //#define BOOTSTRAP
 #ifdef BOOTSTRAP
     //note: this could be a 'rebootstrap' message via MQTT .. in the future..
     {
@@ -2316,7 +2316,7 @@ void MQTTModule_readPreferences()
         char *BOOT_mqtt_user = (char*)"test";
         char *BOOT_mqtt_password = (char*)"test";
         char *BOOT_mqtt_guestPassword = (char*)"test";
-
+        
         //new 2.2.22 (last time this century..)
         //change over to new MQTT Namespace: usersP/bark
         char *BOOT_mqtt_topic = (char*)"usersP/bark/test";
@@ -2329,9 +2329,9 @@ void MQTTModule_readPreferences()
         
         ///note: these createCopy are to get between String and char* .. probably a better way like  &BOOT[0] or something..
         _ssidString = createCopy(BOOT_ssid);
-
+        
         _ssidPasswordString = createCopy(BOOT_ssid_password);
-    
+        
         _mqttServerString = createCopy(BOOT_mqtt_server);
         _mqttPortString = createCopy(BOOT_mqtt_port);
         _mqttPasswordString = createCopy(BOOT_mqtt_password);
@@ -2352,7 +2352,7 @@ void MQTTModule_readPreferences()
         myObject["mqtt_port"] = BOOT_mqtt_port;
         myObject["mqtt_password"] = BOOT_mqtt_password;
         myObject["mqtt_guestPassword"] = BOOT_mqtt_guestPassword;
-
+        
         myObject["mqtt_user"] = BOOT_mqtt_user;
         myObject["mqtt_topic"] = BOOT_mqtt_topic;
         myObject["deviceName"] = BOOT_deviceName;
@@ -2445,19 +2445,19 @@ void MQTTModule_readPreferences()
 #ifdef NOT_ORIGINAL
     if (a1 && strlen(a1)>0)   /// CHANGED 9.19.23
 #else
-    if (a1)
+        if (a1)
 #endif
-    {
-        _ssidString = const_cast<char*>(a1);
-        _ssidString = createCopy(_ssidString);
-        SerialDebug.println(_ssidString);
-        
-    }
-    else
-    {
-        _ssidString = NULL;
-        SerialDebug.println("ssid == NULL");
-    }
+        {
+            _ssidString = const_cast<char*>(a1);
+            _ssidString = createCopy(_ssidString);
+            SerialDebug.println(_ssidString);
+            
+        }
+        else
+        {
+            _ssidString = NULL;
+            SerialDebug.println("ssid == NULL");
+        }
     if (!_ssidString)
     {
         
@@ -2471,7 +2471,7 @@ void MQTTModule_readPreferences()
         _mqttUserString = NULL;
         _mqttTopicString = NULL;
 #ifdef NOT_ORIGINAL
-      //  _deviceNameString = (char*)"Unnamed";    /// CHANGED 9.19.23
+        //  _deviceNameString = (char*)"Unnamed";    /// CHANGED 9.19.23
 #else
         _deviceNameString = (char*)"Unnamed";
 #endif
@@ -2571,7 +2571,7 @@ void MQTTModule_readPreferences()
             _uuidString = createCopy(_uuidString);
             SerialDebug.print("UUID: ");
             SerialDebug.println(_uuidString);
-
+            
         }
         else
             _uuidString = NULL;
@@ -2652,8 +2652,8 @@ boolean isTrueString(String valCmdString)
 function isFalseString(String valCmdString)
 {
     return  valCmdString.equalsIgnoreCase("off") ||
-            valCmdString.equalsIgnoreCase("0") ||
-            valCmdString.equalsIgnoreCase("false");
+    valCmdString.equalsIgnoreCase("0") ||
+    valCmdString.equalsIgnoreCase("false");
 }
 #endif
 
@@ -2706,7 +2706,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
     }
     
     SerialDebug.printf("processJSONMessageMQTT: '%s'\n", ascii);
-
+    
     // Deserialize the JSON document, then store the ascii in the EPROM (if it parses..)
     
     SerialLots.printf("Ascii before deserializeJson: %s\n", ascii);
@@ -2716,10 +2716,10 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
 #else
     DynamicJsonDocument myObject(1024);
 #endif
-
+    
     deserializeJson(myObject, ascii);
     serializeJsonPretty(myObject, Serial);
-
+    
     //NOTE: the ascii is now corrupted...
     SerialDebug.print("JSON parsed = ");
     // String output;
@@ -2735,10 +2735,10 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
     const char* cmd = myObject["cmd"];
     const char* semanticMarkerCmd = myObject["sm"];
     const char* guestCmd = myObject["guest"];
-
+    
     //! 9.18.23 add this .. so it doesnt' fall through
     const char *set64Cmd = myObject["set64"];
-
+    
     const char *setCmd = myObject["set"];
     const char *valCmd = myObject["val"];
     //new:  'send':<request> eg. status|temp
@@ -2752,7 +2752,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
     
 #ifdef PROCESS_SMART_BUTTON_JSON
     //! 7,1.23 Dads 92'n birthday
-
+    
     //const char *SMARTButton = myObject["SMARTButton"];
     boolean processSMARTButton = containsSubstring(output1,"SMARTButton"); //myObject["SMARTButton"] != NULL;
     SerialTemp.printf("SMARTButton = %d\n", processSMARTButton);
@@ -2783,7 +2783,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
     {
         _mqttPasswordString = NOTSET_STRING;
     }
- 
+    
     //!this is to ensure that the credentials are not processed..
     //! there is a return 'true' after processing commands
     if (processCommands)
@@ -2793,7 +2793,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
         {
             char* setCmdString  = const_cast<char*>(setCmd);
             char* valCmdString = const_cast<char*>(valCmd);
-
+            
             if (setCmd && strcasecmp(setCmd,"semanticMarker")==0)
             {
                 SerialDebug.printf("DAWGPACK supported message: %s\n", setCmd);
@@ -2831,7 +2831,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 processMessageOrGateway = true;
             }
 #endif
-
+            
             //!we are in gateway mode, and the paired device isn't ours..
             if (devName
                 && getPreferenceBoolean_mainModule(PREFERENCE_MAIN_GATEWAY_VALUE))
@@ -2852,7 +2852,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             }
             
         }
-     
+        
         //! basically, processMessageOrGateway is set to TRUE if the device isn't mentioned, OR
         //! the dev is mentioned, and the wildcard works (or is paired)
         //! In either case, the deviceNameSpecified will be true if "dev" was specified (even with wildcard)
@@ -2860,15 +2860,15 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
         //! For the SemanticMarker, if the onlyDevSM==true, then look for deviceNameSpecified
         
 #ifdef PROCESS_SMART_BUTTON_JSON  //no 9.28.23
-        //! early attempt to process a SMART buttons JSON as a stored procedure.
-        //! But currently the JSON parser is bombing on the JSON provided..
-        //! 7.1.23 Dads 92nd birthday
+                                  //! early attempt to process a SMART buttons JSON as a stored procedure.
+                                  //! But currently the JSON parser is bombing on the JSON provided..
+                                  //! 7.1.23 Dads 92nd birthday
         if (processMessageOrGateway && processSMARTButton)
         {
             StaticJsonDocument<2024>  smartButtonObject;
-
+            
             deserializeJson(smartButtonObject, myObject["SMARTButton"]);
-
+            
             return processJSONSMARTButton(smartButtonObject);
         }
 #endif
@@ -2887,12 +2887,12 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
 #ifdef WILDCARD_DEVICE_NAME_SUPPORT
                 if (!queryMatchesName_mainModule(getPreferenceString_mainModule(PREFERENCE_PAIRED_DEVICE_SETTING)))
 #else
-                if (strcmp(devName,getPreferenceString_mainModule(PREFERENCE_PAIRED_DEVICE_SETTING)) != 0)
+                    if (strcmp(devName,getPreferenceString_mainModule(PREFERENCE_PAIRED_DEVICE_SETTING)) != 0)
 #endif
-                {
-                    SerialTemp.print(" .. And not paired device:");
-                    SerialTemp.println(getPreferenceString_mainModule(PREFERENCE_PAIRED_DEVICE_SETTING));
-                }
+                    {
+                        SerialTemp.print(" .. And not paired device:");
+                        SerialTemp.println(getPreferenceString_mainModule(PREFERENCE_PAIRED_DEVICE_SETTING));
+                    }
             }
         }
         else if (cmd)
@@ -2905,7 +2905,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             //NOTE: the number here has to be updated in the ButtonProcessing code too..
             int whichSMMode = whichSMMode_mainModule((char*)cmd);
             SerialTemp.printf("BLE CMD = '%s'\n", cmd);
-
+            
             // -1 if none..
             if (whichSMMode >= 0)
             {
@@ -2928,10 +2928,10 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     else
                         SerialDebug.println(" *** SM_doc_follow and changing to the same page ***");
                 }
-
+                
                 //set the global SMMode.. NOTE: if greater than the MAX change mode to NON MIN
                 setCurrentSMMode_mainModule(whichSMMode);
-
+                
                 boolean markerAlreadyShown = false;
                 switch (whichSMMode)
                 {
@@ -2979,7 +2979,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                         sprintf(_semanticMarkerString,"%s/%s/%s/%s", "https://SemanticMarker.org/bot/sensor", _mqttUserString?_mqttUserString:"NULL", guestPassword?guestPassword:"NULL", statusString?statusString:"NULL");
                         
                         title = "WIFI FEED";
-
+                        
                         //TODO.. use the String (*getStatusFunc)(void))  to re-create this..
                         //TODO: get the guest info.. or they send us the guest password in a message.. for next time..
                         //SerialDebug.print("SemanticMarker: ");
@@ -2999,7 +2999,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                         
                         //!create the SemanticMarker address
                         sprintf(_semanticMarkerString,"%s/%s/%s/%s", "https://SemanticMarker.org/bot/sensor", _mqttUserString?_mqttUserString:"NULL", guestPassword?guestPassword:"NULL", statusString?statusString:"NULL");
-
+                        
                         //!tack on the device name..
                         sprintf(_fullMessageOut,"Status %s", getDeviceNameMQTT());
                         //title = _fullMessageOut;
@@ -3043,7 +3043,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     case SM_WIFI_ssid:
                     {
                         title = "WIFI";
-
+                        
                         //!#issue 136 create a SM for the WIFI syntax
                         //!WIFI:S:<SSID>;T:<WEP|WPA|blank>;P:<PASSWORD>;H:<true|false|blank>;
                         sprintf(_semanticMarkerString,"WIFI:S:%s;T:;P:%s;H:;", _ssidString?_ssidString:"NONE", _ssidPasswordString?_ssidPasswordString:"");
@@ -3095,7 +3095,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                         title = "Timer";
                     }
                         break;
-
+                        
                 }
                 //TODO: get the guest info.. or they send us the guest password in a message.. for next time..
                 //SerialDebug.print("SemanticMarker: ");
@@ -3145,27 +3145,27 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     printTimestamp_SPIFFModule();
                     printInt_SPIFFModule(_WIFI_MQTTState);
                     println_SPIFFModule((char*)"=WIFI_MQTTState");
-
+                    
                     print_SPIFFModule((char*)getDynamicStatusFunc());
                     println_SPIFFModule((char*)"=DynamcState");
-
+                    
                     printInt_SPIFFModule(isConnectedWIFI_MQTTState());
                     println_SPIFFModule((char*)"=WIFIConnected");
-
+                    
                     print_SPIFFModule((char*)wifiStatus_MQTT());
                     println_SPIFFModule((char*)"=WIFI Status");
-
+                    
                     printInt_SPIFFModule(isConnectedMQTT_MQTTState());
                     println_SPIFFModule((char*)"=MQTTConnected");
-
+                    
                     printInt_SPIFFModule(_mqttClient.connected());
                     println_SPIFFModule((char*)"=MQTTConnected");
-
+                    
                 }
-
-
+                
+                
                 //WL_NO_SSID_AVAIL .. to WL_DISCONNECTED
-                //but never reconnects ... 
+                //but never reconnects ...
                 SerialLots.println("cmd == status");
                 //! request a STATUS be sent.
                 processBarkletMessage("#STATUS", topic);
@@ -3344,7 +3344,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             else if (strcasecmp(cmd,"readspiff")==0)
             {
                 SerialDebug.println("readspiff...");
- 
+                
                 printFile_SPIFFModule();
             }
             else if (strcasecmp(cmd,"sendspiff")==0)
@@ -3417,10 +3417,10 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             
             //! 8.28.23  Tell Main about the set,val and if others are registered .. then get informed
             messageSetVal_mainModule(setCmdString, valCmdString);
-
+            
             //!set flag (if a boolean command)
             boolean flag = isTrueString(valCmdString);
-       
+            
             //!try 5.12.22 {'set':'item'},{'val':'value'}
             //!   eg. set:hightemp, val:80)
             //!   TODO: confirm valid integer values...
@@ -3461,7 +3461,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     savePreferenceBoolean_mainModule(PREFERENCE_DEV_ONLY_SM_SETTING, flag);
                 }
             }
-
+            
             else if (strcasecmp(setCmdString,"ble+wifi")==0)
             {
                 if (deviceNameSpecified)
@@ -3522,10 +3522,10 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 {
                     //! the setup for this module
                     setup_SPIFFModule();
-
+                    
                 }
             }
-        
+            
             //!MQTT:  set: timerdelay, val:seconds
             else if  (strcasecmp(setCmdString,"timerdelay")==0)
             {
@@ -3536,6 +3536,18 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     setTimerDelaySeconds_mainModule(timerdelay);
                     //!start or stop the timer..
                     SerialDebug.printf("timerdelay: %d\n", timerdelay);
+                }
+            }
+            //!MQTT:  set: timerdelay, val:seconds
+            else if  (strcasecmp(setCmdString,"timerdelayMax")==0)
+            {
+                if (deviceNameSpecified)
+                {
+                    int timerdelay = atoi(valCmdString);
+                    //!set the timer delay (0 == stop).
+                    setTimerDelaySecondsMax_mainModule(timerdelay);
+                    //!start or stop the timer..
+                    SerialDebug.printf("timerdelayMax: %d\n", timerdelay);
                 }
             }
             //! MQTT:  set: starttimer, val: true/false  (true == start timer, false = stop timer)
@@ -3660,7 +3672,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 
                 //! reboot the device to set subscribe or not for groups
                 rebootDevice_mainModule();
-
+                
             }
             //! sets the PREFERENCE_GROUP_NAMES_SETTING
             else if (strcasecmp(setCmdString,"groups")==0)
@@ -3672,7 +3684,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 rebootDevice_mainModule();
                 
             }
-
+            
             else if (strcasecmp(setCmdString,"screencolor")==0)
             {
                 //!set the screen color 0..n
@@ -3688,7 +3700,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 //! sets the gen3only flag
                 savePreferenceBoolean_mainModule(PREFERENCE_ONLY_GEN3_CONNECT_SETTING, flag);
                 //!for now just reboot which will use this perference
-               // rebootDevice_mainModule();
+                // rebootDevice_mainModule();
                 //TODO... maybe just disconnect .. or don't worry about it unless connected
             }
             //! BLEUsePairedDeviceName (Says to only look for BLEServers with the paired name..
@@ -3777,7 +3789,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             {
                 SerialDebug.printf("PREFERENCE_USE_DOC_FOLLOW_SETTING %s\n", valCmdString);
                 savePreferenceBoolean_mainModule(PREFERENCE_USE_DOC_FOLLOW_SETTING, flag);
-        
+                
             }
             else if (strcasecmp(setCmdString,"semanticMarker")==0)
             {
@@ -3830,7 +3842,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     }
                 }
             }
-
+            
             //!TODO: duplicate and depreciate these and replace with set:buzz,val:on
             else if (strcasecmp(setCmdString,"buzz")==0)
             {
@@ -3922,7 +3934,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     }
                 }
             } // zoomSM
-            //! 9.22.22  added button press from messages..
+              //! 9.22.22  added button press from messages..
             else if (strcasecmp(setCmdString,"buttonA")==0)
             {
                 if (strcasecmp(valCmdString,"longpress")==0)
@@ -3941,13 +3953,13 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             {
                 SerialMin.printf("Unknown cmd: %s\n", setCmdString);
             }
-
+            
         }
         //!5.24.22  send:<request>  .. Note these are for cmd without an argument..
         else if (sendCmd)
         {
             //!NOTE: This will be calling ourself
-
+            
             char* sendCmdString  = const_cast<char*>(sendCmd);
             if (strcasecmp(sendCmdString,"temp")==0)
             {
@@ -3978,7 +3990,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 SerialTemp.print("Unknown send request: ");
                 SerialTemp.println(sendCmdString);
             }
-
+            
         }
         //! 9.18.23 set64 with a val
         else if (set64Cmd)
@@ -4018,7 +4030,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             
 #endif //DECODE_BASE64
 #endif //M5
-
+            
         }
         
         //!NOTE: if teh command isn't recognized .. then it slips through.. and is treaded like
@@ -4059,9 +4071,9 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
     //!! Store wifi config.  存储wifi配置信息
     //! @see https://arduinojson.org
     
-//! THE CHALLENGE:  if send use {ssid, ssidPassword} .. it will assume others
-//! SO .. only null out the value if (1) there is an attributed {ssid} and empty string..
-//#define ONLY_NULL_IF_THERE
+    //! THE CHALLENGE:  if send use {ssid, ssidPassword} .. it will assume others
+    //! SO .. only null out the value if (1) there is an attributed {ssid} and empty string..
+    //#define ONLY_NULL_IF_THERE
 #ifdef ONLY_NULL_IF_THERE
     SerialDebug.println(" *** processMQTT .. treat like credentials");
     {
@@ -4177,12 +4189,12 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
 #ifdef NOT_ORIGINAL
         if (a8 && strlen(a8)>0)
 #else
-        if (a8)
+            if (a8)
 #endif
-        {
-            _uuidString = const_cast<char*>(a8);
-            _uuidString = createCopy(_uuidString);
-        }
+            {
+                _uuidString = const_cast<char*>(a8);
+                _uuidString = createCopy(_uuidString);
+            }
         //    else
         //        _uuidString = NULL;
     }
@@ -4191,12 +4203,12 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
 #ifdef NOT_ORIGINAL
         if (a9 && strlen(a9)>0)
 #else
-        if (a9)
+            if (a9)
 #endif
-        {
-            _mqttTopicString = const_cast<char*>(a9);
-            _mqttTopicString = createCopy(_mqttTopicString);
-        }
+            {
+                _mqttTopicString = const_cast<char*>(a9);
+                _mqttTopicString = createCopy(_mqttTopicString);
+            }
         //    else
         //        _mqttTopicString = NULL;
         
@@ -4206,12 +4218,12 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
 #ifdef NOT_ORIGINAL
         if (a10 && strlen(a10)>0)
 #else
-        if (a10)
+            if (a10)
 #endif
-        {
-            _mqttGuestPasswordString = const_cast<char*>(a10);
-            _mqttGuestPasswordString = createCopy(_mqttGuestPasswordString);
-        }
+            {
+                _mqttGuestPasswordString = const_cast<char*>(a10);
+                _mqttGuestPasswordString = createCopy(_mqttGuestPasswordString);
+            }
         //    else
         //        _mqttGuestPasswordString = NULL;
     }
@@ -4241,17 +4253,17 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
         //!set the state, then the 'loop' will call setupWIF(...)
         _WIFI_MQTTState = preSetupWIFI;
         startDelay_WIFI_MQTTState();
-
+        
     }
     else
     {
         SerialDebug.println(" ***** ERROR .. no ssidString *** ");
         //!call the callback specified from the caller (eg. NimBLE_PetTutor_Server .. or others)
         callCallbackMain(CALLBACKS_MQTT, MQTT_CALLBACK_SOLID_LIGHT, (char*)"solidLight");
-
+        
         saveJSONPreferences = false;
     }
-
+    
     
     //!don't save the preferences, since it didn't have enough information..
     if (!saveJSONPreferences)
@@ -4262,14 +4274,14 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
     
     //!NOTE: this writes over entire values, since it's a string vs an JSON object
     updatePreferencesInEPROM();
-        
+    
     //!new 4.8.22 .. trying to kick out of AP mode if the credentials are good..
     main_credentialsUpdated();
     
     //!putting here .. time might have gone too fast..
     _WIFI_MQTTState = preSetupWIFI;
     startDelay_WIFI_MQTTState();
-
+    
     
     return true;
 }
@@ -4281,7 +4293,7 @@ void restartWIFI_MQTTState()
     _MQTTRunning = false;
     
     SerialTemp.printf("restartWIFI_MQTTState (%s, %s)\n", _ssidString?_ssidString:"NULL", _ssidPasswordString?_ssidPasswordString:"NULL");
-//#define TRY_EXIT2
+    //#define TRY_EXIT2
 #ifdef TRY_EXIT2
     //! 9.19.23 before Van Morrison ..
     if (!_ssidString || (_ssidString && strlen(_ssidString)==0))
@@ -4305,7 +4317,7 @@ void cleanMQTTpasswordsUpdateInEPROM()
     _ssidString = NULL;
     _mqttPasswordString = NULL;
     _mqttGuestPasswordString = NULL;
-
+    
     //!now update the eprom with these null values
     updatePreferencesInEPROM();
 }
@@ -4316,7 +4328,7 @@ void updatePreferencesInEPROM()
     SerialDebug.printf("updatePreferencesInEPROM (mqtt-pass=%s)\n",_mqttPasswordString?_mqttPasswordString:"NULL");
     
     DynamicJsonDocument myObject(1024);
-
+    
     //!basically if only the ssid/pass are sent, that is all that's written to EPROM
     //!even if the other information is available.. So recreate the JSON instead..
     //!seems c++ you cannot re-use output as it just appends to it.. unreal

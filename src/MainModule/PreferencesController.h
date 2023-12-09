@@ -102,8 +102,11 @@
 //!9.28.23 #272   only show Semantic Markers that are sent directly to the device
 #define PREFERENCE_DEV_ONLY_SM_SETTING 38
 
+//! the preference timer MAX (pairs with PREFERENCE_TIMER_INT_SETTING)
+#define PREFERENCE_TIMER_MAX_INT_SETTING 39
+
 //! *******  1 greater than last value **** IMPORTANT *** and no gaps..
-#define MAX_MAIN_PREFERENCES 39
+#define MAX_MAIN_PREFERENCES 40
 
 
 //!initialize the _preferencesMainLookup with EPROM lookup names
