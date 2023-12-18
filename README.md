@@ -31,11 +31,11 @@ https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_in
 
 ## Build Targets
 
-Currently there are 3 M5 builds and 1 ESP-32 base build.
+Currently there are 3 M5 builds and 1 ESP-32 base build. These are configured with the various **ifdef** defines.
 This includes:
 1.  <b>ESP_M5_SMART_CLICKER_CONFIGURATION</b> (M5 with a display) 
 ![M5 display](https://semanticmarker.org/vision/M5SM.jpeg)
-2.  <b>ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION</b> (M5 connected to the ATOM QR Code Scanner) 
+2.  <b>ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION</b> (M5 connected to the ATOM QR Code Scanner) See [Code sample](https://github.com/konacurrents/M5ATOM_Testing)
 <img src="images/QRAtom.jpeg" width=300>
 3.  <b>ESP_M5_CAMERA</b> (M5 with a built in camera)
 <img src="images/M5Camera.jpeg" width=300>
