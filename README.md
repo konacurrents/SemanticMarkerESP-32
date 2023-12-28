@@ -42,6 +42,8 @@ This includes:
 4.  <b>ESP_32_FEEDER</b> (a simple ESP-32 chip with the 2 lights). If this chip is connected via the PINs then
     additional configurations and code are required. These are outside the open-source aspects of this software.
 <img src="images/ESP.jpg" width=300>
+5. <b>ATOM Socket</b> [web page](https://docs.m5stack.com/en/atom/atom_socket)
+<img src="https://static-cdn.m5stack.com/resource/docs/products/atom/atom_socket/atom_socket_05.webp" width=300">
 
 # API Document
 
