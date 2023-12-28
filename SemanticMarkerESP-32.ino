@@ -129,6 +129,12 @@ void setup() {
     //setup the ATOM QR Reader
     setup_ATOMQRCodeModule();
 #endif
+   
+#ifdef ATOM_SOCKET_MODULE
+    //setup the ATOM SOCKET Module
+    //! 12.26.23
+    setup_ATOM_SocketModule();
+#endif
     
   SerialInfo.println("Starting PetTutor_Server");
   SerialDebug.printf("M5STACK VERSION = %s\n", M5STACK_VERSION);
@@ -277,6 +283,12 @@ void finishSetup()
   } //doneWIFI_APModule_Credentials()
 #endif
 
+
+//! try a call..  NOTE, if the WIFI isn't working, this won't work either..
+#ifdef USE_REST_MESSAGING
+   setupSecureRESTCall();
+#endif
+
 }
 
 
@@ -284,6 +296,12 @@ void finishSetup()
 //! main loop() of the Arduino runtime
 void loop() {
 //#define USE_STOP_ALL
+
+//! try a call..
+#ifdef USE_REST_MESSAGING
+  // sendSecureRESTCall("/help");
+#endif
+
 
  #ifdef USE_STOP_ALL
   if (stopAllProcesses_mainModule())
@@ -351,6 +369,12 @@ void loop() {
     //! 8.1.23 for the ATOM Lite QRCode Reader
 #ifdef ATOM_QRCODE_MODULE
     loop_ATOMQRCodeModule();
+#endif
+    
+    
+    //! 12.26.23 for the ATOM Socket Power
+#ifdef ATOM_SOCKET_MODULE
+    loop_ATOM_SocketModule();
 #endif
    
   //** NOTE: the WIFI_AP_MODULE is tricky. The doneWIFI_APModule_Credentials() is set when done, but also when the MQTT networking is running (meaning the credentials were specified via BLE, or from EPROM)

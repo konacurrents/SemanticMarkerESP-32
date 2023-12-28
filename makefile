@@ -2,15 +2,24 @@
 #upload (after compiling) a script for the ESP32
 #NOTE: FQBN stands for 'Fully Qualified Board Name'. When compiling or uploading code, this error will occur if no board is selected, or if the board 
 
-compile:
-	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_32_FEEDER --fqbn esp32:esp32:esp32 | tee output
 
-compileBoard:
+# with board
+compile:
 	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_32_FEEDER_WITH_BOARD --fqbn esp32:esp32:esp32 | tee output
+
+compileNoBoard:
+	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_32_FEEDER --fqbn esp32:esp32:esp32 | tee output
 
 
 compileM5:
 	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_M5_SMART_CLICKER_CONFIGURATION --fqbn esp32:esp32:m5stick-c | tee output
+
+compileM5AtomQR:
+	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION --fqbn esp32:esp32:m5stick-c | tee output
+
+compileM5AtomSocket:
+	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_M5_ATOM_SOCKET_CONFIGURATION --fqbn esp32:esp32:m5stick-c | tee output
+####
 
 upload:
 	/opt/homebrew/bin/arduino-cli upload --port /dev/cu.usbserial-0001 --fqbn esp32:esp32:esp32 | tee  output
@@ -77,8 +86,14 @@ uploadFlashM5TEST: .
 uploadFlashM5CameraTEST: .
 	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stack_timer_cam.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5
 
+# Module ATOM QRCode Scanner
 uploadFlashM5QRReaderTEST: .
 	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5QRReader
+	
+# NOTE: The smart.html needs to be updated for these 
+# Module ATOM SOCKET MODULE
+uploadFlashM5AtomSocketTEST: .
+	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5AtomSocket
 	
 	
 releaseFull: compileM5  compileBoard

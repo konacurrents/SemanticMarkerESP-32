@@ -16,6 +16,20 @@
 		D24B00752B1EA0EA00D29C0A /* ESP_IOT_Modules.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = ESP_IOT_Modules.png; sourceTree = "<group>"; };
 		D24B00762B1EA0EB00D29C0A /* KSNetworking.004.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = KSNetworking.004.jpeg; sourceTree = "<group>"; };
 		D24B00772B1EA0EB00D29C0A /* ESP.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = ESP.jpg; sourceTree = "<group>"; };
+		D2CC84972B3E2F7B00294F65 /* AtomSocket.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AtomSocket.h; sourceTree = "<group>"; };
+		D2CC84982B3E2F7B00294F65 /* ATOM_SocketModule.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ATOM_SocketModule.cpp; sourceTree = "<group>"; };
+		D2CC84992B3E2F7B00294F65 /* ATOM_SocketModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ATOM_SocketModule.h; sourceTree = "<group>"; };
+		D2CC849A2B3E2F7B00294F65 /* AtomSocket.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = AtomSocket.cpp; sourceTree = "<group>"; };
+		D2CC849C2B3E2F7B00294F65 /* Task.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Task.h; sourceTree = "<group>"; };
+		D2CC849D2B3E2F7B00294F65 /* M5Display.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = M5Display.cpp; sourceTree = "<group>"; };
+		D2CC849E2B3E2F7B00294F65 /* LED_DisPlay.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = LED_DisPlay.cpp; sourceTree = "<group>"; };
+		D2CC849F2B3E2F7B00294F65 /* LED_DisPlay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LED_DisPlay.h; sourceTree = "<group>"; };
+		D2CC84A02B3E2F7B00294F65 /* Task.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Task.cpp; sourceTree = "<group>"; };
+		D2CC84A12B3E2F7B00294F65 /* M5Display.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = M5Display.h; sourceTree = "<group>"; };
+		D2CC84A22B3E2F8B00294F65 /* RESTMessaging.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RESTMessaging.cpp; sourceTree = "<group>"; };
+		D2CC84A32B3E2F8B00294F65 /* RESTMessaging.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RESTMessaging.h; sourceTree = "<group>"; };
+		D2CC84A42B3E2FB400294F65 /* ATOM_SM.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ATOM_SM.cpp; sourceTree = "<group>"; };
+		D2CC84A52B3E2FB400294F65 /* ATOM_SM.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ATOM_SM.h; sourceTree = "<group>"; };
 		D2E430642B02DC4F00E2C80B /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; };
 		D2E430662B02DC4F00E2C80B /* Defines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Defines.h; sourceTree = "<group>"; };
 		D2E4306C2B02DC5900E2C80B /* ATOMQRButtons.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ATOMQRButtons.cpp; sourceTree = "<group>"; };
@@ -75,7 +89,7 @@
 		D2E430B72B02DC5900E2C80B /* AudioModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AudioModule.cpp; sourceTree = "<group>"; };
 		D2E430B82B02DC5900E2C80B /* AudioModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioModule.h; sourceTree = "<group>"; };
 		D2E430C32B02DC8400E2C80B /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
-		D2E430C42B02DD8000E2C80B /* SemanticMarkerESP-32.ino */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "SemanticMarkerESP-32.ino"; sourceTree = "<group>"; };
+		D2E430C42B02DD8000E2C80B /* SemanticMarkerESP-32.ino */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; path = "SemanticMarkerESP-32.ino"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -94,6 +108,30 @@
 			path = images;
 			sourceTree = "<group>";
 		};
+		D2CC84962B3E2F7B00294F65 /* ATOM_SocketModule */ = {
+			isa = PBXGroup;
+			children = (
+				D2CC84972B3E2F7B00294F65 /* AtomSocket.h */,
+				D2CC84982B3E2F7B00294F65 /* ATOM_SocketModule.cpp */,
+				D2CC84992B3E2F7B00294F65 /* ATOM_SocketModule.h */,
+				D2CC849A2B3E2F7B00294F65 /* AtomSocket.cpp */,
+			);
+			path = ATOM_SocketModule;
+			sourceTree = "<group>";
+		};
+		D2CC849B2B3E2F7B00294F65 /* ATOM_LED_Module */ = {
+			isa = PBXGroup;
+			children = (
+				D2CC849C2B3E2F7B00294F65 /* Task.h */,
+				D2CC849D2B3E2F7B00294F65 /* M5Display.cpp */,
+				D2CC849E2B3E2F7B00294F65 /* LED_DisPlay.cpp */,
+				D2CC849F2B3E2F7B00294F65 /* LED_DisPlay.h */,
+				D2CC84A02B3E2F7B00294F65 /* Task.cpp */,
+				D2CC84A12B3E2F7B00294F65 /* M5Display.h */,
+			);
+			path = ATOM_LED_Module;
+			sourceTree = "<group>";
+		};
 		D2E430582B02DB7F00E2C80B = {
 			isa = PBXGroup;
 			children = (
@@ -110,6 +148,8 @@
 		D2E4306A2B02DC5900E2C80B /* src */ = {
 			isa = PBXGroup;
 			children = (
+				D2CC849B2B3E2F7B00294F65 /* ATOM_LED_Module */,
+				D2CC84962B3E2F7B00294F65 /* ATOM_SocketModule */,
 				D2E4306B2B02DC5900E2C80B /* ATOM_QRCode_Module */,
 				D2E430722B02DC5900E2C80B /* WIFI_APModule */,
 				D2E430802B02DC5900E2C80B /* BLEServerModule */,
@@ -128,6 +168,8 @@
 		D2E4306B2B02DC5900E2C80B /* ATOM_QRCode_Module */ = {
 			isa = PBXGroup;
 			children = (
+				D2CC84A42B3E2FB400294F65 /* ATOM_SM.cpp */,
+				D2CC84A52B3E2FB400294F65 /* ATOM_SM.h */,
 				D2E4306C2B02DC5900E2C80B /* ATOMQRButtons.cpp */,
 				D2E4306D2B02DC5900E2C80B /* ATOMQR_UART_CMD.cpp */,
 				D2E4306E2B02DC5900E2C80B /* ATOMQRButtons.h */,
@@ -184,6 +226,8 @@
 		D2E430972B02DC5900E2C80B /* MQTTModule */ = {
 			isa = PBXGroup;
 			children = (
+				D2CC84A22B3E2F8B00294F65 /* RESTMessaging.cpp */,
+				D2CC84A32B3E2F8B00294F65 /* RESTMessaging.h */,
 				D2E430982B02DC5900E2C80B /* SMARTButton.cpp */,
 				D2E430992B02DC5900E2C80B /* OTAImageUpdate.h */,
 				D2E4309A2B02DC5900E2C80B /* SMARTButton.h */,

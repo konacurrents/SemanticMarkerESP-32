@@ -10,7 +10,7 @@
 
 //turn on or off which configuration is desired..  
 //BOARD = M5Stick-C-Plus,  type : make uploadFlashM5TEST
-#define ESP_M5_SMART_CLICKER_CONFIGURATION
+//#define ESP_M5_SMART_CLICKER_CONFIGURATION
 
 //original feeder: (and any without PetTutor board. Otherwise Blue light doesn't flash)
 //BOARD = ESP32 Dev Modulef   type: make uploadFlashOrigTEST
@@ -23,8 +23,12 @@
 //#define ESP_32_FEEDER_BLE_GEN3
 
 //turn on or off which configuration is desired..  
-//BOARD = M5Stick-C-Plus,  type : make uploadFlashM5TEST
-//#define ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION
+//BOARD = M5Stick-C-Plus,  type : make uploadFlashM5TEST ??
+#define ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION
+
+//BOARD = M5Stick-C-Plus,  type : make uploadFlashM5TEST ??
+// 12.26.23 added for the power socket ATOM
+//#define ESP_M5_ATOM_SOCKET_CONFIGURATION
 
 // an ESP M5 with a camera 8.11.22 (same as M5 without a display or buttons, but with a camera)
 // Use the M5Stack-Timer-CAM library
@@ -39,7 +43,7 @@
 
 
 //!global to all releases (for now) used in Status for M5 (only 2 characters)
-#define VERSION_SHORT "v5"
+#define VERSION_SHORT "v6"
 
 //!used to force using the BLE Device name in SERVER( eg. PTFEEDER:ScoobyDoo)
 //NOT NOW 9.14.22 (no)
@@ -53,16 +57,21 @@
 //! 7.1.23 try process SMARTButton JSON
 //! 9.27.23  NOT WORKING .. parsing the JSON isn't working..
 //! This was for a stored procedure.
+//! NOTE: going to try a call to node-red via https (USE_REST_MESSAGING) and have it run the stored
+//! procedure with the arguments we send
 //#define PROCESS_SMART_BUTTON_JSON
+
 
 // *** Start of Configurations ***
 #define M5STACK_VERSION "2.0.4"
 //#define M5STACK_VERSION "2.0.7"  //9.24.23  (didn't seem to have heap space to start BLE server)
 
+/* *************************** CONFIGURATIONS **********************************/
+
 //M5stack 2.0.5-1.0 (Nov 2022)s
 //This is an easy way to turn on the smart clicker configuration...
 #ifdef ESP_M5_SMART_CLICKER_CONFIGURATION
-#define VERSION "Version-(2.16v)-10.13.2023-ESP_M5_SMART_CLICKER_BLE_GROUPS_SET64_DEVONLY_SM"
+#define VERSION "Version-(2.17b)-11.29.2023-ESP_M5_SMART_CLICKER_BLE_GROUPS_SM_RAND"
 #define ESP_M5
 #define USE_MQTT_NETWORKING
 #define USE_BUTTON_MODULE
@@ -115,7 +124,7 @@
 #define VERSION "Version-(2.15b)-7.16.2023-ESP_32_FEEDER_GROUPS2"
 #else
 //!normal BOARD - or the main feeders !! MODIFY THIS ONE...
-#define VERSION "Version-(2.16v)-10.13.2023-ESP_32_FEEDER_GROUPS2_WIFI_AP"
+#define VERSION "Version-(2.17a)-11.17.2023-ESP_32_FEEDER_GROUPS2_WIFI_AP"
 #endif
 
 #else // orig
@@ -167,13 +176,17 @@
 #define USE_WIFI_AP_MODULE
 #endif //ESP_M5_SERVER
 
+//!NOTE: M5_ATOM is define for the subset of ESP_M5 that is an ATOM
+//! This turns on features like the LED display
 
 //This is an easy way to turn on the smart clicker configuration...
 //! https://docs.m5stack.com/en/atom/atomic_qr
-//! library:  M5Stack-ATOM (actually using M5Stack-C-Plus)
+//! library:  not using M5Stack-ATOM (actually using M5Stack-C-Plus)
+//! ALSO: use the Minimal SPIFF .. to make this 64% of program space (vs 99%)
 #ifdef ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION
-#define VERSION "Version-1.9-9.27.23.2023-ESP_M5_ATOM_LITE_QR_SCANNER_AP_OTA_SM"
+#define VERSION "Version-(2.21)-12.27.23-ESP_M5_ATOM_QR_HTTPS_SMART_LED"
 #define ESP_M5
+#define M5_ATOM
 #define USE_MQTT_NETWORKING
 //#define USE_BUTTON_MODULE  ... ATOMQButtons.cpp
 #define USE_WIFI_AP_MODULE
@@ -182,13 +195,42 @@
 #define ATOM_QRCODE_MODULE
 //#define USE_DISPLAY_MODULE  .. no display
 
+//! 11.14.23 try "https" secure web call (to SemanticMarker.org/bot/...)
+//!  See https://GitHub.com/konacurrents/SemanticMarkerAPI for more info
+#define USE_REST_MESSAGING
+
 #endif //ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION
+
+
+//! 12.26.23 day after xmas
+//! https://docs.m5stack.com/en/atom/atom_socket
+//! library:  not using M5Stack-ATOM (actually using M5Stack-C-Plus)
+//! ALSO: use the Minimal SPIFF .. to make this 64% of program space (vs 99%)
+#ifdef ESP_M5_ATOM_SOCKET_CONFIGURATION
+#define VERSION "Version-(2.21)-12.27.23.2023-ESP_M5_ATOM_POWER_SOCKET_LED"
+#define ESP_M5
+#define M5_ATOM
+#define USE_MQTT_NETWORKING
+//#define USE_BUTTON_MODULE  ... ATOMQButtons.cpp
+#define USE_WIFI_AP_MODULE
+#define USE_BLE_SERVER_NETWORKING
+#define USE_BLE_CLIENT_NETWORKING //try to be a smart clicker too..
+#define ATOM_SOCKET_MODULE
+//#define USE_DISPLAY_MODULE  .. no display
+
+#endif //ESP_M5_ATOM_SOCKET_CONFIGURATION
+
 
 #if !defined(ESP_M5) && !defined(ESP_32)
 Error either ESP_M5 or ESP_32 must be defined
 #endif
 #if defined(ESP_M5) && defined(ESP_32)
 Error either ESP_M5 or ESP_32 must be defined but not both
+#endif
+
+// Try the SOCKET modules 12.26.23
+#if defined(ATOM_SOCKET_MODULE) && defined(ATOM_QRCODE_MODULE) && defined(M5_ATOM)
+Error either ATOM_SOCKET_MODULE or ATOM_QRCODE_MODULE must be defined but not both
 #endif
 
 //https://forum.arduino.cc/t/single-line-define-to-disable-code/636044/4
@@ -277,6 +319,24 @@ Error either ESP_M5 or ESP_32 must be defined but not both
 #ifdef ATOM_QRCODE_MODULE
 #include "src/ATOM_QRCode_Module/ATOMQRCodeModule.h"
 #endif
+
+//! 12.26.23
+#ifdef ATOM_SOCKET_MODULE
+#include "src/ATOM_SocketModule/ATOM_SocketModule.h"
+#endif
+
+//! 12.27.23
+//! this lets an ATOM to not use the FAST_LED
+#define USE_FAST_LED
+#ifdef  USE_FAST_LED
+//#include "src/ATOM_LED_Module/M5Display.h"
+#endif
+
+//! try a call..
+#ifdef USE_REST_MESSAGING
+#include "src/MQTTModule/RESTMessaging.h"
+#endif
+
 //! The following are ALWAYS included as the "Main" functionality
 
 //! add the MainModule.h so the defines for preferences are known

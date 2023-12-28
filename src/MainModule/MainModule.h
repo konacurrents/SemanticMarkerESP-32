@@ -134,6 +134,16 @@ char *main_nextJSONWIFICredential();
 //! sets the WIFI and MQTT user/password. It's up to the code to decide who needs to know (currently this calls APmodule..)
 void main_updateMQTTInfo(char *ssid, char *ssid_password, char *username, char *password, char *guestPassword, char *deviceName, char * host, char * port, char *locationString);
 
+//! return the username and password
+//! 12.14.23 to support calling the SMART buttons (smrun) with parameters
+char *main_getUsername();
+//! return password
+char *main_getPassword();
+//! return devicename
+char *main_getScannedDeviceName();
+//! set the scanned device name
+void main_setScannedDeviceName(char *deviceName);
+
 //! TODO: make this a registeration approach
 
 //! 3.21.22 these are to setup for the next time the main loop() runs to call these commands..
@@ -386,5 +396,8 @@ boolean isTrueString_mainModule(String valCmdString);
 //! 8.28.23  Adding a way for others to get informed on messages that arrive
 //! for the set,val
 void messageSetVal_mainModule(char *setName, char* valValue);
+//! 12.28.23, 8.28.23  Adding a way for others to get informed on messages that arrive
+//! for the set,val
+void messageSend_mainModule(char *sendValue);
 //!TODO: have a callback regist approach
 #endif /* MainModule_h */

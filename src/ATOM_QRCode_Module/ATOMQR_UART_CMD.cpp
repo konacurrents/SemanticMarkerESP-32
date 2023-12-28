@@ -14,23 +14,21 @@
  Serial. More Info pls refer: [QR module serial control command
  list](https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/docs/datasheet/atombase/AtomicQR/ATOM_QRCODE_CMD_EN.pdf)
  
+@ee https://github.com/konacurrents/ESP_IOT/issues/261
  */
 #include "../../Defines.h"
 
 #ifdef ATOM_QRCODE_MODULE
 #include "ATOMQR_UART_CMD.h"
 
+//! semantic marker processing
+#include "ATOM_SM.h"
+
 //#include <M5Atom.h>
 
-#ifdef ESP_M5
-#include <M5StickCPlus.h>
-
-//void M5StickCPlus::begin(bool LCDEnable, bool PowerEnable, bool SerialEnable) {
-//void begin(bool LCDEnable=true, bool PowerEnable=true, bool SerialEnable=true);
-
+#ifdef USE_FAST_LED
+#include "../ATOM_LED_Module/M5Display.h"
 #endif
-
-
 
 //! 8.28.23  Adding a way for others to get informed on messages that arrive
 //! for the set,val
@@ -40,70 +38,46 @@ void messageSetVal_ATOMQR_UARD_CMD(char *setName, char* valValue)
 
     SerialTemp.printf("messageSetVal.ATOMQR_UARD_CMD(%s,%s - %s)\n", setName, valValue, isTrue?"TRUE":"FALSE");
 
+    //! process specific commands ...
 }
 
 boolean _shortPress = false;
 boolean _longPress = false;
 boolean _longLongPress = false;
-char _lastSemanticMarker[500];
+#define MAX_SM 500
 
-//!M5Atom is 39
-//Button ButtonA = Button(39,true,10);
+char _lastSemanticMarker[MAX_SM];
 
-//!NOTE: Config.h has the M5
-//!BUTTON_A_PIN 37
-//!BUTTON_B_PIN 39
-//!
-//!RGB is GPIO 27
-const int ledPin_M5Atom = 27;
-#ifdef LATER
-//! CRGB is RGB
-//! https://github.com/FastLED/FastLED/wiki/Pixel-reference
-//! https://github.com/FastLED/FastLED/wiki/RGBSet-Reference
-//! https://gist.github.com/chemdoc77?page=3
-//! https://github.com/marmilicious/FastLED_examples/blob/master/blink_variations.ino
+//!forward reference .. since if button press called externally..
+void loopCode_ATOMQR_UARD_CMD();
 
-//! @see https://community.m5stack.com/topic/5550/atom-lite-with-different-led-controllers-for-internal-led/7
-// Choose the LED type from the list below.
-// #define LED_TYPE LED_STRIP_WS2812
-#define LED_TYPE LED_STRIP_SK6812
-// #define LED_TYPE LED_STRIP_APA106
-// #define LED_TYPE LED_STRIP_SM16703
 
-#define LED_TYPE_IS_RGBW 1
-#define LED_GPIO 27
-#define LED_BRIGHT 100
-
-static const crgb_t L_RED = 0xff0000;
-static const crgb_t L_GREEN = 0x00ff00;
-static const crgb_t L_BLUE = 0x0000ff;
-static const crgb_t L_WHITE = 0xe0e0e0;
-
-LiteLED myLED( LED_TYPE, LED_TYPE_IS_RGBW );
-#endif
-/*
- ATON:
- 
-
- */
-void setLEDLight(boolean onOff)
+//! BUTTON PROCESSING abstraction
+//!short press on buttonA (top button)
+void buttonA_ShortPress_ATOMQR_UARD_CMD()
 {
-    //pin = 37
- //   digitalWrite(ledPin_M5Atom, onOff?HIGH:LOW);
+    _shortPress = false;
+    _longPress = false;
+    _longLongPress = false;
+    
+    _shortPress = true;
+    loopCode_ATOMQR_UARD_CMD();
 }
-
-boolean _LEDFlag = false;
-void toggleLED()
+//!long press on buttonA (top button)
+void buttonA_LongPress_ATOMQR_UARD_CMD()
 {
-    _LEDFlag = !_LEDFlag;
-    setLEDLight(_LEDFlag);
+    _shortPress = false;
+    _longPress = false;
+    _longLongPress = false;
+    
+    _longPress = true;
+    loopCode_ATOMQR_UARD_CMD();
 }
 
 
 //!big button on front of M5StickC Plus
 void checkButtonB_ButtonProcessing()
 {
-    boolean buttonTouched = true;
     _shortPress = false;
     _longPress = false;
     _longLongPress = false;
@@ -121,11 +95,11 @@ void checkButtonB_ButtonProcessing()
     //        SerialDebug.printf("CH= %c\n", ch);
     //    }
     
-#define TRY_REVERSE
-    //works..
-#ifdef  TRY_REVERSE
+
+    
+    //!NOTE: ths issue is the timer is interruped by the scanner.. so make long-long very long..
     //was 1000  (from 500)
-    if (M5.BtnB.wasReleasefor(1500))
+    if (M5.BtnB.wasReleasefor(3500))
     {
         //        buttonA_LongPress();
         SerialDebug.println(" **** LONG LONG PRESS ***");
@@ -137,42 +111,14 @@ void checkButtonB_ButtonProcessing()
         SerialDebug.println(" **** LONG PRESS ***");
         _longPress = true;
     }
-#else
-    //was 1000  (from 500)
-    if (M5.BtnB.wasReleasefor(500))
-    {
-        //        buttonA_LongPress();
-        SerialDebug.println(" **** LONG PRESS ***");
-        _longPress = true;
-    }
-    else if (M5.BtnB.wasReleasefor(1000))
-    {
-        //        buttonA_LongPress();
-        SerialDebug.println(" **** LONG LONG PRESS ***");
-        _longLongPress = true;
-    }
-#endif
     else if (M5.BtnB.wasReleased())
     {
         //        buttonA_ShortPress();
         SerialDebug.println(" **** SHORT PRESS ***");
         _shortPress = true;
-        
-        toggleLED();
-        
-    }
-    else
-    {
-        buttonTouched = false;
-    }
-    //if a button was touched, update the delay since no touch..
-    if (buttonTouched)
-    {
-        //        refreshDelayButtonTouched();
+                
     }
     
-    
-    //_shortPress = true;
     
 #endif //ESP_M5
 }
@@ -192,29 +138,52 @@ uint8_t bootSoundProhibit[]   = {0x08, 0xC6, 0x04, 0x08, 0x00, 0xF2, 0x0D, 0x00,
 //more
 uint8_t continuous_mode_cmd[]  = {0x07, 0xC6, 0x04, 0x08, 0x00, 0x8A, 0x04, 0xFE, 0x99};
 
+//more
+uint8_t enable_scanning_config_mode_cmd[]    = {0x07, 0xC6, 0x04, 0x08, 0x00, 0xEC, 0x01, 0xFE, 0x3A};
+uint8_t prohibit_scanning_config_mode_cmd[]  = {0x07, 0xC6, 0x04, 0x08, 0x00, 0xEC, 0x00, 0xFE, 0x3B};
+
 void setup_ATOMQR_UARD_CMD()
 {
     SerialDebug.println("setup_ATOMQR_UARD_CMD");
-    M5.begin(true, false, true);
+    //M5.begin(true, false, true);
+    M5.begin(false, false, true);
+
     Serial2.begin(
                   9600, SERIAL_8N1, 22,
                   19);  // Set the baud rate of serial port 2 to 115200,8 data bits, no
                         // parity bits, and 1 stop bit, and set RX to 22 and TX to 19.
                         // 设置串口二的波特率为115200,8位数据位,没有校验位,1位停止位,并设置RX为22,TX为19
-  //  M5.dis.fillpix(0xfff000);  // YELLOW 黄色
-#ifdef LATER
-    //pinMode(ledPin_M5Atom, OUTPUT);
-    myLED.begin( LED_GPIO, 1 );
-    myLED.brightness( LED_BRIGHT );
-    myLED.setPixel( 0, L_RED, 1 );
-
+    
+#ifdef USE_FAST_LED
+    //!NOTE: this could probably be done by ESP_IOT.ino .. but for now keep here (and in the other ATOM code..)
+    setup_M5Display();
+    fillpix(L_GREEN);
 #endif
+        
+    //! NOTE: it seems that a startup of a new ATOM with QRReader, requires the HOST most first, then
+    //! the continuous will work ... 12.25.23
+    
     //! first wakeup the device
     Serial2.write(wakeup_cmd);
     delay(50);
-  
+    
+    //        Serial2.write(buzzerVolumeLow, sizeof(buzzerVolumeLow));
+    
+    //NOT WORKING.. it was 12.9.23 (but then no beep on detection either)
+//    Serial2.write(bootSoundProhibit, sizeof(bootSoundProhibit));
+//    delay(50);
+//    Serial2.write(buzzerVolumeLow, sizeof(buzzerVolumeLow));
+//    delay(50);
+    
+    //!@see https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/docs/datasheet/atombase/AtomicQR/ATOM_QRCODE_CMD_EN.pdf
+ //   Serial2.write(prohibit_scanning_config_mode_cmd, sizeof(prohibit_scanning_config_mode_cmd));
+    Serial2.write(enable_scanning_config_mode_cmd, sizeof(enable_scanning_config_mode_cmd));
+
+    delay(50);
 //#define TRY_HOST
 #ifdef TRY_HOST
+    SerialDebug.println("TRY_HOST");
+
     //! then send the command (host .. or maybe continuous)
     Serial2.write(host_mode_cmd, sizeof(host_mode_cmd));
 #else
@@ -227,19 +196,33 @@ void setup_ATOMQR_UARD_CMD()
 //#define TRY_CONTINUOUS
 #ifdef  TRY_CONTINUOUS
     //THIS IS WORKING..
+    SerialDebug.println("TRY_CONTINUOUS");
       Serial2.write(continuous_mode_cmd, sizeof(continuous_mode_cmd));
 #endif
     
-    strcpy(_lastSemanticMarker,"https://iDogWatch.com/bot/feed/test/test");
-
+   // strcpy(_lastSemanticMarker,"https://iDogWatch.com/bot/feed/test/test");
+  //  strcpy(_lastSemanticMarker,"https://iDogWatch.com/bot/smart/test/test");
+    strcpy(_lastSemanticMarker,"https://SemanticMarker.org/bot/smart?uuid=QHmwUurxC3&flow=1674517131429");
 
 }
 
 
-void loop_ATOMQR_UARD_CMD() {
+//! the loop
+void loop_ATOMQR_UARD_CMD() 
+{
     M5.update();
     //    checkButtonA_ButtonProcessing();
     checkButtonB_ButtonProcessing();
+    
+    //! do loop code
+    loopCode_ATOMQR_UARD_CMD();
+}
+
+//! LOOP code.. refactored so it's also called when a buttonPress message arrives
+void loopCode_ATOMQR_UARD_CMD()
+{
+
+    //! this might be a mode..
 //#ifndef TRY_CONTINUOUS
 #ifdef NOT_HERE
     //  if (M5.BtnA.isPressed()) {
@@ -265,7 +248,7 @@ void loop_ATOMQR_UARD_CMD() {
     }
 #endif
     
-#define read_serial_monitor
+//#define read_serial_monitor
 #ifdef read_serial_monitor
     //???  reads from the serial monitor it seems
     // Actually .. there is a way to send a message form the serial monitor..
@@ -285,20 +268,20 @@ void loop_ATOMQR_UARD_CMD() {
     //        int ch = Serial2.read();
     //        Serial.write(ch);
     //    }
-#define MAX_SM 500
     char semanticMarker[MAX_SM];
     char buf[2];
     sprintf(semanticMarker,"");
-    boolean valid = false;
+    boolean validScannedSM = false;
     //! This read from the Serial2 -- the QR Scanner device, and outputs to the serial debug
     //! BUT there seems to be strange charancters...
     while (Serial2.available() > 0)
     {
         char ch = Serial2.read();
         if (ch >= '!' && ch <= '~')
+        {
             if (ch != ',')
             {
-                valid = true;
+                validScannedSM = true;
                 //                SerialDebug.printf("0x%x ",ch);
                 //                SerialDebug.print(ch);
                 sprintf(buf,"%c",ch);
@@ -308,40 +291,68 @@ void loop_ATOMQR_UARD_CMD() {
                 {
                     SerialDebug.printf(" *** TOO LONG A STRING *** '%s'\n", semanticMarker);
                     strcpy(semanticMarker,"");
+                    validScannedSM = false;
                 }
             }
+        }
     }
-    if (valid)
+    //! if a valid scanned Semantic Marker .. process it
+    if (validScannedSM)
     {
+#ifdef USE_FAST_LED
+        fillpix(L_WHITE);
+#endif
         //        SerialDebug.println();
         sprintf(buf,"%c",NULL);
         
         strcat(semanticMarker,buf);
         SerialDebug.printf("SM = '%s'\n", semanticMarker);
         
-        //!send this as a DOCFOLLOW message
-        sendSemanticMarkerDocFollow_mainModule(semanticMarker);
-        
-        //!save globally..
-        strcpy(_lastSemanticMarker, semanticMarker);
-        
-    }
     
-    if (_longPress)
-    {
-        SerialDebug.printf("Sending last SM = '%s'\n", _lastSemanticMarker);
-        // send the _lastSemanticMarker again ...
-        //!send this as a DOCFOLLOW message
-        sendSemanticMarkerDocFollow_mainModule(_lastSemanticMarker);
+        
+        //!process the semantic marker.  It will save to _lastSemanticMarker unless scannedDevice
+        boolean saveSM = ATOM_processSemanticMarker(semanticMarker, _lastSemanticMarker);
+        if (saveSM)
+        {
+            //!save globally..
+            strcpy(_lastSemanticMarker, semanticMarker);
+            
+            //!send this as a DOCFOLLOW message
+            sendSemanticMarkerDocFollow_mainModule(semanticMarker);
+        }
+    
     }
-    if (_longLongPress)
+
+    else if (_longPress)
     {
+#ifdef USE_FAST_LED
+        fillpix(L_YELLOW);
+#endif
+        SerialDebug.printf("Sending last SM = '%s'\n", _lastSemanticMarker);
+            // send the _lastSemanticMarker again ...
+        //!send this as a DOCFOLLOW message
+      //  sendSemanticMarkerDocFollow_mainModule(_lastSemanticMarker);
+        
+        //!process the semantic marker AGAIN
+        //!used _lastSemanticMarker
+        boolean saveSM = ATOM_processSemanticMarker(_lastSemanticMarker, _lastSemanticMarker);
+        if (saveSM)
+        {
+            //!send this as a DOCFOLLOW message
+            sendSemanticMarkerDocFollow_mainModule(_lastSemanticMarker);
+        }
+    }
+    else if (_longLongPress)
+    {
+#ifdef USE_FAST_LED
+        fillpix(L_RED);
+#endif
         SerialDebug.printf("CLEAN CREDENTIALS and reboot to AP mode\n");
 
         //! dispatches a call to the command specified. This is run on the next loop()
         main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_CREDENTIALS);
     }
-#ifdef TRY_HOST
+#ifdef TRY_HOST  ///no
     else if (_shortPress)
     {
         delay(50);
@@ -352,6 +363,10 @@ void loop_ATOMQR_UARD_CMD() {
 #else
     else if (_shortPress)
     {
+#ifdef USE_FAST_LED
+        fillpix(L_BLUE);
+#endif
+        
         SerialDebug.printf("Feed BLE\n");
         // send the _lastSemanticMarker again ...
         //!send this as a DOCFOLLOW message

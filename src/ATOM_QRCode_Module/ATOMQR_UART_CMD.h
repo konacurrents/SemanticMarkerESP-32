@@ -9,4 +9,12 @@ void  loop_ATOMQR_UARD_CMD();
 //! for the set,val
 void messageSetVal_ATOMQR_UARD_CMD(char *setName, char* valValue);
 
+
+
+//! BUTTON PROCESSING abstraction
+//!short press on buttonA (top button)
+void buttonA_ShortPress_ATOMQR_UARD_CMD();
+//!long press on buttonA (top button)
+void buttonA_LongPress_ATOMQR_UARD_CMD();
+
 #endif

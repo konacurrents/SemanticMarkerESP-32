@@ -1,0 +1,18 @@
+
+[92mUsed library[0m     [92mVersion[0m [90mPath[0m                                                                                         
+[93mM5StickCPlus[0m     0.0.8   [90m/Users/scott/Documents/Arduino/libraries/M5StickCPlus[0m                                        
+[93mWire[0m             1.0.1   [90m/Users/scott/Library/Arduino15/packages/esp32/hardware/esp32/1.0.6/libraries/Wire[0m            
+[93mSPI[0m              1.0     [90m/Users/scott/Library/Arduino15/packages/esp32/hardware/esp32/1.0.6/libraries/SPI[0m             
+[93mFS[0m               1.0     [90m/Users/scott/Library/Arduino15/packages/esp32/hardware/esp32/1.0.6/libraries/FS[0m              
+[93mWiFi[0m             1.0     [90m/Users/scott/Library/Arduino15/packages/esp32/hardware/esp32/1.0.6/libraries/WiFi[0m            
+[93mFastLED[0m          3.5.0   [90m/Users/scott/Documents/Arduino/libraries/FastLED[0m                                             
+[93mNimBLE-Arduino[0m   1.4.1   [90m/Users/scott/Documents/Arduino/libraries/NimBLE-Arduino[0m                                      
+[93mArduinoJson[0m      6.19.4  [90m/Users/scott/Documents/Arduino/libraries/ArduinoJson[0m                                         
+[93mPreferences[0m      1.0     [90m/Users/scott/Library/Arduino15/packages/esp32/hardware/esp32/1.0.6/libraries/Preferences[0m     
+[93mWiFiClientSecure[0m 1.0     [90m/Users/scott/Library/Arduino15/packages/esp32/hardware/esp32/1.0.6/libraries/WiFiClientSecure[0m
+[93mPubSubClient[0m     2.8     [90m/Users/scott/Documents/Arduino/libraries/PubSubClient[0m                                        
+[93mUpdate[0m           1.0     [90m/Users/scott/Library/Arduino15/packages/esp32/hardware/esp32/1.0.6/libraries/Update[0m          
+[93mESPmDNS[0m          1.0     [90m/Users/scott/Library/Arduino15/packages/esp32/hardware/esp32/1.0.6/libraries/ESPmDNS[0m         
+
+[92mUsed platform[0m [92mVersion[0m [90mPath[0m                                                              
+[93mesp32:esp32[0m   1.0.6   [90m/Users/scott/Library/Arduino15/packages/esp32/hardware/esp32/1.0.6[0m

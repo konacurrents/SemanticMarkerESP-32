@@ -65,6 +65,9 @@ void initGlobals_mainModule()
     strcpy(_asyncParameter,(char*)"");
     strcpy(_fullBLEDeviceName,(char*)"");
     
+    main_setScannedDeviceName((char*)"");
+
+    
 }
 
 //THIS IS the setup() and loop() but using the "component" name, eg MQTTNetworking()
@@ -76,7 +79,7 @@ void setup_mainModule()
     //!cleans the EPROM .. if things are really not working..
     cleanEPROM_mainModule();
 #endif
-    
+
     //test...
     //! setup for the token parser (really just for testing)  -- an
     setup_tokenParser_mainModule();
@@ -101,14 +104,21 @@ void setup_mainModule()
 #ifdef ESP_M5
 #ifdef ATOM_QRCODE_MODULE
         savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE,  true); //false);
-        // 8.28.23 .. not doing this anymore..
 #else
+#ifdef ATOM_SOCKET_MODULE
+        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE,  true); //false);
+#else
+        // 8.28.23 .. not doing this anymore..
         savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE,  false);
-
-#endif
+//! cannot figure out #elseif syntax..
+#endif //atom_socket_module
+#endif //adom_qr_module
+ 
+        //! not ESP_M5
 #else
         savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE, true);
 #endif
+        //! all ..
         savePreferenceBoolean_mainModule(PREFERENCE_FIRST_TIME_FEATURE_SETTING, false);
 
     }
@@ -374,8 +384,21 @@ void messageSetVal_mainModule(char *setName, char* valValue)
 #ifdef ATOM_QRCODE_MODULE
     messageSetVal_ATOMQRCodeModule(setName, valValue);
 #endif
+    
+#ifdef ATOM_SOCKET_MODULE
+    messageSetVal_ATOM_SocketModule(setName, valValue);
+#endif
 }
 //!TODO: have a callback regist approach
+
+//! 12.28.23, 8.28.23  Adding a way for others to get informed on messages that arrive
+//! for the set,val
+void messageSend_mainModule(char *sendValue)
+{
+#ifdef ATOM_SOCKET_MODULE
+    messageSend_ATOM_SocketModule(sendValue);
+#endif
+}
 
 #ifdef USE_MQTT_NETWORKING
 //!example callback: but the scope would have the pCharacteristic defined, etc..
@@ -768,10 +791,43 @@ void main_cleanSavedWIFICredentials()
 }
 
 
+//! 12.14.23
+char *_MQTT_Password = (char*)"";
+char *_MQTT_Username = (char*)"";
+char _scannedDeviceName[100];
+
+//! return the username and password
+//! 12.14.23 to support calling the SMART buttons (smrun) with parameters
+char *main_getUsername()
+{
+    return _MQTT_Username;
+}
+//! return password
+char *main_getPassword()
+{
+    return _MQTT_Password;
+}
+//! return devicename
+char *main_getScannedDeviceName()
+{
+    SerialDebug.printf("main_getScannedDeviceName(%s)\n", _scannedDeviceName);
+
+    return _scannedDeviceName;
+}
+//! set the scanned device name
+void main_setScannedDeviceName(char *deviceName)
+{
+    strcpy(_scannedDeviceName, deviceName);
+    SerialDebug.printf("main_setScannedDeviceName(%s)\n", deviceName);
+}
+
 //! sets the WIFI and MQTT user/password. It's up to the code (below, maybe in future a register approach)  to decide who needs to know
 void main_updateMQTTInfo(char *ssid, char *ssid_password, char *username, char *password, char *guestPassword, char *deviceName, char * host, char * port, char *locationString)
 {
     SerialMin.printf("main_updateMQTTInfo(%s,%s,%s,%s,%s, %s, d=%s)\n", ssid?ssid:"NULL", ssid_password?ssid_password:"NULL", username?username:"NULL", password?password:"NULL", guestPassword?guestPassword:"NULL", locationString?locationString:"NULL", deviceName?deviceName:"NULL");
+    
+    _MQTT_Password = password;
+    _MQTT_Username = username;
     
     //!store the device name
    savePreference_mainModule(PREFERENCE_DEVICE_NAME_SETTING, deviceName);
@@ -1540,7 +1596,14 @@ float getBatPercentage_mainModule()
 void sendMessageString_mainModule(char *messageString)
 {
 #ifdef USE_MQTT_NETWORKING
-    if (strlen(messageString) < MESSAGE_STORAGE_MAX)
+    SerialDebug.printf("sendMessageString_mainModule(%s)\n", messageString);
+    if (strlen(messageString) > 0 && messageString[0] == '{')
+    {
+        // JSON Message
+        //! 12.19.23 Amber in air from Iceland. 50 years since Dead 12.19.73
+        sendMessageNoChangeMQTT(messageString);
+    }
+    else if (strlen(messageString) < MESSAGE_STORAGE_MAX)
     {
         //!NOTE: the # has to be there, otherwise the sendMessageMQTT ignores it..
         sprintf(_messageStorage,"#%s {%s} {t:%d}", messageString, getDeviceNameMQTT(), getTimeStamp_mainModule());
@@ -2310,12 +2373,24 @@ void buttonA_ShortPress_mainModule()
 #ifdef USE_BUTTON_MODULE
     buttonA_ShortPress_ButtonModule();
 #endif
+#ifdef ATOM_QRCODE_MODULE
+    buttonA_ShortPress_ATOMQRCodeModule();
+#endif
+#ifdef ATOM_SOCKET_MODULE
+    buttonA_ShortPress_ATOM_SocketModule();
+#endif
 }
 //!long press on buttonA (top button)
 void buttonA_LongPress_mainModule()
 {
 #ifdef USE_BUTTON_MODULE
     buttonA_LongPress_ButtonModule();
+#endif
+#ifdef ATOM_QRCODE_MODULE
+    buttonA_LongPress_ATOMQRCodeModule();
+#endif
+#ifdef ATOM_SOCKET_MODULE
+    buttonA_LongPress_ATOM_SocketModule();
 #endif
 }
 //!the long press of the side button

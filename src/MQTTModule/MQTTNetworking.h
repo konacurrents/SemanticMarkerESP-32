@@ -119,6 +119,9 @@ String get_WIFIInfoString();
 //! 9.18.23 LA (after Eagle Rock bike ride, Van Morrison tomorrow)
 void cleanMQTTpasswordsUpdateInEPROM();
 
+//!Decode the URL (exposed 12.17.23 for the scanner
+String MQTT_urlDecode(String input);
+
 #endif // USE_MQTT_NETWORKING
 
 #endif // MQTTNetworking_h

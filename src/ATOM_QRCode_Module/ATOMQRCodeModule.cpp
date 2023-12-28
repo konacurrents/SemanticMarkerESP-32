@@ -31,4 +31,28 @@ void messageSetVal_ATOMQRCodeModule(char *setName, char* valValue)
     messageSetVal_ATOMQR_UARD_CMD(setName, valValue);
 }
 
+
+
+//! BUTTON PROCESSING abstraction
+//!short press on buttonA (top button)
+void buttonA_ShortPress_ATOMQRCodeModule()
+{
+    
+    //! BUTTON PROCESSING abstraction
+    //!short press on buttonA (top button)
+    buttonA_ShortPress_ATOMQR_UARD_CMD();
+   
+
+}
+//!long press on buttonA (top button)
+void buttonA_LongPress_ATOMQRCodeModule()
+{
+    
+    //! BUTTON PROCESSING abstraction
+   
+    //!long press on buttonA (top button)
+    buttonA_LongPress_ATOMQR_UARD_CMD();
+
+}
+
 #endif
