@@ -20,7 +20,7 @@
 #endif
 
 //! info from the socket power
-int _Voltage;
+int _Voltage = 0;
 int _ActivePower = 0;
 float _Current = 0;
 
@@ -37,13 +37,13 @@ HardwareSerial AtomSerial(2);
 void loopCode_ATOM_SocketModule();
 
 //!big button on front of M5StickC Plus
-void checkButtonB_ButtonProcessing();
+void checkButtonB_ATOM_SocketModule();
 
 
 //! not beware of linking another ATOM these names will overload..
-boolean _shortPress = false;
-boolean _longPress = false;
-boolean _longLongPress = false;
+boolean _shortPress_ATOM_SocketModule = false;
+boolean _longPress_ATOM_SocketModule = false;
+boolean _longLongPress_ATOM_SocketModule = false;
 
 //! whether the device is ON  (default of)
 //! called "RelayFlag" is the example
@@ -62,6 +62,8 @@ void set_ATOM_SocketModule(boolean flag)
 #ifdef USE_FAST_LED
         fillpix(L_GREEN);
 #endif
+        //! 1.1.24 syntax:   socket=on  or socket=off (somewhere in the string..) .. this version, only string avaialble..
+        storePreference_mainModule(PREFERENCE_ATOMS_SETTING, "socket=on");
     }
     else
     {
@@ -70,7 +72,13 @@ void set_ATOM_SocketModule(boolean flag)
         fillpix(L_YELLOW);
         //or turn light off??
 #endif
+        //! 1.1.24 syntax:   socket=on  or socket=off (somewhere in the string..)
+        storePreference_mainModule(PREFERENCE_ATOMS_SETTING, "socket=off");
     }
+    
+    //!send status after power on/off change..
+    sendStatusMQTT_mainModule();
+    
 }
 
 //! turn on/off the socket
@@ -89,19 +97,28 @@ void messageSetVal_ATOM_SocketModule(char *setName, char* valValue)
     boolean isTrue =  isTrueString_mainModule(valValue);
     if (strcmp(setName,"socket")==0)
     {
+        SerialDebug.printf("messageSetVal_ATOM_SocketModule(%s)\n", valValue);
         set_ATOM_SocketModule(isTrue);
     }
 }
 
 //! 12.28.23, 8.28.23  Adding a way for others to get informed on messages that arrive
-//! for the set,val
+//! for the send
 void messageSend_ATOM_SocketModule(char *sendValue)
 {
-    if (strcmp(sendValue, "togglesocket"))
+    SerialDebug.printf("messageSend_ATOM_SocketModule(%s)\n", sendValue);
+    if (strcmp(sendValue, "togglesocket")==0)
     {
         toggle_ATOM_SocketModule();
     }
 }
+
+//! init any globals
+//! 1.5.24
+void initGlobals_ATOM_SocketModule()
+{
+}
+
 
 //!THIS IS the setup() and loop() but using the "component" name, eg AudioModule()
 //!This will perform preference initializtion as well
@@ -110,7 +127,16 @@ void messageSend_ATOM_SocketModule(char *sendValue)
 //void setup_AudioModule(void (*loudCallback)(int));
 void setup_ATOM_SocketModule()
 {
-    _isOn_ATOM_SocketModule = false;
+    initGlobals_ATOM_SocketModule();
+    
+    //! 1.1.24 syntax:   socket=on  or socket=off (somewhere in the string..)
+    char *preference = getPreference_mainModule(PREFERENCE_ATOMS_SETTING);
+    SerialDebug.printf("ATOM Pref = %s\n", preference);
+    if (containsSubstring(preference,(char*)"socket=on"))
+        _isOn_ATOM_SocketModule = true;
+    else
+        _isOn_ATOM_SocketModule = false;
+    
     //! TODO..
 
     M5.begin(true, false, true);
@@ -125,9 +151,8 @@ void setup_ATOM_SocketModule()
     //! ijnit the ATOM Socket
     ATOM.Init(AtomSerial, RELAY, RXD);
     
-    //!default OFF
-    set_ATOM_SocketModule(false);
-
+    //!default whatever was the last mode Persistently..
+    set_ATOM_SocketModule(_isOn_ATOM_SocketModule);
 
 }
 
@@ -151,8 +176,8 @@ void loop_ATOM_SocketModule()
 #endif
     
     M5.update();
-    //    checkButtonA_ButtonProcessing();
-    checkButtonB_ButtonProcessing();
+    //    checkButtonA_ATOM_SocketModule();
+    checkButtonB_ATOM_SocketModule();
     
     //! do loop code
     loopCode_ATOM_SocketModule();
@@ -162,32 +187,32 @@ void loop_ATOM_SocketModule()
 //!short press on buttonA (top button)
 void buttonA_ShortPress_ATOM_SocketModule()
 {
-    _shortPress = false;
-    _longPress = false;
-    _longLongPress = false;
+    _shortPress_ATOM_SocketModule = false;
+    _longPress_ATOM_SocketModule = false;
+    _longLongPress_ATOM_SocketModule = false;
     
-    _shortPress = true;
+    _shortPress_ATOM_SocketModule = true;
     loopCode_ATOM_SocketModule();
 }
 
 //!long press on buttonA (top button)
 void buttonA_LongPress_ATOM_SocketModule()
 {
-    _shortPress = false;
-    _longPress = false;
-    _longLongPress = false;
+    _shortPress_ATOM_SocketModule = false;
+    _longPress_ATOM_SocketModule = false;
+    _longLongPress_ATOM_SocketModule = false;
     
-    _longPress = true;
+    _longPress_ATOM_SocketModule = true;
     loopCode_ATOM_SocketModule();
 }
 
 
 //!big button on front of M5StickC Plus
-void checkButtonB_ButtonProcessing()
+void checkButtonB_ATOM_SocketModule()
 {
-    _shortPress = false;
-    _longPress = false;
-    _longLongPress = false;
+    _shortPress_ATOM_SocketModule = false;
+    _longPress_ATOM_SocketModule = false;
+    _longLongPress_ATOM_SocketModule = false;
     
 #ifdef ESP_M5
    
@@ -195,21 +220,21 @@ void checkButtonB_ButtonProcessing()
     //was 1000  (from 500)
     if (M5.BtnB.wasReleasefor(3500))
     {
-        //        buttonA_LongPress();
+        //        buttonA_longPress_ATOM_SocketModule();
         SerialDebug.println(" **** LONG LONG PRESS ***");
-        _longLongPress = true;
+        _longLongPress_ATOM_SocketModule = true;
     }
     else if (M5.BtnB.wasReleasefor(1000))
     {
-        //        buttonA_LongPress();
+        //        buttonA_longPress_ATOM_SocketModule();
         SerialDebug.println(" **** LONG PRESS ***");
-        _longPress = true;
+        _longPress_ATOM_SocketModule = true;
     }
     else if (M5.BtnB.wasReleased())
     {
-        //        buttonA_ShortPress();
+        //        buttonA_shortPress_ATOM_SocketModule();
         SerialDebug.println(" **** SHORT PRESS ***");
-        _shortPress = true;
+        _shortPress_ATOM_SocketModule = true;
     }
     
 #endif //ESP_M5
@@ -236,7 +261,7 @@ void loopCode_ATOM_SocketModule()
     
 #endif
  
-    if (_longPress)
+    if (_longPress_ATOM_SocketModule)
     {
 #ifdef USE_FAST_LED
        // fillpix(L_YELLOW);
@@ -262,7 +287,7 @@ void loopCode_ATOM_SocketModule()
         //TODO .. send this message out on MQTT
         //TODO:  add a callback for requesting "STATUS"
     }
-    else if (_longLongPress)
+    else if (_longLongPress_ATOM_SocketModule)
     {
 #ifdef USE_FAST_LED
         fillpix(L_RED);
@@ -272,10 +297,28 @@ void loopCode_ATOM_SocketModule()
         //! dispatches a call to the command specified. This is run on the next loop()
         main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_CREDENTIALS);
     }
-    else if (_shortPress)
+    else if (_shortPress_ATOM_SocketModule)
     {
         toggle_ATOM_SocketModule();
     }
 }
 
+//!returns a string in in URL so:  status&battery=84'&buzzon='off'  } .. etc
+char * currentStatusURL_ATOM_SocketModule()
+{
+    if (_isOn_ATOM_SocketModule)
+        return (char*)"&socket=on";
+    else
+        return (char*)"&socket=off";
+}
+
+//!returns a string in in JSON so:  status&battery=84'&buzzon='off'  } .. etc
+//!starts with "&"*
+char * currentStatusJSON_ATOM_SocketModule()
+{
+    if (_isOn_ATOM_SocketModule)
+        return (char*)"'socket':'on'";
+    else
+        return (char*)"'socket':'off'";
+}
 #endif // ATOM_SOCKET_MODULE

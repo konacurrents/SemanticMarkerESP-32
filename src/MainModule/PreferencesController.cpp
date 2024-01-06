@@ -125,10 +125,18 @@ char _preferenceBufferString[100];
 //! 11.29.23 add the max time .. so a random can be used
 #define EPROM_PREFERENCE_TIMER_MAX_INT_SETTING "39x"
 
+//! 1.1.24 the preference for all the ATOM plugs (format:  atomType:value} .. for now just use socket:on
+#define EPROM_PREFERENCE_ATOMS_SETTING "40a"
+
+//!1.4.24  What kind of ATOM plug (set, M5AtomKind, val= {M5AtomSocket, M5AtomScanner}
+#define EPROM_PREFERENCE_ATOM_KIND_SETTING "41Atom"
+
 //!the EPROM is in preferences.h
 #include <Preferences.h>
 //!name of main prefs eprom
 #define PREFERENCES_EPROM_MAIN_NAME "MainPrefs"
+
+
 
 //! preferences for MAIN
 Preferences _preferencesMainModule;
@@ -156,7 +164,7 @@ boolean _isCachedPreferenceInt[MAX_MAIN_PREFERENCES];
 void savePreference_mainModule(int preferenceID, String preferenceValue)
 {
     if (preferenceID != PREFERENCE_DEBUG_INFO_SETTING)
-        SerialLots.printf("savePreference .. %d, %s\n", preferenceID, preferenceValue.c_str());
+        SerialTemp.printf("savePreference .. %d = '%s'\n", preferenceID, preferenceValue.c_str());
     // cannot invoke the preference, as this would be an infinite loop back to here..
     
     //save in EPROM
@@ -196,9 +204,17 @@ void appendPreference_mainModule(int preferenceID, String preferenceValue)
 //! called to append to a a preference (which will be an identifier and a string, which can be converted to a number or boolean)
 void storePreference_mainModule(int preferenceID, String preferenceValue)
 {
+#ifdef AP_DEBUG_MODE
+
     appendPreference_mainModule(preferenceID, preferenceValue);
    // SerialDebug.printf("storePref(%d): %s\n", _appendingPreferenceString.length(), _appendingPreferenceString.c_str());
     savePreference_mainModule(preferenceID, _appendingPreferenceString);
+#else
+    //!turn AP_DEBUG_MODe off for now...
+    //!1.1.24 seems the append is goofing things..
+    savePreference_mainModule(preferenceID, preferenceValue);
+
+#endif
 }
 
 //! called to reset to blank a preference (which will be an identifier and a string, which can be converted to a number or boolean)
@@ -446,6 +462,11 @@ void readPreferences_mainModule()
 //!BUT these are not stored in EPROM. The next method 
 void initPreferencesMainModule()
 {
+#ifdef AP_DEBUG_MODE
+#else
+   // savePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING,"");
+    resetPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING);
+#endif
     
     strcpy(_preferenceBufferString,(char*)"");
     strcpy(_preferenceBuffer,(char*)"");
@@ -489,7 +510,7 @@ void initPreferencesMainModule()
                 _preferenceMainModuleLookupDefaults[i] = (char*)"0";
 #else
                 _preferenceMainModuleLookupDefaults[i] = (char*)"1";
-#endif // ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION
+#endif // ESP_M5_ATOM_LITE
                 
 #else
                 _preferenceMainModuleLookupDefaults[i] = (char*)"0";
@@ -630,7 +651,7 @@ void initPreferencesMainModule()
 #ifdef ESP_M5_CAMERA
                 _preferenceMainModuleLookupDefaults[i] = (char*)"M5Camera";
 #else
-#ifdef ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION
+#ifdef ESP_M5_ATOM_LITE
                 _preferenceMainModuleLookupDefaults[i] = (char*)"M5Atom";
 #else
                 _preferenceMainModuleLookupDefaults[i] = (char*)"M5";
@@ -757,7 +778,23 @@ void initPreferencesMainModule()
                 (char*)EPROM_DEV_ONLY_SM_SETTING;
                 _preferenceMainModuleLookupDefaults[i] = (char*)"0";
                 break;
-                                
+           
+                //! 1.1.24  first version of preferences for the ATOMs depending on which ATOM kind
+                //! first version, only the socket and the value is on/off
+                //! syntaxURL   socket=off&smscanner=on
+            case PREFERENCE_ATOMS_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_PREFERENCE_ATOMS_SETTING;
+                _preferenceMainModuleLookupDefaults[i] = (char*)"socket=off";
+                break;
+                
+                //!1.4.24  What kind of ATOM plug (set, M5AtomKind, val= {M5AtomSocket, M5AtomScanner}
+            case PREFERENCE_ATOM_KIND_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_PREFERENCE_ATOM_KIND_SETTING;
+                _preferenceMainModuleLookupDefaults[i] = (char*)"M5AtomScanner";
+                break;
+                
             default:
                 SerialError.printf(" ** NO default for preference[%d]\n", i);
         }
@@ -809,6 +846,9 @@ void printPreferenceValues_mainModule()
     SerialTemp.printf("PREFERENCE_GROUP_NAMES_SETTING: %s\n", getPreference_mainModule(PREFERENCE_GROUP_NAMES_SETTING));
     SerialTemp.printf("PREFERENCE_DEV_ONLY_SM_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_DEV_ONLY_SM_SETTING));
 
+    SerialTemp.printf("PREFERENCE_ATOMS_SETTING: %s\n", getPreference_mainModule(PREFERENCE_ATOMS_SETTING));
+    SerialTemp.printf("PREFERENCE_ATOM_KIND_SETTING: %s\n", getPreference_mainModule(PREFERENCE_ATOM_KIND_SETTING));
+
 #if (SERIAL_DEBUG_CALL)
     // this is many lines long .. so only show in the CALL settting..
     SerialTemp.printf("PREFERENCE_DEBUG_INFO_SETTING: %s\n", getPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING));
@@ -846,4 +886,63 @@ void setDiscoverM5PTClicker(boolean flag)
 boolean getDiscoverM5PTClicker()
 {
     return _DiscoverM5PTClicker;
+}
+
+
+//! if the preference was retrieved..
+boolean _firstTimeAtomKind = true;
+int _ATOM_KIND = ATOM_KIND_M5_SCANNER;
+//!returned from mainModule
+//#define ATOM_KIND_M5_SCANNER 0
+//#define ATOM_KIND_M5_SOCKET 1
+//! new 1.4.24 setting ATOM kind (eg. M5AtomSocket, M5AtomScanner)
+//! 1.5.24 also set the initial atom storage
+//! Then the device reboots.. so setup() and loop() are for the correct ATOM
+void savePreferenceATOMKind_MainModule(String value)
+{
+    SerialDebug.printf("M5AtomKind = %s\n", value.c_str());
+    _firstTimeAtomKind = true;
+    savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING,  value);
+    
+    //! 1.5.24 also set the initial atom storage
+    //! 1.4.24 use the _atomKind (which CAN change)
+    switch (getM5ATOMKind_MainModule())
+    {
+        case ATOM_KIND_M5_SCANNER:
+            //! 8.1.23 for the ATOM Lite QRCode Reader
+            savePreference_mainModule(PREFERENCE_ATOMS_SETTING,"smscanner=on");
+            break;
+        case ATOM_KIND_M5_SOCKET:
+            //! 12.26.23 for the ATOM Socket Power
+            savePreference_mainModule(PREFERENCE_ATOMS_SETTING,"socket=off");
+            break;
+    }
+
+}
+//! new 1.4.24 setting ATOM kind (eg. M5AtomSocket, M5AtomScanner)
+char* getPreferenceATOMKind_MainModule()
+{
+    char *atomKind = getPreference_mainModule(PREFERENCE_ATOM_KIND_SETTING);
+    return atomKind;
+}
+
+//! new 1.4.24 setting ATOM kind (eg. ATOM_KIND_M5_SCANNER, ATOM_KIND_M5_SOCKET)
+//! sets global _ATOM_KIND
+int getM5ATOMKind_MainModule()
+{
+    //! optimize to only call this retrieval from EPROM 1 time..  unless changing the ATOMKind
+    if (_firstTimeAtomKind)
+    {
+        char *atomKind = getPreferenceATOMKind_MainModule();
+        if (strcasecmp(atomKind,"M5AtomScanner")==0)
+        {
+            _ATOM_KIND = ATOM_KIND_M5_SCANNER;
+        }
+        else if (strcasecmp(atomKind,"M5AtomSocket")==0)
+        {
+            _ATOM_KIND = ATOM_KIND_M5_SOCKET;
+        }
+        _firstTimeAtomKind = false;
+    }
+    return _ATOM_KIND;
 }

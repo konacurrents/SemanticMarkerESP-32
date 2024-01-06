@@ -13,7 +13,11 @@
 #include "OTAImageUpdate.h"
 #ifdef USE_MQTT_NETWORKING
 
+#ifdef USE_REST_MESSAGING
+#include <WiFiClientSecure.h>
+#else
 #include <WiFi.h>
+#endif
 
 #include <Update.h>
 

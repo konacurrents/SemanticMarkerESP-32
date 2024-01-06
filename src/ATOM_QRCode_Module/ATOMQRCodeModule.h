@@ -27,4 +27,13 @@ void buttonA_ShortPress_ATOMQRCodeModule();
 //!long press on buttonA (top button)
 void buttonA_LongPress_ATOMQRCodeModule();
 
+//!returns a string in in URL so:  status&battery=84'&buzzon='off'  } .. etc
+//!//!starts with "&"*
+char * currentStatusURL_ATOMQRCodeModule();
+
+
+//!returns a string in in JSON so:  status&battery=84'&buzzon='off'  } .. etc
+//!starts with "&"*
+char * currentStatusJSON_ATOMQRCodeModule();
+
 #endif

@@ -32,12 +32,8 @@
 		D2CC84A52B3E2FB400294F65 /* ATOM_SM.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ATOM_SM.h; sourceTree = "<group>"; };
 		D2E430642B02DC4F00E2C80B /* makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; };
 		D2E430662B02DC4F00E2C80B /* Defines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Defines.h; sourceTree = "<group>"; };
-		D2E4306C2B02DC5900E2C80B /* ATOMQRButtons.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ATOMQRButtons.cpp; sourceTree = "<group>"; };
-		D2E4306D2B02DC5900E2C80B /* ATOMQR_UART_CMD.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ATOMQR_UART_CMD.cpp; sourceTree = "<group>"; };
-		D2E4306E2B02DC5900E2C80B /* ATOMQRButtons.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ATOMQRButtons.h; sourceTree = "<group>"; };
 		D2E4306F2B02DC5900E2C80B /* ATOMQRCodeModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ATOMQRCodeModule.h; sourceTree = "<group>"; };
 		D2E430702B02DC5900E2C80B /* ATOMQRCodeModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ATOMQRCodeModule.cpp; sourceTree = "<group>"; };
-		D2E430712B02DC5900E2C80B /* ATOMQR_UART_CMD.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ATOMQR_UART_CMD.h; sourceTree = "<group>"; };
 		D2E430732B02DC5900E2C80B /* RequestHandler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RequestHandler.h; sourceTree = "<group>"; };
 		D2E430742B02DC5900E2C80B /* WebServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WebServer.h; sourceTree = "<group>"; };
 		D2E430752B02DC5900E2C80B /* Parsing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Parsing.cpp; sourceTree = "<group>"; };
@@ -170,12 +166,8 @@
 			children = (
 				D2CC84A42B3E2FB400294F65 /* ATOM_SM.cpp */,
 				D2CC84A52B3E2FB400294F65 /* ATOM_SM.h */,
-				D2E4306C2B02DC5900E2C80B /* ATOMQRButtons.cpp */,
-				D2E4306D2B02DC5900E2C80B /* ATOMQR_UART_CMD.cpp */,
-				D2E4306E2B02DC5900E2C80B /* ATOMQRButtons.h */,
 				D2E4306F2B02DC5900E2C80B /* ATOMQRCodeModule.h */,
 				D2E430702B02DC5900E2C80B /* ATOMQRCodeModule.cpp */,
-				D2E430712B02DC5900E2C80B /* ATOMQR_UART_CMD.h */,
 			);
 			path = ATOM_QRCode_Module;
 			sourceTree = "<group>";

@@ -4,7 +4,11 @@
 #define SPIFFModule_h
 
 #include "../../Defines.h"
-#include "WiFi.h"
+#ifdef USE_REST_MESSAGING
+#include <WiFiClientSecure.h>
+#else
+#include <WiFi.h>
+#endif
 
 //! The SPIFF module is for storing messages that are retrievable later as it stores on a folder area of the ESP chip
 //!prints a timestamp

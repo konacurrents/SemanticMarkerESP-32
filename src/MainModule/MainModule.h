@@ -226,7 +226,8 @@ int getTimeStamp_mainModule();
 char * main_currentStatusJSON();
 
 //!returns a string in in URL so:  status&battery=84'&buzzon='off'  } .. etc
-char* main_currentStatusURL();
+//!if fullStatus, return everything, else just the ATOM stuff
+char* main_currentStatusURL(boolean fullStatus);
 
 #ifdef UNUSED
 //!sets status parts cia a a string in JSON format, such that {'battery':'84'}, {'buzzon':'off'} .. etc
@@ -400,4 +401,8 @@ void messageSetVal_mainModule(char *setName, char* valValue);
 //! for the set,val
 void messageSend_mainModule(char *sendValue);
 //!TODO: have a callback regist approach
+
+//! 1.1.24 send status of this device after events..
+void sendStatusMQTT_mainModule();
+
 #endif /* MainModule_h */

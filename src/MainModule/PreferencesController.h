@@ -97,7 +97,7 @@
 //! a place to put some kind of Last Will of what went wrong .. for now (> max tries)
 #define PREFERENCE_DEBUG_INFO_SETTING 37
 //! adding AP_DEBUG_MODE to let others know that DEBUG eprom is available. Turn this OFF for non dev
-#define AP_DEBUG_MODE
+//#define AP_DEBUG_MODE
 
 //!9.28.23 #272   only show Semantic Markers that are sent directly to the device
 #define PREFERENCE_DEV_ONLY_SM_SETTING 38
@@ -105,8 +105,14 @@
 //! the preference timer MAX (pairs with PREFERENCE_TIMER_INT_SETTING)
 #define PREFERENCE_TIMER_MAX_INT_SETTING 39
 
+//!1.1.24  the preference for all the ATOM plugs (format:  atomType:value} .. for now just use socket:on
+#define PREFERENCE_ATOMS_SETTING 40
+
+//!1.4.24  What kind of ATOM plug (set, M5AtomKind, val= {M5AtomSocket, M5AtomScanner}
+#define PREFERENCE_ATOM_KIND_SETTING 41
+
 //! *******  1 greater than last value **** IMPORTANT *** and no gaps..
-#define MAX_MAIN_PREFERENCES 40
+#define MAX_MAIN_PREFERENCES 42
 
 
 //!initialize the _preferencesMainLookup with EPROM lookup names
@@ -128,6 +134,7 @@ void storePreference_mainModule(int preferenceID, String preferenceValue);
 
 //! called to reset to blank a preference (which will be an identifier and a string, which can be converted to a number or boolean)
 void resetPreference_mainModule(int preferenceID);
+
 
 
 //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
@@ -188,4 +195,18 @@ void resetAllPreferences_mainModule();
 void setDiscoverM5PTClicker(boolean flag);
 //! get option
 boolean getDiscoverM5PTClicker();
+
+#pragma mark ATOM Processing
+
+//! new 1.4.24 setting ATOM kind (eg. M5AtomSocket, M5AtomScanner). MQTT message "set":"M5AtomKind", val=
+void savePreferenceATOMKind_MainModule(String value);
+//! new 1.4.24 setting ATOM kind (eg. M5AtomSocket, M5AtomScanner)
+char *getPreferenceATOMKind_MainModule();
+
+//!returned from mainModule
+#define ATOM_KIND_M5_SCANNER 0
+#define ATOM_KIND_M5_SOCKET 1
+//! new 1.4.24 setting ATOM kind (eg. ATOM_KIND_M5_SCANNER, ATOM_KIND_M5_SOCKET)
+int getM5ATOMKind_MainModule();
+
 #endif // PreferensesController_h

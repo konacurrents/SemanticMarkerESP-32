@@ -2,57 +2,437 @@
 #ifdef ATOM_QRCODE_MODULE
 #include "ATOMQRCodeModule.h"
 
-#include "ATOMQR_UART_CMD.h"
-//#include "ATOMQRButtons.h"
+
+/*
+ *******************************************************************************
+ *                  Equipped with Atom-Lite/Matrix sample source code
+ *                          配套  Atom-Lite/Matrix 示例源代码
+ * Visit for more information: https://docs.m5stack.com/en/atom/atomic_qr
+ * 获取更多资料请访问：https://docs.m5stack.com/zh_CN/atom/atomic_qr
+ *
+ * Product:  ATOM QR-CODE UART control.
+ * Date: 2021/8/30
+ *******************************************************************************
+ Press the button to scan, and the scan result will be printed out through
+ Serial. More Info pls refer: [QR module serial control command
+ list](https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/docs/datasheet/atombase/AtomicQR/ATOM_QRCODE_CMD_EN.pdf)
+ 
+ @ee https://github.com/konacurrents/ESP_IOT/issues/261
+ */
+
+//! semantic marker processing
+#include "ATOM_SM.h"
+
+//#include <M5Atom.h>
+
+#ifdef USE_FAST_LED
+#include "../ATOM_LED_Module/M5Display.h"
+#endif
 
 
-//!THIS IS the setup() and loop() but using the "component" name, eg AudioModule()
-//!This will perform preference initializtion as well
-//! called from the setup()
-//! Pass in the method to call on a loud (over a threshhold. The parameter for value will be sent
-//void setup_AudioModule(void (*loudCallback)(int));
-void setup_ATOMQRCodeModule()
-{
-//    setup_ATOMQRButtons();
-    setup_ATOMQR_UARD_CMD();
-}
+//! turn on/off the scanning .. actually go to Host mode ..
+void setHostMode_ATOMQRCodeModule(boolean flag);
 
-//! called for the loop() of this plugin
-void loop_ATOMQRCodeModule()
-{
-//    loop_ATOMQRButtons();
-    loop_ATOMQR_UARD_CMD();
-}
+//! ability to turn on/off the ATOMQRCodeModule's scanning
+boolean _isOn_ATOMQRCodeModule = true;
 
 //! 8.28.23  Adding a way for others to get informed on messages that arrive
 //! for the set,val
 void messageSetVal_ATOMQRCodeModule(char *setName, char* valValue)
 {
-    messageSetVal_ATOMQR_UARD_CMD(setName, valValue);
+
+    //! process specific commands ...
+    if (strcmp(setName, "atomscanner")==0)
+    {
+        boolean isTrue =  isTrueString_mainModule(valValue);
+
+        SerialTemp.printf("messageSetVal.ATOMQRCodeModule(%s,%s - %s)\n", setName, valValue, isTrue?"TRUE":"FALSE");
+
+        _isOn_ATOMQRCodeModule = isTrue;
+        //LATER..  scared.. to touch the QR scanner again..
+    }
 }
 
+boolean _shortPress_ATOMQRCodeModule = false;
+boolean _longPress_ATOMQRCodeModule = false;
+boolean _longLongPress_ATOMQRCodeModule = false;
+#define MAX_SM 500
+
+//! needs to be initialized
+char _lastSemanticMarker[MAX_SM];
+
+//!forward reference .. since if button press called externally..
+void loopCode_ATOMQRCodeModule();
 
 
 //! BUTTON PROCESSING abstraction
 //!short press on buttonA (top button)
 void buttonA_ShortPress_ATOMQRCodeModule()
 {
+    _shortPress_ATOMQRCodeModule = false;
+    _longPress_ATOMQRCodeModule = false;
+    _longLongPress_ATOMQRCodeModule = false;
     
-    //! BUTTON PROCESSING abstraction
-    //!short press on buttonA (top button)
-    buttonA_ShortPress_ATOMQR_UARD_CMD();
-   
-
+    _shortPress_ATOMQRCodeModule = true;
+    loopCode_ATOMQRCodeModule();
 }
 //!long press on buttonA (top button)
 void buttonA_LongPress_ATOMQRCodeModule()
 {
+    _shortPress_ATOMQRCodeModule = false;
+    _longPress_ATOMQRCodeModule = false;
+    _longLongPress_ATOMQRCodeModule = false;
     
-    //! BUTTON PROCESSING abstraction
-   
-    //!long press on buttonA (top button)
-    buttonA_LongPress_ATOMQR_UARD_CMD();
-
+    _longPress_ATOMQRCodeModule = true;
+    loopCode_ATOMQRCodeModule();
 }
 
+
+//!big button on front of M5StickC Plus
+void checkButtonB_ATOMQRCodeModule()
+{
+    _shortPress_ATOMQRCodeModule = false;
+    _longPress_ATOMQRCodeModule = false;
+    _longLongPress_ATOMQRCodeModule = false;
+    
+#ifdef ESP_M5
+    //    SerialDebug.println(" checkButtonA_ATOMQRCodeModule ***");
+    //    if (M5.BtnB.isPressed()) {
+    //                SerialDebug.println("M5.BtnB.isPressed");
+    //        _shortPress_ATOMQRCodeModule = true;
+    //    }
+    
+    //  M5.dis.fillpix(0x00ff00);  // GREEN  绿色
+    //    while (Serial2.available() > 0) {
+    //        char ch = Serial2.read();
+    //        SerialDebug.printf("CH= %c\n", ch);
+    //    }
+    
+    
+    
+    //!NOTE: ths issue is the timer is interruped by the scanner.. so make long-long very long..
+    //was 1000  (from 500)
+    if (M5.BtnB.wasReleasefor(3500))
+    {
+        //        buttonA_longPress_ATOMQRCodeModule();
+        SerialDebug.println(" **** LONG LONG PRESS ***");
+        _longLongPress_ATOMQRCodeModule = true;
+    }
+    else if (M5.BtnB.wasReleasefor(1000))
+    {
+        //        buttonA_longPress_ATOMQRCodeModule();
+        SerialDebug.println(" **** LONG PRESS ***");
+        _longPress_ATOMQRCodeModule = true;
+    }
+    else if (M5.BtnB.wasReleased())
+    {
+        //        buttonA_shortPress_ATOMQRCodeModule();
+        SerialDebug.println(" **** SHORT PRESS ***");
+        _shortPress_ATOMQRCodeModule = true;
+        
+    }
+    
+    
+#endif //ESP_M5
+}
+
+uint8_t wakeup_cmd       = 0x00;
+uint8_t start_scan_cmd[] = {0x04, 0xE4, 0x04, 0x00, 0xFF, 0x14};
+uint8_t stop_scan_cmd[]  = {0x04, 0xE5, 0x04, 0x00, 0xFF, 0x13};
+uint8_t host_mode_cmd[]  = {0x07, 0xC6, 0x04, 0x08, 0x00, 0x8A, 0x08, 0xFE, 0x95};
+
+
+uint8_t buzzerVolumeHigh[]    = {0x07, 0xC6, 0x04, 0x08, 0x00, 0xFE, 0x9B};
+uint8_t buzzerVolumeMiddle[]  = {0x07, 0xC6, 0x04, 0x08, 0x01, 0xFE, 0x9A};
+uint8_t buzzerVolumeLow[]     = {0x07, 0xC6, 0x04, 0x08, 0x02, 0xFE, 0x99};
+
+uint8_t bootSoundProhibit[]   = {0x08, 0xC6, 0x04, 0x08, 0x00, 0xF2, 0x0D, 0x00, 0xFE, 0x27};
+
+//more
+uint8_t continuous_mode_cmd[]  = {0x07, 0xC6, 0x04, 0x08, 0x00, 0x8A, 0x04, 0xFE, 0x99};
+
+//more
+uint8_t enable_scanning_config_mode_cmd[]    = {0x07, 0xC6, 0x04, 0x08, 0x00, 0xEC, 0x01, 0xFE, 0x3A};
+uint8_t prohibit_scanning_config_mode_cmd[]  = {0x07, 0xC6, 0x04, 0x08, 0x00, 0xEC, 0x00, 0xFE, 0x3B};
+
+//! init any globals
+//! 1.5.24
+void initGlobals_ATOMQRCodeModule()
+{
+    strcpy(_lastSemanticMarker,"");
+}
+
+//!  the setup() for this ATOM
+void setup_ATOMQRCodeModule()
+{
+    SerialDebug.println("setup_ATOMQRCodeModule");
+    initGlobals_ATOMQRCodeModule();
+    
+    
+    //M5.begin(true, false, true);
+    M5.begin(false, false, true);
+    
+    Serial2.begin(
+                  9600, SERIAL_8N1, 22,
+                  19);  // Set the baud rate of serial port 2 to 115200,8 data bits, no
+                        // parity bits, and 1 stop bit, and set RX to 22 and TX to 19.
+                        // 设置串口二的波特率为115200,8位数据位,没有校验位,1位停止位,并设置RX为22,TX为19
+    
+#ifdef USE_FAST_LED
+    //!NOTE: this could probably be done by ESP_IOT.ino .. but for now keep here (and in the other ATOM code..)
+    setup_M5Display();
+    fillpix(L_GREEN);
+#endif
+    
+    //! NOTE: it seems that a startup of a new ATOM with QRReader, requires the HOST most first, then
+    //! the continuous will work ... 12.25.23
+    
+    //! first wakeup the device
+    Serial2.write(wakeup_cmd);
+    delay(50);
+    
+    //        Serial2.write(buzzerVolumeLow, sizeof(buzzerVolumeLow));
+    
+    //NOT WORKING.. it was 12.9.23 (but then no beep on detection either)
+    //    Serial2.write(bootSoundProhibit, sizeof(bootSoundProhibit));
+    //    delay(50);
+    //    Serial2.write(buzzerVolumeLow, sizeof(buzzerVolumeLow));
+    //    delay(50);
+    
+    //!@see https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/docs/datasheet/atombase/AtomicQR/ATOM_QRCODE_CMD_EN.pdf
+    //   Serial2.write(prohibit_scanning_config_mode_cmd, sizeof(prohibit_scanning_config_mode_cmd));
+    Serial2.write(enable_scanning_config_mode_cmd, sizeof(enable_scanning_config_mode_cmd));
+    
+    delay(50);
+    //#define TRY_HOST
+#ifdef TRY_HOST
+    SerialDebug.println("TRY_HOST");
+    
+    //! then send the command (host .. or maybe continuous)
+    Serial2.write(host_mode_cmd, sizeof(host_mode_cmd));
+#else
+#define TRY_CONTINUOUS
+#endif
+    
+    
+    //    Serial2.write(buzzerVolumeLow, sizeof(buzzerVolumeLow));
+    //    Serial2.write(bootSoundProhibit, sizeof(bootSoundProhibit));
+    //#define TRY_CONTINUOUS
+#ifdef  TRY_CONTINUOUS
+    //THIS IS WORKING..
+    SerialDebug.println("TRY_CONTINUOUS");
+    Serial2.write(continuous_mode_cmd, sizeof(continuous_mode_cmd));
+#endif
+    
+    // strcpy(_lastSemanticMarker,"https://iDogWatch.com/bot/feed/test/test");
+    //  strcpy(_lastSemanticMarker,"https://iDogWatch.com/bot/smart/test/test");
+    strcpy(_lastSemanticMarker,"https://SemanticMarker.org/bot/smart?uuid=QHmwUurxC3&flow=1674517131429");
+    
+}
+
+//! turn on/off the scanning .. actually go to Host mode ..
+void setHostMode_ATOMQRCodeModule(boolean flag)
+{
+    if (flag)
+        Serial2.write(host_mode_cmd, sizeof(host_mode_cmd));
+    else
+        Serial2.write(continuous_mode_cmd, sizeof(continuous_mode_cmd));
+}
+
+
+//! the loop
+void loop_ATOMQRCodeModule()
+{
+    M5.update();
+    //    checkButtonA_ATOMQRCodeModule();
+    checkButtonB_ATOMQRCodeModule();
+    
+    //! do loop code
+    loopCode_ATOMQRCodeModule();
+}
+
+//! LOOP code.. refactored so it's also called when a buttonPress message arrives
+void loopCode_ATOMQRCodeModule()
+{
+    
+    //! this might be a mode..
+    //#ifndef TRY_CONTINUOUS
+#ifdef NOT_HERE
+    //  if (M5.BtnA.isPressed()) {
+    if (!_shortPress_ATOMQRCodeModule && !_longPress_ATOMQRCodeModule)
+    {
+        //        SerialDebug.println("button pressed");
+        
+        //     M5.dis.fillpix(0x0000ff);
+        //        Serial2.write(wakeup_cmd);
+        
+        delay(50);
+        Serial2.write(start_scan_cmd, sizeof(start_scan_cmd));
+        delay(1000);
+        Serial2.write(stop_scan_cmd, sizeof(stop_scan_cmd));
+        
+        //continuous not working..
+        
+        //        Serial2.write(buzzerVolumeLow, sizeof(buzzerVolumeLow));
+        //        Serial2.write(bootSoundProhibit, sizeof(bootSoundProhibit));
+        
+        //bug in original .. typo
+        // Serial2.write(start_scan_cmd, sizeof(stop_scan_cmd));
+    }
+#endif
+    
+    //#define read_serial_monitor
+#ifdef read_serial_monitor
+    //???  reads from the serial monitor it seems
+    // Actually .. there is a way to send a message form the serial monitor..
+    boolean serialData = false;
+    while (Serial.available()) {
+        serialData = true;
+        int ch = Serial.read();
+        //        Serial2.write(ch);
+        SerialDebug.write(ch);
+    }
+    if (serialData)
+        SerialDebug.println();
+    
+#endif
+    //???
+    //    if (Serial2.available()) {
+    //        int ch = Serial2.read();
+    //        Serial.write(ch);
+    //    }
+    char semanticMarker[MAX_SM];
+    char buf[2];
+    sprintf(semanticMarker,"");
+    boolean validScannedSM = false;
+    //! This read from the Serial2 -- the QR Scanner device, and outputs to the serial debug
+    //! BUT there seems to be strange charancters...
+    while (Serial2.available() > 0)
+    {
+        char ch = Serial2.read();
+        if (ch >= '!' && ch <= '~')
+        {
+            if (ch != ',')
+            {
+                validScannedSM = true;
+                //                SerialDebug.printf("0x%x ",ch);
+                //                SerialDebug.print(ch);
+                sprintf(buf,"%c",ch);
+                strcat(semanticMarker,buf); //adds NULL
+                
+                if (strlen(semanticMarker) >= MAX_SM)
+                {
+                    SerialDebug.printf(" *** TOO LONG A STRING *** '%s'\n", semanticMarker);
+                    strcpy(semanticMarker,"");
+                    validScannedSM = false;
+                }
+            }
+        }
+    }
+    //! if a valid scanned Semantic Marker .. process it
+    if (validScannedSM)
+    {
+#ifdef USE_FAST_LED
+        fillpix(L_WHITE);
+#endif
+        //        SerialDebug.println();
+//        sprintf(buf,"%c",'\0');
+//        
+//        strcat(semanticMarker,buf);
+        SerialDebug.printf("SM = '%s'\n", semanticMarker);
+        
+        
+        
+        //!process the semantic marker.  It will save to _lastSemanticMarker unless scannedDevice
+        boolean saveSM = ATOM_processSemanticMarker(semanticMarker, _lastSemanticMarker);
+        if (saveSM)
+        {
+            //!save globally..
+            strcpy(_lastSemanticMarker, semanticMarker);
+            
+            //!send this as a DOCFOLLOW message
+            sendSemanticMarkerDocFollow_mainModule(semanticMarker);
+        }
+        
+    }
+    
+    else if (_longPress_ATOMQRCodeModule)
+    {
+#ifdef USE_FAST_LED
+        fillpix(L_YELLOW);
+#endif
+        SerialDebug.printf("Sending last SM = '%s'\n", _lastSemanticMarker);
+        // send the _lastSemanticMarker again ...
+        //!send this as a DOCFOLLOW message
+        //  sendSemanticMarkerDocFollow_mainModule(_lastSemanticMarker);
+        
+        //!process the semantic marker AGAIN
+        //!used _lastSemanticMarker
+        boolean saveSM = ATOM_processSemanticMarker(_lastSemanticMarker, _lastSemanticMarker);
+        if (saveSM)
+        {
+            //!send this as a DOCFOLLOW message
+            sendSemanticMarkerDocFollow_mainModule(_lastSemanticMarker);
+        }
+    }
+    else if (_longLongPress_ATOMQRCodeModule)
+    {
+#ifdef USE_FAST_LED
+        fillpix(L_RED);
+#endif
+        SerialDebug.printf("CLEAN CREDENTIALS and reboot to AP mode\n");
+        
+        //! dispatches a call to the command specified. This is run on the next loop()
+        main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_CREDENTIALS);
+    }
+#ifdef TRY_HOST  ///no
+    else if (_shortPress_ATOMQRCodeModule)
+    {
+        delay(50);
+        Serial2.write(start_scan_cmd, sizeof(start_scan_cmd));
+        delay(1000);
+        Serial2.write(stop_scan_cmd, sizeof(stop_scan_cmd));
+    }
+#else
+    else if (_shortPress_ATOMQRCodeModule)
+    {
+#ifdef USE_FAST_LED
+        fillpix(L_BLUE);
+#endif
+        
+        SerialDebug.printf("Feed BLE\n");
+        // send the _lastSemanticMarker again ...
+        //!send this as a DOCFOLLOW message
+        //sendSemanticMarkerDocFollow_mainModule(_lastSemanticMarker);
+        //        strcpy(_lastSemanticMarker,"https://iDogWatch.com/bot/feed/test/test");
+        
+        ///feed always  (done after the code below..)
+        main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
+    }
+#endif
+}
+
+
+//!returns a string in in URL so:  status&battery=84'&buzzon='off'  } .. etc
+char * currentStatusURL_ATOMQRCodeModule()
+{
+    return (char*)"&smscanner=on";
+}
+
+//!returns a string in in JSON so:  status&battery=84'&buzzon='off'  } .. etc
+//!starts with "&"*
+char * currentStatusJSON_ATOMQRCodeModule()
+{
+    return (char*)"'smscanner':'on'";
+}
+
+/*
+ Seems to have a length issue on one loop of the serial ..  OR the next one shows up.. see line 2 below.. https starts up ..
+ SM = 'https://SemanticMarker.org/bot/smflowinfo?uuid=QHmwUurxC3&flow=1681834107821&flowname=MotionSensor&flowcat=ESP&USERNAME='
+ SM = '&PASSWORD=&M5_DEVICE_1=https://idogwatch.com/bot/feedguestdevice/scott@konacurrents.com/doggy/HowieFeeder'
+ SM = 'https://idogwatch.com/bot/feedguestdevice/scott@konacurrents.com/doggy/ScoobyDoo'
+ SM = 'https://iDogWatch.com/bot/set/scott@konacurrents.com/pass/SM_VideoPlayback/on'
+ SM = 'https://idogwatch.com/bot/feedguestdevice/scott@konacurrents.com/doggy/ScoobyDoo'
+ 
+ */
 #endif

@@ -139,7 +139,7 @@ int _startTimestamp = 0;
 
 #define STATUS "#STATUS"
 //NOTE: the "Me" names are known and keep them..
-#define REMOTE "#remoteMe"
+#define REMOTEME "#remoteMe"
 #define REMOTE2 "#REMOTE"
 #define FEED "#FEED"
 #define FEED_2 "#feedme"
@@ -240,7 +240,7 @@ boolean skipMessageProcessing()
     if (containsSubstring(_fullMessageIn, ACK_FEED)
         || containsSubstring(_fullMessageIn, ACK_FEED2)
         || containsSubstring(_fullMessageIn, REMOTE2)
-        || containsSubstring(_fullMessageIn, REMOTE))
+        || containsSubstring(_fullMessageIn, REMOTEME))
         skip = true;
     return skip;
 }
@@ -437,7 +437,7 @@ void getChipInfo()
 const char* getDynamicStatusFunc()
 {
     //Make URL for the status..
-    char *statusString = main_currentStatusURL();
+    char *statusString = main_currentStatusURL(true);
     
     //    sprintf(_semanticMarkerString,"%s/%s/%s/%s", "https://SemanticMarker.org/bot/sensor", _mqttUserString, _mqttGuestPasswordString, statusString);
     //shorten..
@@ -1430,7 +1430,7 @@ void reconnectMQTT_loop()
             //NOTE: no wildcards allowed on statusfeed.
             // Once connected, publish an announcement...
             //NOTE: _jsonLocationString is null... sometimes.
-            sprintf(_fullMessageOut, "%s {%s}{'mqttUser':'%s','location':'%s','uptime':'%d','v':'%s'}", REMOTE, _deviceNameString?_deviceNameString:"NULL", _mqttUserString?_mqttUserString:"NULL", _jsonLocationString?_jsonLocationString:"somewhere", getUptime(), VERSION);
+            sprintf(_fullMessageOut, "%s {%s}{'mqttUser':'%s','location':'%s','uptime':'%d',%s,'v':'%s'}", REMOTEME, _deviceNameString?_deviceNameString:"NULL", _mqttUserString?_mqttUserString:"NULL", _jsonLocationString?_jsonLocationString:"somewhere", getUptime(), main_currentStatusJSON(), VERSION);
             
             SerialInfo.println(_fullMessageOut);
             
@@ -1703,8 +1703,10 @@ void sendMessageNoChangeMQTT(char *message)
 //! sends the semantic marker as a doc follow message #remoteMe (vs STATUS, as that triggers a status reply.. )
 void sendStatusMessageMQTT_deviceName(char *deviceName, const char *semanticMarker)
 {
-    SerialTemp.println("sendStatusMessageMQTT..");
+    SerialCall.println("sendStatusMessageMQTT..");
+    //! don't call main_currentStatusURL .. since it was already called
     sprintf(_fullMessageOut, "#remoteMe {%s} {AVM=%s}", deviceName, semanticMarker);
+    //sprintf(_fullMessageOut, "#remoteMe {%s} {AVM=%s%s}", deviceName, semanticMarker, main_currentStatusURL(false));
     if   (_MQTTRunning)
     {
         //        _mqttClient.publish(_mqttTopicString, _fullMessageOut);
@@ -1726,11 +1728,11 @@ void sendStatusMessageMQTT(const char *semanticMarker)
 //! sends the semantic marker as a doc follow message
 void sendDocFollowMessageMQTT(const char *semanticMarker)
 {
-    SerialTemp.println("sendDocFollowMessageMQTT..");
+    SerialCall.println("sendDocFollowMessageMQTT..");
     if (!containsSubstring(semanticMarker,"https"))
         sprintf(_fullMessageOut, "#DOCFOLLOW {%s} {AVM=https://SemanticMarker.org/bot/%s}", _deviceNameString, semanticMarker);
     else
-#ifdef ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION
+#ifdef ESP_M5_ATOM_LITE
         //! using the followme syntax for now..
         sprintf(_fullMessageOut, "#followMe {AVM=%s}", semanticMarker);
 
@@ -1813,8 +1815,8 @@ void processBarkletMessage(String message, String topic)
         {
             //! FOR NOW , copy the code and create a _fullMessageOut that is for the Paired device...
             
-            sprintf(_fullMessageOut, "%s {%s} {%s} {I,F}  {'T':'%d','dev':'%s','user':'%s','location':'%s','v':'%s','ble':'%s'}",
-                    REMOTE,
+            sprintf(_fullMessageOut, "%s {%s} {%s} {I,F}  {'T':'%d','dev':'%s','user':'%s','location':'%s','v':'%s','ble':'%s,%s}",
+                    REMOTEME,
                     pairedDevice,
                     bluetoothOnline() ? CONNECTED : NOT_CONNECTED,
                     time,
@@ -1828,6 +1830,8 @@ void processBarkletMessage(String message, String topic)
 #else
                     "none"
 #endif
+                    // if calling this.. add "%s" to sprintf above..
+                    , main_currentStatusJSON()
                     );
             
             //publish this message..
@@ -1857,11 +1861,11 @@ void processBarkletMessage(String message, String topic)
             }
         }
 
-        //sprintf(_fullMessageOut, "%s {%s} {%s} {I,F} {T=now}", REMOTE, _deviceNameString, bluetoothOnline() ? CONNECTED : NOT_CONNECTED);
+        //sprintf(_fullMessageOut, "%s {%s} {%s} {I,F} {T=now}", REMOTEME, _deviceNameString, bluetoothOnline() ? CONNECTED : NOT_CONNECTED);
         // Once connected, publish an announcement...
         // sprintf(message, "#STATUS {%s} {%s}", _deviceNameString, chipName);
-        sprintf(_fullMessageOut, "%s {%s} {%s} {I,F}  {'T':'%d','dev':'%s','user':'%s','location':'%s','ble':'%s','v':'%s'}",
-                REMOTE,
+        sprintf(_fullMessageOut, "%s {%s} {%s} {I,F}  {'T':'%d','dev':'%s','user':'%s','location':'%s','ble':'%s','v':'%s',%s}",
+                REMOTEME,
                 _deviceNameString?_deviceNameString:"NULL",
                 bluetoothOnline() ? CONNECTED : NOT_CONNECTED,
                 time,
@@ -1870,12 +1874,14 @@ void processBarkletMessage(String message, String topic)
                 _jsonLocationString?_jsonLocationString:"somewhere",
 #ifdef USE_BLE_SERVER_NETWORKING
                 //! retrieve the service name (PTFEEDER, PTFeeder:Name, PTClicker:Name, etc)
-                getServiceName_BLEServerNetworking(),
+                getServiceName_BLEServerNetworking()
 #else
-                "none",
+                "none"
 #endif
-                VERSION);
-                
+                , VERSION
+                , main_currentStatusJSON()
+                );
+        
         messageValidToSendBack = true;
         
         addToTextMessages_displayModule(_fullMessageOut);
@@ -2247,11 +2253,27 @@ void performFeedMethod(char *topic)
         }
         
     }
-    sprintf(_fullMessageOut, "%s {%s} {'T':'%d','temp':'%2.0f','topic':'%s','user':'%s','v':'%s','location':'%s','paired':'%s', 'ble':'%s','connected':'%s','gateway':'%s'}", ACK_FEED, _deviceNameString, time, temp, &topic[0]?&topic[0]:"NULL",_mqttUserString, VERSION_SHORT, _jsonLocationString?_jsonLocationString:"somewhere",pairedDevice, isConnectedBLE?"c":"x", connectedBLEDeviceName_mainModule()?connectedBLEDeviceName_mainModule():"none", isGateway?"on":"off");
+    //! output the main #actMe message .. but it get's nothing from the plugins - like ATOM status
+    sprintf(_fullMessageOut, "%s {%s} {'T':'%d','temp':'%2.0f','topic':'%s','user':'%s','v':'%s','location':'%s','paired':'%s', 'ble':'%s','connected':'%s','gateway':'%s'", ACK_FEED, _deviceNameString, time, temp, &topic[0]?&topic[0]:"NULL",_mqttUserString, VERSION_SHORT, _jsonLocationString?_jsonLocationString:"somewhere",pairedDevice, isConnectedBLE?"c":"x", connectedBLEDeviceName_mainModule()?connectedBLEDeviceName_mainModule():"none", isGateway?"on":"off");
     
     // send the FEED to the display (if any)
     addToTextMessages_displayModule("FEED");
     
+#define TRY_MORE_URL
+#ifdef  TRY_MORE_URL
+    char *moreStatus = main_currentStatusJSON();
+    if (moreStatus && strlen(moreStatus) > 0)
+    {
+        strcat(_fullMessageOut, (char*)",");
+        
+        //Make URL for the status..
+        strcat(_fullMessageOut, moreStatus);
+    }
+    
+#endif
+    //! close the JSON message
+    strcat(_fullMessageOut, (char*)"}");
+
     //if (messageValidToSendBack)
     if (true)
     {
@@ -2999,7 +3021,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     case SM_status:
                     {
                         //Make URL for the status..
-                        char *statusString = main_currentStatusURL();
+                        char *statusString = main_currentStatusURL(true);
                         
                         //!create the SemanticMarker address
                         sprintf(_semanticMarkerString,"%s/%s/%s/%s", "https://SemanticMarker.org/bot/sensor", _mqttUserString?_mqttUserString:"NULL", guestPassword?guestPassword:"NULL", statusString?statusString:"NULL");
@@ -3966,6 +3988,16 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 else if (strcasecmp(valCmdString,"shortpress")==0)
                     buttonB_ShortPress_mainModule();
             }
+            else if (strcasecmp(setCmdString,"M5AtomKind")==0)
+            {
+                //! new 1.4.24 setting ATOM kind (eg. M5AtomSocket, M5AtomScanner). MQTT message "set":"M5AtomKind", val=
+                savePreferenceATOMKind_MainModule(valCmdString);
+            
+                //!for now just reboot which will use this perference
+                rebootDevice_mainModule();
+            }
+            
+            
             else
             {
                 SerialMin.printf("Unknown cmd: %s\n", setCmdString);

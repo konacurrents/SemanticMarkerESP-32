@@ -32,7 +32,7 @@ char _asyncParameter[500];
 //!global to store credentials when ever they are stored..
 char _JSONStringForWIFICredentials[200];
 //!global for others to use..
-#define MESSAGE_STORAGE_MAX 400
+#define MESSAGE_STORAGE_MAX 500
 char _messageStorage[MESSAGE_STORAGE_MAX];
 //!status string (URL query format)
 char _fullStatusString[300];
@@ -102,20 +102,33 @@ void setup_mainModule()
         //!#issue 116 .. turn off the BLE_Server for the M5
         SerialMin.println("FIRST TIME TURNING off the BLE_SERVER for the M5");
 #ifdef ESP_M5
+        
+#ifdef M5_ATOM
+        //! 1.4.24 use the _atomKind (which CAN change)
+        switch (getM5ATOMKind_MainModule())
+        {
+            case ATOM_KIND_M5_SCANNER:
+                //! 8.1.23 for the ATOM Lite QRCode Reader
 #ifdef ATOM_QRCODE_MODULE
-        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE,  true); //false);
-#else
+                savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE,  true); //false);
+#endif
+                
+                break;
+            case ATOM_KIND_M5_SOCKET:
+                //! 12.26.23 for the ATOM Socket Power
 #ifdef ATOM_SOCKET_MODULE
-        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE,  true); //false);
-#else
+                savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE,  true); //false);
+#endif
+                break;
+        }
+#else  // not M5_ATOM
+
         // 8.28.23 .. not doing this anymore..
         savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE,  false);
-//! cannot figure out #elseif syntax..
-#endif //atom_socket_module
-#endif //adom_qr_module
- 
+
         //! not ESP_M5
-#else
+#endif // M5_ATOM
+#else // NOT ESP_M5
         savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE, true);
 #endif
         //! all ..
@@ -381,13 +394,26 @@ void messageSetVal_mainModule(char *setName, char* valValue)
     SerialCall.printf("messageSetVal(%s,%s)\n", setName, valValue);
     // THE IDEA WOULD be a callback is avaialble..
     //FOR now.. just ifdef
+#ifdef M5_ATOM
+    //! 1.4.24 use the _atomKind (which CAN change)
+    switch (getM5ATOMKind_MainModule())
+    {
+        case ATOM_KIND_M5_SCANNER:
+            //! 8.1.23 for the ATOM Lite QRCode Reader
 #ifdef ATOM_QRCODE_MODULE
-    messageSetVal_ATOMQRCodeModule(setName, valValue);
+            messageSetVal_ATOMQRCodeModule(setName, valValue);
 #endif
-    
+            
+            break;
+        case ATOM_KIND_M5_SOCKET:
+            //! 12.26.23 for the ATOM Socket Power
 #ifdef ATOM_SOCKET_MODULE
-    messageSetVal_ATOM_SocketModule(setName, valValue);
+            messageSetVal_ATOM_SocketModule(setName, valValue);
 #endif
+            break;
+    }
+#endif //M5_ATOM
+    
 }
 //!TODO: have a callback regist approach
 
@@ -395,9 +421,25 @@ void messageSetVal_mainModule(char *setName, char* valValue)
 //! for the set,val
 void messageSend_mainModule(char *sendValue)
 {
-#ifdef ATOM_SOCKET_MODULE
-    messageSend_ATOM_SocketModule(sendValue);
+
+#ifdef M5_ATOM
+    //! 1.4.24 use the _atomKind (which CAN change)
+    switch (getM5ATOMKind_MainModule())
+    {
+        case ATOM_KIND_M5_SCANNER:
+            //! 8.1.23 for the ATOM Lite QRCode Reader
+#ifdef ATOM_QRCODE_MODULE
 #endif
+            
+            break;
+        case ATOM_KIND_M5_SOCKET:
+            //! 12.26.23 for the ATOM Socket Power
+#ifdef ATOM_SOCKET_MODULE
+            messageSend_ATOM_SocketModule(sendValue);
+#endif
+            break;
+    }
+#endif //M5_ATOM
 }
 
 #ifdef USE_MQTT_NETWORKING
@@ -630,9 +672,9 @@ boolean isValidPairedDevice_mainModule()
     {
         char *pairedDeviceAddress = getPairedDeviceAddress_mainModule();
         isValid = pairedDeviceAddress && strlen(pairedDeviceAddress)>0 && strcmp(pairedDeviceAddress,"NONE")!= 0;
-        SerialDebug.printf("isValidDeviceAddress(%s,%d)\n", pairedDeviceAddress, isValid);
+        SerialDebug.printf("isValidDeviceAddress(%s,%d)\n", pairedDeviceAddress?pairedDeviceAddress:(char*)"NULL", isValid);
    }
-    SerialDebug.printf("isValidPairedDevice_mainModule(%s,%d)\n", pairedDevice, isValid);
+    SerialDebug.printf("isValidPairedDevice_mainModule(%s,%d)\n", pairedDevice?pairedDevice:(char*)"NULL", isValid);
     return isValid;
 }
 
@@ -884,7 +926,7 @@ void main_dispatchAsyncCommand(int asyncCallCommand)
     else
 #endif
     {
-        SerialLots.printf("main_dispatchAsyncCommand: %d\n", asyncCallCommand);
+        SerialTemp.printf("main_dispatchAsyncCommand: %d\n", asyncCallCommand);
         _asyncCallFlags[asyncCallCommand] = true;
     }
 }
@@ -1266,7 +1308,7 @@ void invokeAsyncCommands()
                     //!sends the status from the main module URL
 #ifdef USE_MQTT_NETWORKING
                 {
-                    char *statusURL = main_currentStatusURL();
+                    char *statusURL = main_currentStatusURL(true);
                     SerialDebug.print(" ASYNC_SEND_MQTT_STATUS_URL: ");
                     SerialDebug.println(statusURL);
                     /// NO MORE: sendDocFollowMessageMQTT(statusURL);
@@ -1571,19 +1613,28 @@ boolean startsWithChar(char *str, char c)
 float getBatPercentage_mainModule()
 {
 #ifdef ESP_M5
+#ifdef M5_ATOM
+    float batVoltage = 1;
+    float batPercentage = 100;
+    //! the M5.Axp.GetBatVoltage() is VERY slow on the M5 (as there isn't one..)
+#else
     float batVoltage = M5.Axp.GetBatVoltage();
     float batPercentage = (batVoltage < 3.2) ? 0 : ( batVoltage - 3.2 ) * 100;
+#endif
 #else
     float batPercentage = 87.0;
 #endif
     
 #ifdef ESP_M5
+#ifdef M5_ATOM
+#else
     //!#Issue 117
     //!from: https://community.m5stack.com/topic/1361/ischarging-and-getbatterylevel/9
     //!GetVbatdata() is currently depreciated
     uint16_t vbatData = M5.Axp.GetVbatData();
     double vbat = vbatData * 1.1 / 1000;
     batPercentage =  100.0 * ((vbat - 3.0) / (4.07 - 3.0));
+#endif
 #endif
     if (batPercentage > 100.0)
         batPercentage = 100.0;
@@ -1620,8 +1671,12 @@ float getTemperature_mainModule()
     //!return celcius
     //!float temperature = M5.Axp.GetTempInAXP192();
     float temperature;
+#ifdef M5_ATOM
+#else
     M5.IMU.getTempData(&temperature);
-
+#endif
+    
+#ifdef USER_THE_MAX_TEMP_FEATURE
     int maxtemp =  getPreferenceInt_mainModule(PREFERENCE_HIGH_TEMP_POWEROFF_VALUE);
     if (temperature > maxtemp)
     {
@@ -1638,6 +1693,7 @@ float getTemperature_mainModule()
         //!poweroff_mainModule();
 
     }
+#endif
 
 #else
     float temperature = 10.0;
@@ -1677,12 +1733,34 @@ float getTemperature_mainModule()
 ]
 }
 */
+//!status in JSON format
 char* main_currentStatusJSON()
 {
     //returns a JSON string..
 //    String b = String(getBatPercentage(),0);
 //    return "{'status':[{'BLE':'on'},{'bat':'" + b + "'}]}";
-    return NULL;
+   // return (char*)"";
+    
+    //! 1.4.24 work on ATOM kinds without IFDEF (except to bring in the code)
+    
+    //! 1.4.24 use the _atomKind (which CAN change)
+    switch (getM5ATOMKind_MainModule())
+    {
+        case ATOM_KIND_M5_SCANNER:
+            //! 8.1.23 for the ATOM Lite QRCode Reader
+#ifdef ATOM_QRCODE_MODULE
+            return currentStatusJSON_ATOMQRCodeModule();
+#endif
+            
+            break;
+        case ATOM_KIND_M5_SOCKET:
+            //! 12.26.23 for the ATOM Socket Power
+#ifdef ATOM_SOCKET_MODULE
+            return currentStatusJSON_ATOM_SocketModule();
+#endif
+            break;
+    }
+    return (char*)"";
 }
 
 //! TODO: fix syntax. If just sensor sensor status: ....
@@ -1763,18 +1841,44 @@ void addMoreStatusQueryString()
 }
 
 //!returns a string in in URL so:  status?battery=84'&buzzon='off'  } .. etc
-char* main_currentStatusURL()
+//!if fullStatus, return everything, else just the ATOM stuff
+char* main_currentStatusURL(boolean fullStatus)
 {
-
+    if (fullStatus)
+    {
 #ifdef USE_MQTT_NETWORKING
-    char *deviceName = getDeviceNameMQTT();
-    //!TODO: make sure no spaces ... unless escaped
-    sprintf(_fullStatusString,"status?v=%s&dev=%s&b=%2.0f&temp=%2.0f&c=%0d&t=%0d",VERSION_SHORT, deviceName, getBatPercentage_mainModule(), getTemperature_mainModule(), getFeedCount_mainModule(), getLoopTimer_displayModule());
-
+        char *deviceName = getDeviceNameMQTT();
+        //!TODO: make sure no spaces ... unless escaped
+        sprintf(_fullStatusString,"status?v=%s&dev=%s&b=%02.0f&temp=%02.0f&c=%0d&t=%0d",VERSION_SHORT, deviceName, getBatPercentage_mainModule(), getTemperature_mainModule(), getFeedCount_mainModule(), getLoopTimer_displayModule());
+        
 #else
         //!TODO: make sure no spaces ... unless escaped
-    sprintf(_fullStatusString,"status?v=%s&b=%2.0f&temp=%2.0f&c=%0d&t=%0d",VERSION_SHORT, getBatPercentage_mainModule(), getTemperature_mainModule(), getFeedCount_mainModule(), getLoopTimer_displayModule());
+        sprintf(_fullStatusString,"status?v=%s&b=%02.0f&temp=%02.0f&c=%0d&t=%0d",VERSION_SHORT, getBatPercentage_mainModule(), getTemperature_mainModule(), getFeedCount_mainModule(), getLoopTimer_displayModule());
 #endif
+    }
+    else
+    {
+        _fullStatusString[0] = '\0';
+    }
+        
+    //! 1.4.24 use the _atomKind (which CAN change)
+    switch (getM5ATOMKind_MainModule())
+    {
+        case ATOM_KIND_M5_SCANNER:
+            //! 8.1.23 for the ATOM Lite QRCode Reader
+#ifdef ATOM_QRCODE_MODULE
+            strcat(_fullStatusString, currentStatusURL_ATOMQRCodeModule());
+#endif
+            
+            break;
+        case ATOM_KIND_M5_SOCKET:
+            //! 12.26.23 for the ATOM Socket Power
+#ifdef ATOM_SOCKET_MODULE
+            strcat(_fullStatusString, currentStatusURL_ATOM_SocketModule());
+#endif
+            break;
+    }
+    
 
     //add to _fullStatusString
     addMoreStatusQueryString();
@@ -2372,26 +2476,52 @@ void buttonA_ShortPress_mainModule()
 {
 #ifdef USE_BUTTON_MODULE
     buttonA_ShortPress_ButtonModule();
-#endif
+#else
+    //! 1.4.24 use the _atomKind (which CAN change)
+    switch (getM5ATOMKind_MainModule())
+    {
+        case ATOM_KIND_M5_SCANNER:
+            //! 8.1.23 for the ATOM Lite QRCode Reader
 #ifdef ATOM_QRCODE_MODULE
-    buttonA_ShortPress_ATOMQRCodeModule();
+            buttonA_ShortPress_ATOMQRCodeModule();
 #endif
+            
+            break;
+        case ATOM_KIND_M5_SOCKET:
+            //! 12.26.23 for the ATOM Socket Power
 #ifdef ATOM_SOCKET_MODULE
-    buttonA_ShortPress_ATOM_SocketModule();
+            buttonA_ShortPress_ATOM_SocketModule();
 #endif
+            break;
+    }
+#endif
+
 }
 //!long press on buttonA (top button)
 void buttonA_LongPress_mainModule()
 {
 #ifdef USE_BUTTON_MODULE
     buttonA_LongPress_ButtonModule();
-#endif
+#else
+    //! 1.4.24 use the _atomKind (which CAN change)
+    switch (getM5ATOMKind_MainModule())
+    {
+        case ATOM_KIND_M5_SCANNER:
+            //! 8.1.23 for the ATOM Lite QRCode Reader
 #ifdef ATOM_QRCODE_MODULE
-    buttonA_LongPress_ATOMQRCodeModule();
+            buttonA_LongPress_ATOMQRCodeModule();
 #endif
+            
+            break;
+        case ATOM_KIND_M5_SOCKET:
+            //! 12.26.23 for the ATOM Socket Power
 #ifdef ATOM_SOCKET_MODULE
-    buttonA_LongPress_ATOM_SocketModule();
+            buttonA_LongPress_ATOM_SocketModule();
 #endif
+            break;
+    }
+#endif
+
 }
 //!the long press of the side button
 void buttonB_LongPress_mainModule()
@@ -2413,4 +2543,13 @@ void restartAllMenuStates_mainModule()
 {
     //!restarts all the menu states to the first one .. useful for getting a clean start. This doesn't care if the menu is being shown
     restartAllMenuStates_ModelController();
+}
+
+//! 1.1.24 send status of this device after events..
+void sendStatusMQTT_mainModule()
+{
+    //On demand #STATUS send the statusURL as well (if an M5)
+    //this queues the sending of the StatusURL over MQTT.
+    // This is async (next loop) since sending 2 MQTT messages can be hard to do in a row ..
+    main_dispatchAsyncCommand(ASYNC_SEND_MQTT_STATUS_URL_MESSAGE);
 }

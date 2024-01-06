@@ -29,4 +29,11 @@ void buttonA_ShortPress_ATOM_SocketModule();
 //!long press on buttonA (top button)
 void buttonA_LongPress_ATOM_SocketModule();
 
+//!returns a string in in URL so:  status&battery=84'&buzzon='off'  } .. etc
+//!starts with "&"*
+char * currentStatusURL_ATOM_SocketModule();
+
+//!returns a string in in JSON so:  status&battery=84'&buzzon='off'  } .. etc
+//!starts with "&"*
+char * currentStatusJSON_ATOM_SocketModule();
 #endif

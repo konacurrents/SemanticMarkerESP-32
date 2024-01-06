@@ -29,6 +29,9 @@ void stepperModule_ProcessClientCmd(char cmd)
 //NOTE: there might be an issue that the REGISTERED methods aren't done yet .. so cannot call them..
 boolean _finishSetupCalledAlready;
 
+//! 1.4.24 work on ATOM kinds without IFDEF (except to bring in the code)
+int _atomKind;
+
 //forward definition
 void finishSetup();
 
@@ -124,17 +127,25 @@ void setup() {
   //setup the stepper for the feeder
   setup_UIModule();
 #endif
-
+    
+    //! 1.4.24 work on ATOM kinds without IFDEF (except to bring in the code)
+    _atomKind = getM5ATOMKind_MainModule();
+    switch (_atomKind)
+    {
+        case ATOM_KIND_M5_SCANNER:
 #ifdef ATOM_QRCODE_MODULE
-    //setup the ATOM QR Reader
-    setup_ATOMQRCodeModule();
+            //setup the ATOM QR Reader
+            setup_ATOMQRCodeModule();
 #endif
-   
+            break;
+        case ATOM_KIND_M5_SOCKET:
 #ifdef ATOM_SOCKET_MODULE
-    //setup the ATOM SOCKET Module
-    //! 12.26.23
-    setup_ATOM_SocketModule();
+            //setup the ATOM SOCKET Module
+            //! 12.26.23
+            setup_ATOM_SocketModule();
 #endif
+            break;
+    }
     
   SerialInfo.println("Starting PetTutor_Server");
   SerialDebug.printf("M5STACK VERSION = %s\n", M5STACK_VERSION);
@@ -366,16 +377,30 @@ void loop() {
   loop_BLEClientNetworking();
 #endif //USE_BLE_CLIENT_NETWORKING
     
-    //! 8.1.23 for the ATOM Lite QRCode Reader
+    //! 1.4.24 work on ATOM kinds without IFDEF (except to bring in the code)
+    _atomKind = getM5ATOMKind_MainModule();
+    
+    //! 1.4.24 use the _atomKind (which CAN change)
+    switch (_atomKind)
+    {
+        case ATOM_KIND_M5_SCANNER:
+            //! 8.1.23 for the ATOM Lite QRCode Reader
 #ifdef ATOM_QRCODE_MODULE
-    loop_ATOMQRCodeModule();
+            loop_ATOMQRCodeModule();
 #endif
-    
-    
-    //! 12.26.23 for the ATOM Socket Power
+            
+            break;
+        case ATOM_KIND_M5_SOCKET:
+            //! 12.26.23 for the ATOM Socket Power
 #ifdef ATOM_SOCKET_MODULE
-    loop_ATOM_SocketModule();
+            loop_ATOM_SocketModule();
 #endif
+            break;
+    }
+    
+
+    
+
    
   //** NOTE: the WIFI_AP_MODULE is tricky. The doneWIFI_APModule_Credentials() is set when done, but also when the MQTT networking is running (meaning the credentials were specified via BLE, or from EPROM)
 #ifdef USE_WIFI_AP_MODULE
