@@ -70,4 +70,25 @@ void setScreenColor_displayModule(int screenColor);
 
 //!show an OTA message..
 void showOTAUpdatingMessage();
+
+#ifdef M5CORE2_MODULE
+
+/**
+ First attempt at using the M5Core2 display to show something other than the M5 display
+ 1. scrolling text
+ */
+//! 1.24.24 Adding scrolling text (if that window on the M5Core2 is shown)
+void addToScrollingText_displayModule(String textString);
+//! 1.24.24 Goto the scrolling text mode ..
+void toggleShowingScrollingTextMode_displayModule();
+//! 1.24.24 Goto the scrolling text mode .. if flag 
+void setShowingScrollingTextMode_displayModule(boolean flag);
+
+//! add a loop for the alternate display
+void loop_Alternate_displayModule();
+
+//! scrolls the displayed text
+void scrollText_displayModule();
+#endif
+
 #endif // DisplayModule

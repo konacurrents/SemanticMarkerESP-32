@@ -111,8 +111,17 @@
 //!1.4.24  What kind of ATOM plug (set, M5AtomKind, val= {M5AtomSocket, M5AtomScanner}
 #define PREFERENCE_ATOM_KIND_SETTING 41
 
+//! 1.10.24 Flag on whether a Semantic Marker command is sent on PIR, and the Command to send
+#define PREFERENCE_SM_ON_PIR_SETTING 42
+//! 1.10.24 The  Semantic Marker command is sent on PIR, and the Command to send
+#define PREFERENCE_SM_COMMAND_PIR_SETTING 43
+//! 1.11.24 The  Semantic Marker command is sent on PIR, and the Command to send on OFF (or opposite)
+#define PREFERENCE_SM_COMMAND_PIR_OFF_SETTING 44
+//! 1.12.24 Whether the AtomSocket accepts global on/off messages
+#define PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING 45
+
 //! *******  1 greater than last value **** IMPORTANT *** and no gaps..
-#define MAX_MAIN_PREFERENCES 42
+#define MAX_MAIN_PREFERENCES 46
 
 
 //!initialize the _preferencesMainLookup with EPROM lookup names

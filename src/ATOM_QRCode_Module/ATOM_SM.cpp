@@ -23,6 +23,8 @@ void parseQueryArgs(char *credentialsStringInput, boolean useAnyArgs);
 
 #define MAX_SM 500
 char _copyLastSemanticMarker[MAX_SM];
+char _lastScannedGroupName[40];
+
 //! process the semantic marker (maybe from a click or a scan)
 //! If a SMART button, it will tack on username, password and optionally scannedDevice
 //! 12.15.23
@@ -82,6 +84,38 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
         strcpy(_copyLastSemanticMarker, lastSemanticMarker);
         //! this is 2 in one. So call ourself but using the lastSemanticMarker
         ATOM_processSemanticMarker(_copyLastSemanticMarker, lastSemanticMarker);
+        return false;
+    }
+    //! 1.7.24 (snow in mountains and down low .. ski monday)
+    else if (containsSubstring(semanticMarker,"/scannedGroup/"))
+    {
+        char *smartIndex = strstr(semanticMarker,"/scannedGroup/");
+        smartIndex += strlen("/scannedGroup/");
+        //! per issue #286, syntax has been extended to include arguments
+        //! /scannedGroup/GroupName?kind=AtomSocket&status=socket&valKind=onoff
+        //! HERE we just need to search for the "?" and that will be the Group name.
+        char *questionMark = strstr(smartIndex, "?");
+        char scannedGroupBuffer[50];
+        scannedGroupBuffer[0] = '\0';
+        int *scannedGroupLen;
+        //! see if any arguments (which we aren't using yet ..)
+        if (questionMark)
+        {
+            int len = questionMark - smartIndex;
+            strncpy(scannedGroupBuffer, smartIndex, len);
+            scannedGroupBuffer[len] = '\0';
+        }
+        else
+            strcpy(scannedGroupBuffer,smartIndex);
+        char *scannedGroup = scannedGroupBuffer;
+        //! save the group name (withoiut topic path) for use in the smrun below
+        strcpy(_lastScannedGroupName, scannedGroup);
+        
+        SerialDebug.printf("scannedGroup = %s\n", scannedGroup);
+        if (strcmp(scannedGroup,"_none")==0)
+            main_setScannedGroupName((char*)"");
+        else
+            main_setScannedGroupName(scannedGroup);
         return false;
     }
     else if (containsSubstring(semanticMarker, "WIFI:"))
@@ -273,7 +307,7 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
         main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
     }
     
-    
+    //! 1.7.24  For now only SMART buttons will use the GROUP feature (and only if local) not the smrun
     // SMART buttons..
     else if (containsSubstring(semanticMarker,"/smart"))
     {
@@ -282,6 +316,9 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
         //! /bot/smrun?uuid=x&flownum=y&username=X&password=y&device=z
         //! HERE .. we add the Username, Password and Device name.. parameters
 #ifdef USE_REST_MESSAGING
+        //! 1.7.24 if non null then valid group topic eg.  /usersP/group/GROUP_NAME
+        char *groupTopic = main_getScannedGroupNameTopic();
+        
         char getCommand[MAX_SM];
         char *username = main_getUsername();
         char *password = main_getPassword();
@@ -304,6 +341,8 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
             //! cmd: feed
             scannedDeviceValid = true;
         }
+        //! this is the cached (in code) SMART buton for feed. 
+        //! @See https://SemanticMarker.org/bot/smart?uuid=QHmwUurxC3&flow=1674517131429
         if (containsSubstring(semanticMarker, "QHmwUurxC3") && containsSubstring(semanticMarker,"1674517131429"))
         {
             //! this will be a cache of commands to try..
@@ -313,7 +352,10 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
                 //! dev: <dev>, cmd: feed
                 //! cmd: feed
                 sprintf(getCommand, "{'dev':'%s', 'cmd':'feed'}", scannedDeviceName);
-                sendMessageString_mainModule(getCommand);
+                if (groupTopic)
+                    sendMessageStringTopic_mainModule(getCommand, groupTopic);
+                else
+                    sendMessageString_mainModule(getCommand);
                 return true;
 
             }
@@ -322,6 +364,8 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
              //   sprintf(getCommand, "{'cmd':'feed'}");
             }
         }
+        //! this is the cached (in code) SMART buton for toggle socket power.
+        //! @See https://SemanticMarker.org/bot/smart?uuid=QHmwUurxC3&flow=1703806697279
         else if (containsSubstring(semanticMarker, "QHmwUurxC3") && containsSubstring(semanticMarker,"1703806697279"))
             //! SMART_ToggleSocket_Device
         {
@@ -334,7 +378,10 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
                 //! dev: <dev>, cmd: feed
                 //! cmd: feed
                 sprintf(getCommand, "{'dev':'%s', 'cmd':'togglesocket'}", scannedDeviceName);
-                sendMessageString_mainModule(getCommand);
+                if (groupTopic)
+                    sendMessageStringTopic_mainModule(getCommand, groupTopic);
+                else
+                    sendMessageString_mainModule(getCommand);
                 return true;
                 
             }
@@ -362,6 +409,12 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
         {
             strcat(getCommand, "&device=");
             strcat(getCommand, scannedDeviceName);
+        }
+        //!tack on the raw group name, not the groupTopic which is full path: usersP/group/NAME
+        if (groupTopic)
+        {
+            strcat(getCommand, "&group=");
+            strcat(getCommand, _lastScannedGroupName);
         }
 #ifdef FIRST_TAKE
         //!for this version .. we are just going to send username/password/device to the smart button .. it might not even use them but

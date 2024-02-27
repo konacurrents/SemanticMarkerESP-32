@@ -48,6 +48,32 @@ boolean _longLongPress_ATOM_SocketModule = false;
 //! whether the device is ON  (default of)
 //! called "RelayFlag" is the example
 boolean _isOn_ATOM_SocketModule;
+//! turn on/off the socket
+void toggle_ATOM_SocketModule();
+
+//#define KEY_UNIT_SENSOR_CLASS in defines.h
+#ifdef  KEY_UNIT_SENSOR_CLASS
+
+#include "../SensorClass/SensorClassType.h"
+#include "../SensorClass/KeyUnitSensorClass.h"
+
+KeyUnitSensorClass *_KeyUnitSensorClass_ATOMSocketModule;
+
+
+//a pointer to a callback function that takes (char*) and returns void
+void M5AtomSocketCallback(char *parameter, boolean flag)
+{
+    SerialDebug.printf("M5AtomSocket.sensorCallbackSignature(%s,%d)\n", parameter, flag);
+    
+    sendMessageString_mainModule((char*)"M5AtomSocket.KEY Pressed ");
+    
+#ifdef USE_FAST_LED
+    fillpix(L_YELLOW);
+#endif
+    toggle_ATOM_SocketModule();
+
+}
+#endif
 
 //! turn on/off the socket
 void set_ATOM_SocketModule(boolean flag)
@@ -91,14 +117,23 @@ void toggle_ATOM_SocketModule()
 //! 8.28.23  Adding a way for others to get informed on messages that arrive
 //! for the set,val
 //! 2.27.23 support setName == "socket"
-
-void messageSetVal_ATOM_SocketModule(char *setName, char* valValue)
+//! 1.10.24 if deviceNameSpecified then this matches this device, otherwise for all.
+//! It's up to the receiver to decide if it has to be specified
+//! 1.12.24 AtomSocketGlobalOnOff  to turn on/off global onoff
+void messageSetVal_ATOM_SocketModule(char *setName, char* valValue, boolean deviceNameSpecified)
 {
+    //! see if global on/off is supported..
+    //! So if globalOnOff definitely perform action. If deviceNameSpecified - perform action so OR of them
+    boolean globalOnOff = getPreferenceBoolean_mainModule(PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING);
+
     boolean isTrue =  isTrueString_mainModule(valValue);
     if (strcmp(setName,"socket")==0)
     {
-        SerialDebug.printf("messageSetVal_ATOM_SocketModule(%s)\n", valValue);
-        set_ATOM_SocketModule(isTrue);
+        SerialDebug.printf("messageSetVal_ATOM_SocketModule(%s - global =%d, dev=%d)\n", valValue, globalOnOff, deviceNameSpecified);
+        if (globalOnOff || deviceNameSpecified)
+        {
+            set_ATOM_SocketModule(isTrue);
+        }
     }
 }
 
@@ -154,6 +189,13 @@ void setup_ATOM_SocketModule()
     //!default whatever was the last mode Persistently..
     set_ATOM_SocketModule(_isOn_ATOM_SocketModule);
 
+#ifdef KEY_UNIT_SENSOR_CLASS
+    _KeyUnitSensorClass_ATOMSocketModule = new KeyUnitSensorClass((char*)"KeyUnitInstanceM5AtomSocket");
+    //! specify the callback
+    _KeyUnitSensorClass_ATOMSocketModule->registerCallback(&M5AtomSocketCallback);
+    //! call the setup
+    _KeyUnitSensorClass_ATOMSocketModule->setup();
+#endif
 }
 
 //! called for the loop() of this plugin
@@ -181,6 +223,10 @@ void loop_ATOM_SocketModule()
     
     //! do loop code
     loopCode_ATOM_SocketModule();
+    
+#ifdef KEY_UNIT_SENSOR_CLASS
+    _KeyUnitSensorClass_ATOMSocketModule->loop();
+#endif
 }
 
 //! BUTTON PROCESSING abstraction
@@ -261,6 +307,10 @@ void loopCode_ATOM_SocketModule()
     
 #endif
  
+    //! 1.11.24 one idea, use the PIR_SM and let this send that message
+    //! That way a long press could turn on all the devices, for example..
+    //! OR: just have a long press toggle but for everyone..
+    //! TODO..
     if (_longPress_ATOM_SocketModule)
     {
 #ifdef USE_FAST_LED

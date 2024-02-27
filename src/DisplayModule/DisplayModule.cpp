@@ -6,6 +6,7 @@
 //!@see https://docs.m5stack.com/en/api/stickc/lcd_m5stickc
 //!@see https://github.com/m5stack/M5StickC-Plus
 //!@see https://docs.m5stack.com/en/core/m5stickc_plus
+//!@see https://docs.m5stack.com/en/api/core2/lcd_api  (for the Core2)
 /**
  *  System:
  *    M5.begin();
@@ -64,6 +65,25 @@ void drawBitmapIcon()
 }
 #endif //later..
 
+#ifdef M5CORE2_MODULE
+boolean _showScrollingTextWindow = false;
+/**
+ 1.24.24 First attempt at using the M5Core2 display to show something other than the M5 display
+ 1. scrolling text
+ */
+#endif
+
+//! 1.24.24 as alternate display windows are introducted,
+//! let others know and don't overright stuff..
+boolean inAlternateDisplay()
+{
+#ifdef M5CORE2_MODULE
+    //! if showing the scrolling window .. don't do the rest ..
+    return _showScrollingTextWindow;
+#else
+    return false;
+#endif
+}
 
 //!prints the text up to the maxLen (the setup of position, etc is already done)
 void printText(String text, int maxLen);
@@ -89,6 +109,8 @@ const char* (*_getStatusFunc)(void) = NULL;
 //!if blank, then only show something after a click (not a message)
 boolean _semanticMarkerShown = false;
 
+//! 1.26.24 10 seems to be working..
+#define SEMANTIC_MARKER_QR_VERSION 10
 
 //!The type of screen (not the SM_home, etc, but using the SemanticTitle)
 //!NORMAL for normal display   .. we can use NORMAL for the first page..
@@ -219,8 +241,12 @@ int screenTypeForTitle_displayModule(String title)
 #define ORANGE 105
 
 #endif
-
+#ifdef M5CORE2_MODULE
+#define WIDTH 320
+#else
 #define WIDTH 135
+#endif
+
 #define HEIGHT_3 20
 #define HEIGHT_3_2LINE 60
 
@@ -285,6 +311,10 @@ TextPositionStruct _helpStatusTextPosition =
 TextPositionStruct _multilineStatusTextPosition   = {0,27,WIDTH,HEIGHT_4,FONT_2,WHITE,BLACK,BLACK,ROTATE_0,40};
 TextPositionStruct _multilineStatusTextPositionZoomed   = {0,65,WIDTH,HEIGHT_4,FONT_2,WHITE,BLACK,BLACK,ROTATE_0,40};
 
+#ifdef M5CORE2_MODULE
+//! 2.10.24 on M5Core2 there is a line under "MINI CLICKER" that can show the Device name and pair=
+TextPositionStruct _moduleDeviceNameTextPosition   = {0,40,WIDTH,HEIGHT_3,FONT_3,YELLOW,BLUE,BLACK,ROTATE_0,30};
+#endif
 //!status are the state modules (WIFI ON/off, etc)
 TextPositionStruct _moduleStatusTextPosition   = {0,67,WIDTH,HEIGHT_3,FONT_3,YELLOW,BLUE,BLACK,ROTATE_0,7};
 TextPositionStruct _moduleStatusTextPositionZoomed   = {0,105,WIDTH,HEIGHT_3,FONT_3,YELLOW,BLUE,BLACK,ROTATE_0,7};
@@ -338,8 +368,13 @@ TextPositionStruct _zoomedTextPositions[MAX_ACTIONS] = {
 //! init the text - but override the text color (stil using the textP.blankCOlor
 void setupTextPositionOverrideTextColor(TextPositionStruct textP, TextPositionStruct textColor)
 {
+    //SerialTemp.printf("setupText(%d,%d,w=%d,h=%d)\n", textP.x, textP.y, textP.width, textP.height);
 #ifdef ESP_M5
+#ifdef M5CORE2_MODULE
+    //! DON"T rotate -- for the M5Core2 display
+#else
     M5.Lcd.setRotation(textP.rotation);
+#endif
     M5.Lcd.fillRect(textP.x, textP.y, textP.width, textP.height, textColor.blankColor );
     M5.Lcd.setTextColor(textColor.textColor, textColor.textColorBackground);
     M5.Lcd.setCursor(textP.x + 2, textP.y);
@@ -372,6 +407,7 @@ void setupTextPosition(TextPositionStruct textP)
 void printTextAtTextPositionOverrideTextColor(String text, TextPositionStruct textPosition, TextPositionStruct textColor)
 {
     setupTextPositionOverrideTextColor(textPosition, textColor);
+    //SerialDebug.printf("'%s'\n", text);
 #ifdef ESP_M5
     M5.Lcd.print(text);
 #endif
@@ -485,54 +521,18 @@ String createSemanticAddress()
         _currentSemanticMarkerAddress = _currentSemanticMarkerAddressBase;
     }
     
-//#define TEST_LONGER_ADDRESS
-#ifdef TEST_LONGER_ADDRESS
-    //!seems the iPHone QR recognizer breaks after 144 characters .. or so..
-    //!  AVMetadataMachineReadableCodeObject *metadataObj = [metadataObjects objectAtIndex:i];
-    //if ([[metadataObj type] isEqualToString:AVMetadataObjectTypeQRCode])
-       // NSString *qrValue = [metadataObj stringValue];
-    
-    if (_loopTimer > 2)
-    {
-        _currentSemanticMarkerAddress += "&n=";
-        
-        // seems that 155 is max (of ability for iPhone to decode a QR but it's still recognized as a QR)
-        if (_currentSemanticMarkerAddress.length() < 130)
-        {
-            for (int i= _currentSemanticMarkerAddress.length(); i< 130; i++)
-            {
-                _currentSemanticMarkerAddress += "_";
-            }
-        }
-        for (int i=0; i< _loopTimer; i++)
-        {
-            _currentSemanticMarkerAddress += String(_loopTimer);
-        }
-    }
-    SerialTemp.printf("Length = %d\n", _currentSemanticMarkerAddress.length());
 
-    
-    // test ..
-    if (_loopTimer == 15)
-    {
-        // strip down to 155 .. yanking off each parameter?? or just chop it.. for not just chop it..
-        if (_currentSemanticMarkerAddress.length() > 154)
-        {
-            SerialTemp.println(" Truncating to 154 chartacters...");
-            
-            _currentSemanticMarkerAddress = _currentSemanticMarkerAddress.substring(0,154);
-        }
-    }
-#else
+    int maxLenForIphone = 250;
+
     // strip down to 155 .. yanking off each parameter?? or just chop it.. for not just chop it..
-    if (_currentSemanticMarkerAddress.length() > 154)
+    if (_currentSemanticMarkerAddress.length() > maxLenForIphone)
     {
-        SerialTemp.println(" Truncating to 154 chartacters...");
-
-        _currentSemanticMarkerAddress = _currentSemanticMarkerAddress.substring(0,154);
+        SerialTemp.printf("1. Truncating chartacters to: %d\n", maxLenForIphone);
+        SerialTemp.println(_currentSemanticMarkerAddress);
+        _currentSemanticMarkerAddress = _currentSemanticMarkerAddress.substring(0,maxLenForIphone);
     }
-#endif
-    SerialLots.println(_currentSemanticMarkerAddress);
+
+    SerialTemp.println(_currentSemanticMarkerAddress);
     return _currentSemanticMarkerAddress;
 }
 
@@ -689,7 +689,7 @@ void wakeupScreen_displayModule()
     
 }
 
-//!clears the screen (but not a blank screen)
+//!clears the screen (but not a blank screen) and stops the timer..
 void clearScreen_displayModule()
 {
     SerialCall.println("clearScreen_displayModule");
@@ -699,7 +699,11 @@ void clearScreen_displayModule()
     stopLoopTimer();
 
 #ifdef ESP_M5
+#ifdef M5CORE2_MODULE
+    //! DON"T rotate -- for the M5Core2 display
+#else
     M5.Lcd.setRotation(0);
+#endif
     M5.Lcd.fillScreen(BLACK);
 #endif
 }
@@ -734,16 +738,58 @@ void setupESP_M5()
 {
     SerialMin.println("setupESP_M5");
     
+#ifdef M5CORE2_MODULE
+    /*
+     https://arduino.stackexchange.com/questions/9092/how-do-you-call-a-class-method-with-named-parameters
+    begin(bool LCDEnable = true, bool SDEnable = true, bool SerialEnable = true,
+          bool I2CEnable = false, mbus_mode_t mode = kMBusModeOutput,
+          bool SpeakerEnable = true);
+    
+    M5.begin(true, true, true, false);
+    */
+    M5.begin( /*LCDEnable*/true,  /*SDEnable*/true,  /*SerialEnable*/ true,
+           /*I2CEnable*/ false,  /*mode*/ kMBusModeOutput,
+           /*SpeakerEnable*/ true);
+    
+    //! see if this lets battery work on M5 Core2 v1.1
+    //! 2.11.24 Super Bowl day
+    //! STILL NOT WORKING on the v1.1 device
+    /*
+    M5.Axp.SetLcdVoltage(3300);
+    M5.Axp.SetBusPowerMode(0);
+    M5.Axp.SetCHGCurrent(AXP192::kCHG_190mA);
+    */
+    /*
+    M5.Power.setPowerBoostOnOff(false); //Change the power on / off method. The power does not turn off when connected via USB. true=Press and hold to turn on / off. false=Turn on / off with two short presses.
+    M5.Power.setPowerBoostSet(false); //Change the power on / off method true=ON / OFF in one short press. false=same as above
+    M5.Power.setPowerVin(true); //When the power supply from USB etc. is cut off, Decide whether to turn on the power again.
+    M5.Power.setPowerBtnEn(true); //Set whether to accept the power button.
+    M5.Power.setPowerBoostKeepOn(false); //Always output power. True= Always output power. False=not Always output power.
+    M5.Power.setAutoBootOnLoad(true); //Set whether to automatically start when power consumption occurs
+     */
+#else
     //!Init M5StickC Plus.  初始化 M5StickC Plus
     M5.begin();
+#endif
     
     //!Set font size.
     //!Set the font color to yellow.  设置字体颜色为黄色
     M5.Lcd.setTextColor(WHITE);
     //!rotate to landscape (vs vertical)
     //!M5.Lcd.setRotation(3);
+#ifdef M5CORE2_MODULE
+    //! DON"T rotate -- for the M5Core2 display
+    SerialMin.println("M5CORE2_MODULE");
+    M5.Lcd.drawCircle(65,220, 10, WHITE);
+    M5.Lcd.drawCircle(155,220, 10, WHITE);
+    M5.Lcd.drawCircle(255,220, 10, WHITE);
+
+    //! *  M5.Lcd.drawCircle(int16_t x0, int16_t y0, int16_t r, uint16_t color);
+
+#else
     //!Rotate the screen. 将屏幕旋转
     M5.Lcd.setRotation(0);
+#endif
     //!set the cursor location.  设置光标位置
     
     //!Set font size.
@@ -757,7 +803,7 @@ void setupESP_M5()
     //!Draws a SemanticMarker&trade; (using QR code)
     //!Create a QR code with a width of 135 QR code  at (0, 100).  在(0,0)处创建一个宽为135二维码
     //!Please select the appropriate QR code version according to the number of characters.  请根据字符数量选择合适的二维码版本
-    M5.Lcd.qrcode("https://iDogWatch.com/bot/help",0,100,135);
+    M5.Lcd.qrcode("https://iDogWatch.com/bot/help",0,100,135,SEMANTIC_MARKER_QR_VERSION);
     //try to draw a character in the middle ...
     printTextAtTextPosition("SM",_zoomedTextPositions[QRAVATAR_ACTION]);
     //delay so they can read it a little bit..
@@ -785,6 +831,17 @@ void setup_displayModule()
 //! called for the loop() of this plugin
 void loop_displayModule()
 {
+    
+#ifdef M5CORE2_MODULE
+    //! 1.24.24 if alternate display then return ..
+    if (inAlternateDisplay())
+    {
+
+        loop_Alternate_displayModule();
+        return;
+    }
+#endif
+
     //!check if a delay was running..
     if (delayFinished())
     {
@@ -826,6 +883,14 @@ void loop_displayModule()
             redrawSemanticMarker_displayModule(KEEP_SAME);
         }
     }
+    
+#ifdef M5CORE2_MODULE
+    //! try to show where the 3 buttons are below the following box..
+    M5.Lcd.drawRect(50, 235, 10, 3, WHITE);
+    M5.Lcd.drawRect(155,235, 10, 3, WHITE);
+    M5.Lcd.drawRect(258,235, 10, 3, WHITE);
+    //! 240 too low..
+#endif
 }
 
 // ************ Drawing of the Action, Mode and Status  ***************
@@ -897,6 +962,11 @@ void drawAction(String title, int screenType)
                 //Hard wire back to "MINI CLICKER" since the MQTT code used a name to bind to this code, eg. MINI-2
                 setupTextPosition(_actionTextHomeSimpleColor[colorIndex]);
                 printText(" MINI  CLICKER", _actionTextHomeSimplePositionZoomed.maxLen);
+#ifdef M5CORE2_MODULE
+                setupTextPosition(_moduleDeviceNameTextPosition);
+                //sprintf(infoString,"%s, %.*s",deviceName_mainModule(),getPairedDeviceOrAddress_mainModule() );
+                printTextAtTextPosition(deviceName_mainModule(), _moduleDeviceNameTextPosition);
+#endif
             }
                 break;
             case SCREEN_TYPE_HOME_SIMPLE_3:
@@ -1516,7 +1586,7 @@ void redrawSemanticMarker_displayModule(boolean startNew)
 {
     int screenType = screenTypeForTitle_displayModule(_semanticTitle);
         
-    SerialLots.printf("redrawSemanticMarker_displayModule(startNew:%d, ScreenType = %d)\n", startNew, screenType);;
+    SerialCall.printf("redrawSemanticMarker_displayModule(startNew:%d, ScreenType = %d)\n", startNew, screenType);;
     if (startNew)
     {
         //! resets the preferences so the mini menu is running, and resets other preferences
@@ -1588,16 +1658,20 @@ void redrawSemanticMarker_displayModule(boolean startNew)
         //! this draws QR but using the lastDocFollowSemanticMarker
 #define QRAVATAR
 #ifdef ESP_M5
+#ifdef M5CORE2_MODULE
+        //! DON"T rotate -- for the M5Core2 display
+#else
         M5.Lcd.setRotation(0);
+#endif
         //!Draws a SemanticMarker&trade; (using QR code)
         //!Create a QR code with a width of 135 QR code  at (0, 100).  在(0,0)处创建一个宽为135二维码
         //!Please select the appropriate QR code version according to the number of characters.  请根据字符数量选择合适的二维码版本
         //try brightness
         setBrightness_displayModule(0);
 #ifdef USE_MQTT_NETWORKING
-        M5.Lcd.qrcode(getLastDocFollowSemanticMarker_MQTTNetworking(),0,100,135);
+        M5.Lcd.qrcode(getLastDocFollowSemanticMarker_MQTTNetworking(),0,100,135, SEMANTIC_MARKER_QR_VERSION);
 #else
-        M5.Lcd.qrcode("https://SemanticMarker.org",0,100,135);
+        M5.Lcd.qrcode("https://SemanticMarker.org",0,100,135,SEMANTIC_MARKER_QR_VERSION);
 
 #endif
 #ifdef QRAVATAR
@@ -1609,7 +1683,11 @@ void redrawSemanticMarker_displayModule(boolean startNew)
     else
     {
 #ifdef ESP_M5
+#ifdef M5CORE2_MODULE
+        //! DON"T rotate -- for the M5Core2 display
+#else
         M5.Lcd.setRotation(0);
+#endif
         SerialLots.print("last vs current: ");
         SerialLots.print(_lastSemanticMarkerAddress);
         SerialLots.println(" vs ");
@@ -1624,7 +1702,7 @@ void redrawSemanticMarker_displayModule(boolean startNew)
             //!Draws a SemanticMarker&trade; (using QR code)
             //!Create a QR code with a width of 135 QR code  at (0, 100).  在(0,0)处创建一个宽为135二维码
             //!Please select the appropriate QR code version according to the number of characters.  请根据字符数量选择合适的二维码版本
-            M5.Lcd.qrcode(_currentSemanticMarkerAddress,0,100,135);
+            M5.Lcd.qrcode(_currentSemanticMarkerAddress,0,100,135, SEMANTIC_MARKER_QR_VERSION);
 #ifdef QRAVATAR
             //try to draw a character in the middle ...  (D, etc)
             String smChar = _semanticTitle.substring(0,1);
@@ -1805,12 +1883,27 @@ void showText_displayModule(String text)
    // startDelay(10);
 }
 
+
+
+
+
 //! adds messages that aren't shown unless in message window mode.
 //! NOTE: This will be a scrolling text as sometime ..
 void addToTextMessages_displayModule(String text)
 {
     SerialLots.printf("addToTextMessages_displayModule:(%d)",displayOnBlankScreen());
     SerialLots.println(text);
+    
+#ifdef M5CORE2_MODULE
+    //! FOR now .. isBlankScreen isn't cared about ..
+    //! if showing the scrolling window .. don't do the rest ..
+    if (_showScrollingTextWindow)
+    {
+        //! 1.24.24 Adding scrolling text (if that window on the M5Core2 is shown)
+        addToScrollingText_displayModule(text);
+        return;
+    }
+#endif
 
     //!whether screen is blank (so the button can be a wake, vs action..)
     if (isBlankScreen_displayModule() and !displayOnBlankScreen())
@@ -1818,7 +1911,7 @@ void addToTextMessages_displayModule(String text)
         SerialLots.println("Not displaying since blank screen");
         return;
     }
-    
+
     
     //!different for home screen
     switch (_currentScreenType)
@@ -1844,6 +1937,84 @@ void addToTextMessages_displayModule(String text)
     }
 }
 
+#ifdef M5CORE2_MODULE
+//! add a loop for the alternate display
+void loop_Alternate_displayModule()
+{
+    //no op for now..
+}
+/**
+ First attempt at using the M5Core2 display to show something other than the M5 display
+ 1. scrolling text
+ */
+//! 1.24.24 Adding scrolling text (if that window on the M5Core2 is shown)
+void addToScrollingText_displayModule(String textString)
+{
+    if (_showScrollingTextWindow)
+    {
+        M5.Lcd.setTextSize(1);
+        M5.Lcd.println(textString);
+        M5.Lcd.println();
+    }
+}
+
+//! 1.24.24 Goto the scrolling text mode ..
+void toggleShowingScrollingTextMode_displayModule()
+{
+    boolean flag = !_showScrollingTextWindow;
+    setShowingScrollingTextMode_displayModule(flag);
+    //! now change perminately ...
+    _showScrollingTextWindow = !_showScrollingTextWindow;
+
+}
+
+//! 1.24.24 Goto the scrolling text mode .. if flag
+void setShowingScrollingTextMode_displayModule(boolean flag)
+{
+    //! only do something if changed state
+    if (flag == _showScrollingTextWindow)
+        return;
+    
+    if (flag)
+    {
+        //! stop timers, etc
+        //!stop the delay which says delay finished .. so don't show anything..  8.9.22
+        clearScreen_displayModule();
+        
+        // blank the area
+        //  M5.Lcd.fillRect(0, 60, 135, 140, WHITE);
+        M5.Lcd.setTextColor(WHITE, BLACK);
+        M5.Lcd.setCursor(0, 0);
+        M5.Lcd.setTextSize(1);
+        M5.Lcd.println("Messages from the Network");
+        //M5.Lcd.setTextWrap(true);
+    }
+    else
+    {
+        //! GO back to a normal screen..
+        //M5.Lcd.setTextWrap(false);
+        
+        //!wakes up the screen
+        M5.Lcd.fillScreen(BLACK);
+        wakeupScreen_displayModule();
+        
+    }
+}
+
+//! scrolls the displayed text
+void scrollText_displayModule()
+{
+    if (_showScrollingTextWindow)
+    {
+        //!TODO..
+        //!for now just clear the text...
+        M5.Lcd.fillScreen(BLACK);
+        M5.Lcd.setCursor(0, 0);
+        //! maybe the text keeps going ... can we ask the cursor location??
+    }
+
+}
+#endif
 
 #else // not DISPLAY_MODULE
 

@@ -24,7 +24,13 @@
 //! https://randomnerdtutorials.com/display-images-esp32-esp8266-web-server/
 #include <ArduinoJson.h>
 
+//!NOTE: 12.15.23  The WiFiClientSecure does NOT work with the access point shown below.
+//!So we will go back to the WiFi.h
+#ifdef X_USE_REST_MESSAGING
+#include <WiFiClientSecure.h>
+#else
 #include <WiFi.h>
+#endif
 #include <ESPmDNS.h>
 #include <WiFiClient.h>
 #include "WebServer.h"
@@ -472,9 +478,11 @@ s += "<button onClick=\"window.location.reload();\">Refresh to re-discover WIFI 
 
             SerialDebug.print("SSID: ");
             SerialDebug.println(ssid);
-            
-            String pass = removeSpaces(WIFI_urlDecode(WIFI_webServer.arg("pass")));
-            
+         
+            //! Issue #305 don't remove spaces...
+            //String pass = removeSpaces(WIFI_urlDecode(WIFI_webServer.arg("pass")));
+            String pass = WIFI_urlDecode(WIFI_webServer.arg("pass"));
+
 #ifdef MQTT
             _WIFI_mqttServer = removeSpaces(WIFI_urlDecode(WIFI_webServer.arg("mqtt_server")));
             _WIFI_mqttPort = removeSpaces(WIFI_urlDecode(WIFI_webServer.arg("mqtt_port")));

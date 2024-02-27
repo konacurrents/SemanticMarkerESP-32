@@ -2,6 +2,12 @@
 #upload (after compiling) a script for the ESP32
 #NOTE: FQBN stands for 'Fully Qualified Board Name'. When compiling or uploading code, this error will occur if no board is selected, or if the board 
 
+compileM5Core2:
+	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_M5CORE2_MODULE --fqbn esp32:esp32:m5stick-c | tee output
+
+compileM5AtomLite:
+	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_M5_ATOM_LITE --fqbn esp32:esp32:m5stick-c | tee output
+
 
 # with board
 compile:
@@ -14,11 +20,6 @@ compileNoBoard:
 compileM5:
 	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_M5_SMART_CLICKER_CONFIGURATION --fqbn esp32:esp32:m5stick-c | tee output
 
-compileM5AtomQR:
-	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION --fqbn esp32:esp32:m5stick-c | tee output
-
-compileM5AtomSocket:
-	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_M5_ATOM_SOCKET_CONFIGURATION --fqbn esp32:esp32:m5stick-c | tee output
 ####
 
 upload:
@@ -52,8 +53,8 @@ uploadFlashBoard: .
 uploadFlashM5: .
 	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA
 
-uploadFlashM5QRReader: .
-	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5QRReader
+uploadFlashM5AtomLite: .
+	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5Atom
 	
 # TEST/MAIN is being depreciated
 uploadFlashBoard_MAIN: .
@@ -85,16 +86,15 @@ uploadFlashM5TEST: .
 
 uploadFlashM5CameraTEST: .
 	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stack_timer_cam.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5
+	
 
-# Module ATOM QRCode Scanner
-uploadFlashM5QRReaderTEST: .
-	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5QRReader
+# Module M5ATOM Generically morphs to different ones
+uploadFlashM5AtomLiteTEST: .
+	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5Atom
 	
-# NOTE: The smart.html needs to be updated for these 
-# Module ATOM SOCKET MODULE
-uploadFlashM5AtomSocketTEST: .
-	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5AtomSocket
-	
+# M5Core2 1.25.24
+uploadFlashM5Core2TEST: .
+	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stack_core2.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5Core2
 	
 releaseFull: compileM5  compileBoard
 	tar cvfz releases.tar.gz ESP_IOT.ino.esp32.bin ESP_IOT.ino.m5stick_c_plus.bin

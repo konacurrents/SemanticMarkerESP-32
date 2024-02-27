@@ -66,9 +66,12 @@ void initGlobals_mainModule()
     strcpy(_fullBLEDeviceName,(char*)"");
     
     main_setScannedDeviceName((char*)"");
+    //! 1.7.24
+    main_setScannedGroupName((char*)"");
 
     
 }
+
 
 //THIS IS the setup() and loop() but using the "component" name, eg MQTTNetworking()
 //! called from the setup()
@@ -245,7 +248,7 @@ bool containsSubstring(String message, String substring)
 #include "../BLEClientModule/BLEClientNetworking.h"
 #endif
 #ifdef USE_BUTTON_MODULE
-#include "../ButtonModule/ButtonModule.h"
+#include "../ButtonModule/ButtonProcessing.h"
 #endif
 
 //! New RegisterCallback that works across a number of callback modules
@@ -354,7 +357,7 @@ void registerCallbackMain(int callbacksModuleId, int callbackType, void (*callba
 
     if (callbackType < 0 || callbackType >= max)
     {
-        SerialError.println("#### Error outside callback range");
+        SerialError.printf("#### Error outside callback range - 1, %d\n", callbackType);
     }
     else
     {
@@ -371,7 +374,8 @@ void callCallbackMain(int callbacksModuleId, int callbackType, char *message)
     
     if (callbackType < 0 || callbackType >= max)
     {
-        SerialError.println("#### Error outside callback range");
+        SerialError.printf("#### Error outside callback range - 2, %d\n", callbackType);
+
     }
     else {
         void (*callbackFunction)(char *) = _allCallbacks[callbacksModuleId][callbackType];
@@ -389,7 +393,9 @@ boolean isTrueString_mainModule(String valCmdString)
 
 //! 8.28.23  Adding a way for others to get informed on messages that arrive
 //! for the set,val
-void messageSetVal_mainModule(char *setName, char* valValue)
+//! 1.10.24 if deviceNameSpecified then this matches this device, otherwise for all.
+//! It's up to the receiver to decide if it has to be specified
+void messageSetVal_mainModule(char *setName, char* valValue, boolean deviceNameSpecified)
 {
     SerialCall.printf("messageSetVal(%s,%s)\n", setName, valValue);
     // THE IDEA WOULD be a callback is avaialble..
@@ -401,19 +407,22 @@ void messageSetVal_mainModule(char *setName, char* valValue)
         case ATOM_KIND_M5_SCANNER:
             //! 8.1.23 for the ATOM Lite QRCode Reader
 #ifdef ATOM_QRCODE_MODULE
-            messageSetVal_ATOMQRCodeModule(setName, valValue);
+            messageSetVal_ATOMQRCodeModule(setName, valValue, deviceNameSpecified);
 #endif
             
             break;
         case ATOM_KIND_M5_SOCKET:
             //! 12.26.23 for the ATOM Socket Power
 #ifdef ATOM_SOCKET_MODULE
-            messageSetVal_ATOM_SocketModule(setName, valValue);
+            messageSetVal_ATOM_SocketModule(setName, valValue, deviceNameSpecified);
 #endif
             break;
     }
 #endif //M5_ATOM
     
+#ifdef M5CORE2_MODULE
+    messageSetVal_M5Core2Module(setName, valValue, deviceNameSpecified);
+#endif
 }
 //!TODO: have a callback regist approach
 
@@ -440,6 +449,11 @@ void messageSend_mainModule(char *sendValue)
             break;
     }
 #endif //M5_ATOM
+    
+#ifdef M5CORE2_MODULE
+    messageSend_M5Core2Module(sendValue);
+
+#endif
 }
 
 #ifdef USE_MQTT_NETWORKING
@@ -633,7 +647,7 @@ void refreshDelayButtonTouched_MainModule()
 {
 #ifdef USE_BUTTON_MODULE
     //!calls the button processing control
-    refreshDelayButtonTouched_ButtonModule();
+    refreshDelayButtonTouched_ButtonProcessing();
 #endif
 }
 //! 3.28.22 .. implemented in ESP_IOT.ino
@@ -672,9 +686,9 @@ boolean isValidPairedDevice_mainModule()
     {
         char *pairedDeviceAddress = getPairedDeviceAddress_mainModule();
         isValid = pairedDeviceAddress && strlen(pairedDeviceAddress)>0 && strcmp(pairedDeviceAddress,"NONE")!= 0;
-        SerialDebug.printf("isValidDeviceAddress(%s,%d)\n", pairedDeviceAddress?pairedDeviceAddress:(char*)"NULL", isValid);
+        SerialLots.printf("isValidDeviceAddress(%s,%d)\n", pairedDeviceAddress?pairedDeviceAddress:(char*)"NULL", isValid);
    }
-    SerialDebug.printf("isValidPairedDevice_mainModule(%s,%d)\n", pairedDevice?pairedDevice:(char*)"NULL", isValid);
+    SerialLots.printf("isValidPairedDevice_mainModule(%s,%d)\n", pairedDevice?pairedDevice:(char*)"NULL", isValid);
     return isValid;
 }
 
@@ -837,6 +851,7 @@ void main_cleanSavedWIFICredentials()
 char *_MQTT_Password = (char*)"";
 char *_MQTT_Username = (char*)"";
 char _scannedDeviceName[100];
+char _scannedGroupTopicName[100];
 
 //! return the username and password
 //! 12.14.23 to support calling the SMART buttons (smrun) with parameters
@@ -862,6 +877,34 @@ void main_setScannedDeviceName(char *deviceName)
     strcpy(_scannedDeviceName, deviceName);
     SerialDebug.printf("main_setScannedDeviceName(%s)\n", deviceName);
 }
+
+//! set the scanned group name
+//! 1.7.24
+void main_setScannedGroupName(char *groupName)
+{
+    SerialDebug.printf("main_setScannedGroupName(%s)\n", groupName);
+    
+    if (groupName && strlen(groupName)>0)
+    {
+        char *groupTopic = groupTopicFullName(groupName);
+        strcpy(_scannedGroupTopicName, groupTopic);
+    }
+    else
+        strcpy(_scannedGroupTopicName, "");
+}
+//! return groupname -- returns "" or nil if not set,
+//! or the FULL group name topic, or nil
+char *main_getScannedGroupNameTopic()
+{
+    if (_scannedGroupTopicName && strlen(_scannedGroupTopicName)>0)
+    {
+        SerialDebug.printf("main_getScannedGroupNameTopic(%s)\n", _scannedGroupTopicName);
+        return _scannedGroupTopicName;
+
+    }
+    return NULL;
+}
+
 
 //! sets the WIFI and MQTT user/password. It's up to the code (below, maybe in future a register approach)  to decide who needs to know
 void main_updateMQTTInfo(char *ssid, char *ssid_password, char *username, char *password, char *guestPassword, char *deviceName, char * host, char * port, char *locationString)
@@ -1024,7 +1067,23 @@ void invokeAsyncCommands()
                     onWriteBLEServerCallbackFinish(_asyncParameter);
                 }
                     break;
+                                      
+                    //! 1.10.24 add ability to send a MQTT Semantic Marker message
+                case ASYNC_JSON_MQTT_MESSAGE_PARAMETER:
+                {
+                    //process the message
+                    SerialDebug.print("ASYNC_JSON_MQTT_MESSAGE_PARAMETER: ");
+                    SerialDebug.println(_asyncParameter);
                     
+                    //! This sends a MQTT message. Currently GROUP not supported
+                    //! TODO: add GROUP
+                    char *groupTopic = NULL;
+                    if (groupTopic)
+                        sendMessageStringTopic_mainModule(_asyncParameter, groupTopic);
+                    else
+                        sendMessageString_mainModule(_asyncParameter);
+                }
+                    break;
             }
             
         }
@@ -1308,12 +1367,22 @@ void invokeAsyncCommands()
                     //!sends the status from the main module URL
 #ifdef USE_MQTT_NETWORKING
                 {
+#ifdef ESP_M5_CAMERA
+                    char *statusURL = main_currentStatusURL(false);
+#else
                     char *statusURL = main_currentStatusURL(true);
+#endif
                     SerialDebug.print(" ASYNC_SEND_MQTT_STATUS_URL: ");
                     SerialDebug.println(statusURL);
                     /// NO MORE: sendDocFollowMessageMQTT(statusURL);
                     sendStatusMessageMQTT(statusURL);
                 }
+#endif
+#ifdef M5BUTTON_MODULE
+                    //! 1.23.24 call the status which re-evaluates the sensor ALIVE
+                    //! this status will be called and let the ALIVE re-evaluate
+                    //! Only do this on the STATUS since it might be slow for the LUX
+                    statusM5ButtonModule();
 #endif
                     break;
                     
@@ -1346,6 +1415,50 @@ void invokeAsyncCommands()
     }
 }
 
+//! 1.12.24 add a temporary LUX dark
+//! threshholdKind = 0 (LIGHT), 1=(DARK) .. others might be 2=super dark
+//#define THRESHOLD_KIND_LIGHT 0
+//#define THRESHOLD_KIND_DARK 1
+int _thresholdLUXDark = 80;
+int _thresholdLUXLight = 0;
+//! set the threshold val
+void setLUXThreshold_mainModule(int thresholdKind, int luxVal)
+{
+    switch (thresholdKind)
+    {
+        case THRESHOLD_KIND_LIGHT:
+            _thresholdLUXLight = luxVal;
+            break;
+        case THRESHOLD_KIND_DARK:
+            _thresholdLUXDark = luxVal;
+            break;
+    }
+}
+//! get the threshold val
+int  getLUXThreshold_mainModule(int thresholdKind)
+{
+    switch (thresholdKind)
+    {
+        case THRESHOLD_KIND_LIGHT:
+            return _thresholdLUXLight;
+            break;
+        case THRESHOLD_KIND_DARK:
+            return _thresholdLUXDark;
+            break;
+    }
+    return 80;
+}
+
+//!storage for the group topic name
+//!Note NO "/" in the front of the path only "usersP"
+char _groupTopicName[100];
+#define GROUP_TOPIC_TO_SEND (char*)"usersP/groups"
+//!returns a groupTopic to use as a topic
+char *groupTopicFullName(char *groupName)
+{
+    sprintf(_groupTopicName, "%s/%s",GROUP_TOPIC_TO_SEND, groupName);
+    return _groupTopicName;
+}
 
 //define a couple lights .. maybe move somewhere else..
 char* _ON_LIGHT = (char*)"ON";
@@ -1455,108 +1568,146 @@ void main_printModuleConfiguration()
 {
     //!Module Configuration
     SerialDebug.println(" ** #define Module Configuration **");
+    SerialDebug.println(" ** BUILDS **");
+
 #ifdef ESP_M5
     //![x] ESP_M5
     SerialMin.println("[x] ESP_M5");
 #else
-    SerialInfo.println("[ ] ESP_M5");
+    SerialMin.println("[ ] ESP_M5");
 #endif
 #ifdef ESP_M5_CAMERA
     //![x] ESP_M5
     SerialMin.println("[x] ESP_M5_CAMERA");
+#else
+    SerialMin.println("[ ] ESP_M5_CAMERA");
 #endif
 #ifdef ESP_32
     //! [x] ESP_32
     SerialMin.println("[x] ESP_32");
 #else
-    SerialInfo.println("[ ] ESP_32");
+    SerialMin.println("[ ] ESP_32");
 #endif
+#ifdef M5CORE2_MODULE
+    //![x] M5CORE2_MODULE
+    SerialMin.println(F("[x] M5CORE2_MODULE"));
+#else
+    SerialMin.println(F("[ ] M5CORE2_MODULE"));
+#endif
+    //Set this if the SMART clicker build is used.
+#ifdef ESP_M5_SMART_CLICKER_CONFIGURATION
+    SerialMin.println(F("[x] ESP_M5_SMART_CLICKER_CONFIGURATION"));
+#else
+    SerialMin.println(F("[ ] ESP_M5_SMART_CLICKER_CONFIGURATION"));
+#endif
+#ifdef ESP_M5_ATOM_LITE
+    SerialMin.println(F("[x] ESP_M5_ATOM_LITE"));
+#else
+    SerialMin.println(F("[ ] ESP_M5_ATOM_LITE"));
+#endif
+    
+    SerialDebug.println(F(" ** MQTT BLE NETWORKING **"));
+
 #ifdef USE_MQTT_NETWORKING
     //! [x] USE_MQTT_NETWORKING
     SerialMin.println("[x] USE_MQTT_NETWORKING");
 #else
-    SerialInfo.println("[ ] USE_MQTT_NETWORKING");
+    SerialMin.println("[ ] USE_MQTT_NETWORKING");
 #endif
 #ifdef USE_BLE_SERVER_NETWORKING
     //! [x] USE_BLE_SERVER_NETWORKING
     SerialMin.println("[x] USE_BLE_SERVER_NETWORKING");
 #else
-    SerialInfo.println("[ ] USE_BLE_SERVER_NETWORKING");
+    SerialMin.println("[ ] USE_BLE_SERVER_NETWORKING");
 #endif
 #ifdef USE_BLE_CLIENT_NETWORKING
     //! [x] USE_BLE_CLIENT_NETWORKING
-    SerialMin.println("[x] USE_BLE_CLIENT_NETWORKING");
+    SerialMin.println(F("[x] USE_BLE_CLIENT_NETWORKING"));
 #else
-    SerialInfo.println("[ ] USE_BLE_CLIENT_NETWORKING");
-    
-#endif
-#ifdef USE_BUTTON_MODULE
-    // [x] USE_BUTTON_MODULE
-    SerialMin.println("[x] USE_BUTTON_MODULE");
-#else
-    SerialInfo.println("[ ] USE_BUTTON_MODULE");
+    SerialMin.println(F("[ ] USE_BLE_CLIENT_NETWORKING"));
     
 #endif
 #ifdef USE_WIFI_AP_MODULE
     //! [x] USE_WIFI_AP_MODULE
-
-    SerialMin.println("[x] USE_WIFI_AP_MODULE");
+    
+    SerialMin.println(F("[x] USE_WIFI_AP_MODULE"));
 #else
-    SerialInfo.println("[ ] USE_WIFI_AP_MODULE");
+    SerialMin.println(F("[ ] USE_WIFI_AP_MODULE"));
     
 #endif
+    
+#ifdef USE_BUTTON_MODULE
+    // [x] USE_BUTTON_MODULE
+    SerialMin.println("[x] USE_BUTTON_MODULE");
+#else
+    SerialMin.println("[ ] USE_BUTTON_MODULE");
+    
+#endif
+    
+#ifdef M5BUTTON_MODULE
+    // [x] M5BUTTON_MODULE
+    SerialMin.println("[x] M5BUTTON_MODULE");
+#else
+    SerialMin.println("[ ] M5BUTTON_MODULE");
+    
+#endif
+
 #ifdef USE_STEPPER_MODULE
     SerialMin.println("[x] USE_STEPPER_MODULE");
 #else
-    SerialInfo.println("[ ] USE_STEPPER_MODULE");
+    SerialMin.println("[ ] USE_STEPPER_MODULE");
     
 #endif
 #ifdef USE_UI_MODULE
     SerialMin.println("[x] USE_UI_MODULE");
 #else
-    SerialInfo.println("[ ] USE_UI_MODULE");
+    SerialMin.println("[ ] USE_UI_MODULE");
     
 #endif
 #ifdef USE_DISPLAY_MODULE
     SerialMin.println("[x] USE_DISPLAY_MODULE");
 #else
-    SerialInfo.println("[ ] USE_DISPLAY_MODULE");
+    SerialMin.println("[ ] USE_DISPLAY_MODULE");
     
 #endif
 #ifdef BOARD
-    SerialMin.println("[x] BOARD");
+    SerialMin.println(F("[x] BOARD"));
 #else
-    SerialInfo.println("[ ] BOARD");
+    SerialMin.println(F("[ ] BOARD"));
 #endif
 #ifdef USE_SPIFF_MODULE
-    SerialMin.println("[x] USE_SPIFF_MODULE");
+    SerialMin.println(F("[x] USE_SPIFF_MODULE"));
 #else
-    SerialInfo.println("[ ] USE_SPIFF_MODULE");
+    SerialMin.println(F("[ ] USE_SPIFF_MODULE"));
 #endif
-//#ifdef PROTO
-//    SerialMin.println("[x] PROTO");
-//#else
-//    SerialInfo.println("[ ] PROTO");
-//#endif
 
-    //Set this if the SMART clicker build is used.
-#ifdef USE_SMART_CLICKER
-    SerialMin.println("[x] USE_SMART_CLICKER");
+#ifdef USE_FAST_LED
+    SerialMin.println(F("[x] USE_FAST_LED"));
 #else
-    SerialInfo.println("[ ] USE_SMART_CLICKER");
+    SerialMin.println(F("[ ] USE_FAST_LED"));
+#endif
+#ifdef KEY_UNIT_SENSOR_CLASS
+    SerialMin.println(F("[x] KEY_UNIT_SENSOR_CLASS"));
+#else
+    SerialMin.println(F("[ ] KEY_UNIT_SENSOR_CLASS"));
+#endif
+#ifdef USE_LED_BREATH
+    SerialMin.println(F("[x] USE_LED_BREATH"));
+#else
+    SerialMin.println(F("[ ] USE_LED_BREATH"));
 #endif
     
 #if (SERIAL_DEBUG_ERROR)
-    SerialMin.println("[x] SERIAL_DEBUG_ERROR");
+    SerialMin.println(F("[x] SERIAL_DEBUG_ERROR"));
 #endif
 #if (SERIAL_DEBUG_DEBUG)
-    SerialMin.println("[x] SERIAL_DEBUG_DEBUG");
+    SerialMin.println(F("[x] SERIAL_DEBUG_DEBUG"));
 #endif
 #if (SERIAL_DEBUG_INFO)
-    SerialMin.println("[x] SERIAL_DEBUG_INFO");
+    SerialMin.println(F("[x] SERIAL_DEBUG_INFO"));
 #endif
 #if (SERIAL_DEBUG_MINIMAL)
-    SerialMin.println("[x] SERIAL_DEBUG_MINIMAL");
+    SerialMin.println(F("[x] SERIAL_DEBUG_MINIMAL"));
 #endif
     
     //!and print any preferences to show
@@ -1612,22 +1763,18 @@ boolean startsWithChar(char *str, char c)
 //!start of the sensor updates ... TODO: tie these to the MQTT messaging as well..
 float getBatPercentage_mainModule()
 {
-#ifdef ESP_M5
-#ifdef M5_ATOM
     float batVoltage = 1;
-    float batPercentage = 100;
-    //! the M5.Axp.GetBatVoltage() is VERY slow on the M5 (as there isn't one..)
-#else
-    float batVoltage = M5.Axp.GetBatVoltage();
-    float batPercentage = (batVoltage < 3.2) ? 0 : ( batVoltage - 3.2 ) * 100;
-#endif
-#else
-    float batPercentage = 87.0;
-#endif
-    
+    float batPercentage = 100; //plugged in
 #ifdef ESP_M5
 #ifdef M5_ATOM
+    //! the M5.Axp.GetBatVoltage() is VERY slow on the M5 (as there isn't one..)
+#elif defined(M5CORE2_MODULE)
+    //!see https://forum.arduino.cc/t/elseif-not-working/565646/12
+    batVoltage = M5.Axp.GetBatVoltage();
+    batPercentage = (batVoltage < 3.2) ? 0 : ( batVoltage - 3.2 ) * 100;
 #else
+    batVoltage = M5.Axp.GetBatVoltage();
+    batPercentage = (batVoltage < 3.2) ? 0 : ( batVoltage - 3.2 ) * 100;
     //!#Issue 117
     //!from: https://community.m5stack.com/topic/1361/ischarging-and-getbatterylevel/9
     //!GetVbatdata() is currently depreciated
@@ -1636,6 +1783,7 @@ float getBatPercentage_mainModule()
     batPercentage =  100.0 * ((vbat - 3.0) / (4.07 - 3.0));
 #endif
 #endif
+ 
     if (batPercentage > 100.0)
         batPercentage = 100.0;
     return batPercentage;
@@ -1646,6 +1794,9 @@ float getBatPercentage_mainModule()
 //!adding a synchronous call to send a message over the network (assuming MQTT but not specified), this tacks on {device} and {t:time}
 void sendMessageString_mainModule(char *messageString)
 {
+    sendMessageStringTopic_mainModule(messageString, TOPIC_TO_SEND);
+#ifdef REFACTOR
+
 #ifdef USE_MQTT_NETWORKING
     SerialDebug.printf("sendMessageString_mainModule(%s)\n", messageString);
     if (strlen(messageString) > 0 && messageString[0] == '{')
@@ -1660,6 +1811,29 @@ void sendMessageString_mainModule(char *messageString)
         sprintf(_messageStorage,"#%s {%s} {t:%d}", messageString, getDeviceNameMQTT(), getTimeStamp_mainModule());
         //!send this message over MQTT
         sendMessageMQTT(_messageStorage);
+    }
+#endif
+#endif
+}
+
+
+//!adding a synchronous call to send a message over the network (assuming MQTT but not specified), this tacks on {device} and {t:time}
+void sendMessageStringTopic_mainModule(char *messageString, char*topicString)
+{
+#ifdef USE_MQTT_NETWORKING
+    SerialDebug.printf("sendMessageStringTopic_mainModule(%s) - topic=%s\n", messageString, topicString);
+    if (strlen(messageString) > 0 && messageString[0] == '{')
+    {
+        // JSON Message
+        //! 12.19.23 Amber in air from Iceland. 50 years since Dead 12.19.73
+        sendMessageNoChangeMQTT_Topic(messageString, topicString);
+    }
+    else if (strlen(messageString) < MESSAGE_STORAGE_MAX)
+    {
+        //!NOTE: the # has to be there, otherwise the sendMessageMQTT ignores it..
+        sprintf(_messageStorage,"#%s {%s} {t:%d}", messageString, getDeviceNameMQTT(), getTimeStamp_mainModule());
+        //!send this message over MQTT
+        sendMessageMQTT_Topic(_messageStorage, topicString);
     }
 #endif
 }
@@ -1760,6 +1934,15 @@ char* main_currentStatusJSON()
 #endif
             break;
     }
+  
+
+    
+#ifdef M5CORE2_MODULE
+    //!returns a string in in JSON so:  status&battery=84'&buzzon='off'  } .. etc
+    //!starts with "&"*
+    return currentStatusJSON_M5Core2Module();
+#endif
+    
     return (char*)"";
 }
 
@@ -1858,7 +2041,16 @@ char* main_currentStatusURL(boolean fullStatus)
     }
     else
     {
-        _fullStatusString[0] = '\0';
+        //_fullStatusString[0] = '\0';
+#ifdef USE_MQTT_NETWORKING
+        char *deviceName = getDeviceNameMQTT();
+        //!TODO: make sure no spaces ... unless escaped
+        sprintf(_fullStatusString,"status?v=%s&dev=%s",VERSION_SHORT, deviceName);
+        
+#else
+        //!TODO: make sure no spaces ... unless escaped
+        sprintf(_fullStatusString,"status?v=%s",VERSION_SHORT);
+#endif
     }
         
     //! 1.4.24 use the _atomKind (which CAN change)
@@ -1878,7 +2070,6 @@ char* main_currentStatusURL(boolean fullStatus)
 #endif
             break;
     }
-    
 
     //add to _fullStatusString
     addMoreStatusQueryString();
@@ -2470,13 +2661,95 @@ char *connectedBLEDeviceNameAddress_mainModule()
 }
 
 
+//! 1.22.24 add setup and loop at main so it can call appropriate plugs
+void loop_Sensors_mainModule()
+{
+#ifdef USE_BUTTON_MODULE
+    //! the model part of the MVC for buttons
+    loop_ButtonProcessing();
+#endif
+    
+    //! these are the plugin modules .. and only 1 active at a time except for ATOM
+#ifdef M5CORE2_MODULE
+    loop_M5Core2Module();
+#elif defined(M5_ATOM)
+    // start atom
+    //! multiple ATOM's alive at same time
+    //! 1.4.24 use the _atomKind (which CAN change)
+    switch (getM5ATOMKind_MainModule())
+    {
+        case ATOM_KIND_M5_SCANNER:
+            //! 8.1.23 for the ATOM Lite QRCode Reader
+#ifdef ATOM_QRCODE_MODULE
+            loop_ATOMQRCodeModule();
+#endif
+            
+            break;
+        case ATOM_KIND_M5_SOCKET:
+            //! 12.26.23 for the ATOM Socket Power
+#ifdef ATOM_SOCKET_MODULE
+            loop_ATOM_SocketModule();
+#endif
+            break;
+    }
+    // end atom
+#elif defined(USE_CAMERA_MODULE)
+    loop_CameraModule();
+#elif defined(M5BUTTON_MODULE)
+    loop_M5ButtonModule();
+#endif
+}
+
+//! 1.22.24 setup of buttons
+void setup_Sensors_mainModule()
+{
+    SerialDebug.println("setup_Sensors_mainModule");
+#ifdef USE_BUTTON_MODULE
+    //! the model part of the MVC for buttons
+    setup_ButtonProcessing();
+#endif
+    //! these are the plugin modules .. and only 1 active at a time except for ATOM
+#ifdef M5CORE2_MODULE
+    setup_M5Core2Module();
+#elif defined(M5_ATOM)
+    SerialDebug.printf("M5AtomKind = %d\n", getM5ATOMKind_MainModule());
+    // start atom
+    //! multiple ATOM's alive at same time
+    //! 1.4.24 use the _atomKind (which CAN change)
+    switch (getM5ATOMKind_MainModule())
+    {
+        case ATOM_KIND_M5_SCANNER:
+            //! 8.1.23 for the ATOM Lite QRCode Reader
+#ifdef ATOM_QRCODE_MODULE
+            setup_ATOMQRCodeModule();
+#endif
+            
+            break;
+        case ATOM_KIND_M5_SOCKET:
+            //! 12.26.23 for the ATOM Socket Power
+#ifdef ATOM_SOCKET_MODULE
+            setup_ATOM_SocketModule();
+#endif
+            break;
+    }
+    // end atom
+#elif defined(USE_CAMERA_MODULE)
+    //! let ESP_IOT.ino call this .. since it needs the WIFI running..
+    //setup_CameraModule();
+#elif defined(M5BUTTON_MODULE)
+    setup_M5ButtonModule();
+#endif
+}
 //! BUTTON PROCESSING abstraction
 //!short press on buttonA (top button)
 void buttonA_ShortPress_mainModule()
 {
 #ifdef USE_BUTTON_MODULE
-    buttonA_ShortPress_ButtonModule();
-#else
+    buttonA_ShortPress();
+#endif
+#ifdef M5CORE2_MODULE
+    buttonA_ShortPress_M5Core2Module();
+#elif defined(M5_ATOM)
     //! 1.4.24 use the _atomKind (which CAN change)
     switch (getM5ATOMKind_MainModule())
     {
@@ -2494,15 +2767,24 @@ void buttonA_ShortPress_mainModule()
 #endif
             break;
     }
+// end atom
+#elif defined(USE_CAMERA_MODULE)
+    buttonA_ShortPress_CameraModule();
+#elif defined(M5BUTTON_MODULE)
+    buttonA_ShortPress_M5ButtonModule();
 #endif
 
 }
+
 //!long press on buttonA (top button)
 void buttonA_LongPress_mainModule()
 {
 #ifdef USE_BUTTON_MODULE
-    buttonA_LongPress_ButtonModule();
-#else
+    buttonA_LongPress();
+#endif
+#ifdef M5CORE2_MODULE
+    buttonA_ShortPress_M5Core2Module();
+#elif defined(M5_ATOM)
     //! 1.4.24 use the _atomKind (which CAN change)
     switch (getM5ATOMKind_MainModule())
     {
@@ -2520,21 +2802,36 @@ void buttonA_LongPress_mainModule()
 #endif
             break;
     }
+    // end atom
+#elif defined(USE_CAMERA_MODULE)
+    buttonA_LongPress_CameraModule();
+#elif defined(M5BUTTON_MODULE)
+    buttonA_LongPress_M5ButtonModule();
 #endif
-
 }
+
+
 //!the long press of the side button
 void buttonB_LongPress_mainModule()
 {
 #ifdef USE_BUTTON_MODULE
-    buttonB_LongPress_ButtonModule();
+    buttonB_LongPress();
+#endif
+#ifdef M5BUTTON_MODULE
+    //!the long press of the side button
+     buttonB_LongPress_M5ButtonModule();
 #endif
 }
 //!the short press of the side button
 void buttonB_ShortPress_mainModule()
 {
 #ifdef USE_BUTTON_MODULE
-    buttonB_ShortPress_ButtonModule();
+    buttonB_ShortPress();
+#endif
+
+#ifdef M5BUTTON_MODULE
+    //!the long press of the side button
+    buttonB_ShortPress_M5ButtonModule();
 #endif
 }
 

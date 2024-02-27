@@ -100,13 +100,13 @@ void setup() {
 
 #endif
 
-#ifdef USE_CAMERA_MODULE
-  setup_CameraModule();
-#endif
+//! 2.4.24 (2.4.68 lisa birthday). Mine 2.5.58 tomorrow
+//! The setup_Buttons_mainModule() is really a setup_Sensors so
+//! take away the #ifdef
+  //calls the setup() for ButtonModule
+  setup_Sensors_mainModule();
 
 #ifdef USE_BUTTON_MODULE
-  //calls the setup() for ButtonModule
-  setup_ButtonModule();
 
   //register the single click
   registerCallbackMain(CALLBACKS_BUTTON_MODULE, SINGLE_CLICK_BM, &singleClickTouched);
@@ -127,25 +127,6 @@ void setup() {
   //setup the stepper for the feeder
   setup_UIModule();
 #endif
-    
-    //! 1.4.24 work on ATOM kinds without IFDEF (except to bring in the code)
-    _atomKind = getM5ATOMKind_MainModule();
-    switch (_atomKind)
-    {
-        case ATOM_KIND_M5_SCANNER:
-#ifdef ATOM_QRCODE_MODULE
-            //setup the ATOM QR Reader
-            setup_ATOMQRCodeModule();
-#endif
-            break;
-        case ATOM_KIND_M5_SOCKET:
-#ifdef ATOM_SOCKET_MODULE
-            //setup the ATOM SOCKET Module
-            //! 12.26.23
-            setup_ATOM_SocketModule();
-#endif
-            break;
-    }
     
   SerialInfo.println("Starting PetTutor_Server");
   SerialDebug.printf("M5STACK VERSION = %s\n", M5STACK_VERSION);
@@ -300,6 +281,12 @@ void finishSetup()
    setupSecureRESTCall();
 #endif
 
+
+//! 1.20.24 setup the camera after the WIFI is working .. 
+#ifdef USE_CAMERA_MODULE
+  setup_CameraModule();
+#endif
+
 }
 
 
@@ -331,7 +318,7 @@ void loop() {
 #endif
   
  #ifdef USE_CAMERA_MODULE
-  loop_CameraModule();
+ // loop_CameraModule();
 #endif
 
 
@@ -359,9 +346,8 @@ void loop() {
     //! called for the loop() of this plugin (this is almost the "frames" of the graphic, as fast as the runtime can make this loop! FAST.. 24 fps ??
   loop_displayModule();
     
-#ifdef USE_BUTTON_MODULE
-  loop_ButtonModule();
-#endif
+    //! loop on the buttons
+  loop_Sensors_mainModule();
 
   /** Do your thing here, this just spams notifications to all connected clients */
 #ifdef USE_STEPPER_MODULE
@@ -377,30 +363,6 @@ void loop() {
   loop_BLEClientNetworking();
 #endif //USE_BLE_CLIENT_NETWORKING
     
-    //! 1.4.24 work on ATOM kinds without IFDEF (except to bring in the code)
-    _atomKind = getM5ATOMKind_MainModule();
-    
-    //! 1.4.24 use the _atomKind (which CAN change)
-    switch (_atomKind)
-    {
-        case ATOM_KIND_M5_SCANNER:
-            //! 8.1.23 for the ATOM Lite QRCode Reader
-#ifdef ATOM_QRCODE_MODULE
-            loop_ATOMQRCodeModule();
-#endif
-            
-            break;
-        case ATOM_KIND_M5_SOCKET:
-            //! 12.26.23 for the ATOM Socket Power
-#ifdef ATOM_SOCKET_MODULE
-            loop_ATOM_SocketModule();
-#endif
-            break;
-    }
-    
-
-    
-
    
   //** NOTE: the WIFI_AP_MODULE is tricky. The doneWIFI_APModule_Credentials() is set when done, but also when the MQTT networking is running (meaning the credentials were specified via BLE, or from EPROM)
 #ifdef USE_WIFI_AP_MODULE
@@ -450,7 +412,9 @@ void loop() {
   //UNFORTUNATELY .. the WIFI and MQTT might fail .. and slow things down. NEED a better way to
   // run the MQTT loop (so others can get some time, like BLE).
 
-
-  delay(100);  //this delays the feed trigger response
-
+#ifdef ESP_32
+    delay(100);  //this delays the feed trigger response
+#else
+    delay(50); // 1.26.24 try a smaller loop delay
+#endif
 }

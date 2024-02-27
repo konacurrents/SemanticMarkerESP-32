@@ -181,15 +181,18 @@ class BLEServerNetworkingCharacteristicCallbacks : public NimBLECharacteristicCa
             // do something ..
             addToTextMessages_displayModule("BLE MSG");
             
-            M5.Beep.beep();
+           // M5.Beep.beep();
             
             //!Increment the screen color 0..n cache for getting the screen color 0..max (max provided by sender)
             //!This is implemented by incrementScreenColor_mainModule() since it knows the MAX value of colors
             incrementScreenColor_displayModule();
    
 #ifdef ESP_M5_CAMERA
+#ifdef USE_CAMERA_MODULE
+
             //!take a picture
             takePicture_CameraModule();
+#endif
 #endif // camera
 #endif
 #ifdef NOT_NOW_MQTT_NETWORKING

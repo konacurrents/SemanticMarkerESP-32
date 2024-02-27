@@ -166,7 +166,9 @@ void doneParsingIdentifier()
     pushIdentifier(_identifier);
 }
 
-// whether the character is a valid identifier character
+//! whether the character is a valid identifier character
+//! 1.22.24 adding ":" so fits a BLE address
+//! DevQuery: !M5Laybrinth & !84:cc:a8:7a:f6:aa
 boolean validIdentifierChar(char c)
 {
     boolean valid = false;
@@ -177,6 +179,8 @@ boolean validIdentifierChar(char c)
     else if (c >= 'a' && c <= 'z')
         valid = true;
     else if (c >= '0' && c <= '9')
+        valid = true;
+    else if (c == ':')
         valid = true;
     else valid = false;
     return valid;
@@ -253,7 +257,8 @@ void initParser()
 //!parses a line of text, returning the number of tokens..
 void parseQueryLine_mainModule(char *line)
 {
-
+//! NOTE: doesn't support the BLE addresses like:
+//! DevQuery: !M5Laybrinth & !84:cc:a8:7a:f6:aa
     SerialTemp.printf("\nDevQuery: %s\n", line);
     
     //! initialize the variables for parsing this line

@@ -26,7 +26,11 @@
 #include "../../Defines.h"
 
 #include <functional>
+#ifdef USE_REST_MESSAGING
+#include <WiFiClientSecure.h>
+#else
 #include <WiFi.h>
+#endif
 #include <Update.h>
 #include <WiFiUdp.h>
 

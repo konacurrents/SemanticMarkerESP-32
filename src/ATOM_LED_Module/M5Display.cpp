@@ -6,7 +6,7 @@
 #include "LED_DisPlay.h"
 //! the LED DIsplay Object
 LED_DisPlay _dis;
-boolean _M5Setup = false;
+boolean _M5DisplaySetup = false;
 
 void setup_M5Display()
 {
@@ -16,7 +16,7 @@ void setup_M5Display()
   _dis.setCore(1);
   _dis.start();
    
-  _M5Setup = true;
+  _M5DisplaySetup = true;
     
 }
 
@@ -42,13 +42,13 @@ void drawpix(uint8_t Number, CRGB Color)
 }
 void clear()
 {
-    if (_M5Setup)
+    if (_M5DisplaySetup)
         _dis.clear();
 }
 
 void fillpix(CRGB Color)
 {
-    if (_M5Setup)
+    if (_M5DisplaySetup)
         _dis.fillpix(Color);
 }
 

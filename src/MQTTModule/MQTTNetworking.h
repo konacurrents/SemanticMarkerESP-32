@@ -66,8 +66,14 @@ boolean processJSONMessageMQTT(char *ascii, char* topic);
 //! for now only send if it start message starts with "#"
  void sendMessageMQTT(char *message);
 
+//! for now only send if it start message starts with "#"
+void sendMessageMQTT_Topic(char *message, char *topic);
+
 //! just send a message but without any extras
 void sendMessageNoChangeMQTT(char *message);
+
+//! just send a message but without any extras, using a topic specified
+void sendMessageNoChangeMQTT_Topic(char *message, char *topic);
 
 //! Wrapper of the mqttclient publish
 void publishMQTTMessage(char *topic, char *message);

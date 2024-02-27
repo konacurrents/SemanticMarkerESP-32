@@ -131,6 +131,15 @@ char _preferenceBufferString[100];
 //!1.4.24  What kind of ATOM plug (set, M5AtomKind, val= {M5AtomSocket, M5AtomScanner}
 #define EPROM_PREFERENCE_ATOM_KIND_SETTING "41Atom"
 
+//! 1.10.24 Flag on whether a Semantic Marker command is sent on PIR, and the Command to send
+#define EPROM_PREFERENCE_SM_ON_PIR_SETTING "42pir"
+//! 1.10.24 The  Semantic Marker command is sent on PIR, and the Command to send
+#define EPROM_PREFERENCE_SM_COMMAND_PIR_SETTING "43pir"
+//! 1.11.24 The  Semantic Marker command is sent on PIR, and the Command to send
+#define EPROM_PREFERENCE_SM_COMMAND_PIR_OFF_SETTING "44pir"
+//! 1.12.24 Whether the AtomSocket accepts global on/off messages
+#define EPROM_PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING "45sock"
+
 //!the EPROM is in preferences.h
 #include <Preferences.h>
 //!name of main prefs eprom
@@ -163,8 +172,10 @@ boolean _isCachedPreferenceInt[MAX_MAIN_PREFERENCES];
 //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
 void savePreference_mainModule(int preferenceID, String preferenceValue)
 {
+#ifdef NOT_NOW
     if (preferenceID != PREFERENCE_DEBUG_INFO_SETTING)
         SerialTemp.printf("savePreference .. %d = '%s'\n", preferenceID, preferenceValue.c_str());
+#endif
     // cannot invoke the preference, as this would be an infinite loop back to here..
     
     //save in EPROM
@@ -504,7 +515,7 @@ void initPreferencesMainModule()
             case PREFERENCE_MAIN_BLE_CLIENT_VALUE:
                 _preferenceMainModuleLookupEPROMNames[i] = (char*) EPROM_MAIN_BLE_CLIENT_VALUE;
 #ifdef ESP_M5
-                //! 12.27.23  ON for most M5 , but off for the SOCKET 
+                //! 12.27.23  ON for most M5 , but off for the SOCKET
 #ifdef ATOM_SOCKET_MODULE
                 //! only the SOCKET will be off by default for now...
                 _preferenceMainModuleLookupDefaults[i] = (char*)"0";
@@ -588,9 +599,9 @@ void initPreferencesMainModule()
             case PREFERENCE_STEPPER_KIND_VALUE:
                 _preferenceMainModuleLookupEPROMNames[i] = (char*) EPROM_STEPPER_KIND_VALUE;
                 /*
-#define STEPPER_IS_UNO 1
-#define STEPPER_IS_MINI 2
-#define STEPPER_IS_TUMBLER 3
+                 #define STEPPER_IS_UNO 1
+                 #define STEPPER_IS_MINI 2
+                 #define STEPPER_IS_TUMBLER 3
                  per issue @269, default is now Tumbler
                  */
                 _preferenceMainModuleLookupDefaults[i] = (char*)"3";
@@ -719,7 +730,7 @@ void initPreferencesMainModule()
                 _preferenceMainModuleLookupEPROMNames[i] =
                 (char*)EPROM_PAIRED_DEVICE_ADDRESS_SETTING;
                 _preferenceMainModuleLookupDefaults[i] = (char*)"";
-
+                
                 break;
                 
                 ///!retreives the motor direction| 0 (false) = default, clockwise; 1 (true) = REVERSE, counterclockwise 9.8.22
@@ -749,10 +760,12 @@ void initPreferencesMainModule()
                 
                 //! 7.26.23 added group message support (or turn it off)
                 //! PREFERENCE_SUPPORT_GROUPS_SETTING
+                //! default OFF 1.15.24
+                //! @see https://github.com/konacurrents/ESP_IOT/issues/300
             case PREFERENCE_SUPPORT_GROUPS_SETTING:
                 _preferenceMainModuleLookupEPROMNames[i] =
                 (char*)EPROM_PREFERENCE_SUPPORT_GROUPS_SETTING;
-                _preferenceMainModuleLookupDefaults[i] = (char*)"1";
+                _preferenceMainModuleLookupDefaults[i] = (char*)"0";
                 break;
                 
                 //! 7.26.23 added group message support (or turn it off)
@@ -778,7 +791,7 @@ void initPreferencesMainModule()
                 (char*)EPROM_DEV_ONLY_SM_SETTING;
                 _preferenceMainModuleLookupDefaults[i] = (char*)"0";
                 break;
-           
+                
                 //! 1.1.24  first version of preferences for the ATOMs depending on which ATOM kind
                 //! first version, only the socket and the value is on/off
                 //! syntaxURL   socket=off&smscanner=on
@@ -793,6 +806,33 @@ void initPreferencesMainModule()
                 _preferenceMainModuleLookupEPROMNames[i] =
                 (char*)EPROM_PREFERENCE_ATOM_KIND_SETTING;
                 _preferenceMainModuleLookupDefaults[i] = (char*)"M5AtomScanner";
+                break;
+                
+                //! 1.10.24 The  Semantic Marker command is sent on PIR, and the Command to send
+            case PREFERENCE_SM_ON_PIR_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_PREFERENCE_SM_ON_PIR_SETTING;
+                _preferenceMainModuleLookupDefaults[i] = (char*)"0";
+                break;
+                
+                //! 1.10.24 The  Semantic Marker command is sent on PIR, and the Command to send
+            case PREFERENCE_SM_COMMAND_PIR_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_PREFERENCE_SM_COMMAND_PIR_SETTING;
+                _preferenceMainModuleLookupDefaults[i] = (char*)"{'set':'socket','val':'on'}";
+                break;
+                //! 1.11.24 The  Semantic Marker command is sent on PIR, and the Command to send for OFF
+            case PREFERENCE_SM_COMMAND_PIR_OFF_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_PREFERENCE_SM_COMMAND_PIR_OFF_SETTING;
+                _preferenceMainModuleLookupDefaults[i] = (char*)"{'set':'socket','val':'off'}";
+                break;
+                
+                //! 1.12.24 whether global on/off is allowed. Default on..
+            case PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING;
+                _preferenceMainModuleLookupDefaults[i] = (char*)"1";
                 break;
                 
             default:
@@ -849,6 +889,19 @@ void printPreferenceValues_mainModule()
     SerialTemp.printf("PREFERENCE_ATOMS_SETTING: %s\n", getPreference_mainModule(PREFERENCE_ATOMS_SETTING));
     SerialTemp.printf("PREFERENCE_ATOM_KIND_SETTING: %s\n", getPreference_mainModule(PREFERENCE_ATOM_KIND_SETTING));
 
+    //! 1.10.24 Flag on whether a Semantic Marker command is sent on PIR, and the Command to send
+    SerialTemp.printf("PREFERENCE_SM_ON_PIR_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_SM_ON_PIR_SETTING));
+    //! 1.10.24 The  Semantic Marker command is sent on PIR, and the Command to send
+    SerialTemp.printf("PREFERENCE_SM_COMMAND_PIR_SETTING: %s\n", getPreference_mainModule(PREFERENCE_SM_COMMAND_PIR_SETTING));
+    //! 1.11.24 The  Semantic Marker command is sent on PIR, and the Command to send
+    SerialTemp.printf("PREFERENCE_SM_COMMAND_PIR_OFF_SETTING: %s\n", getPreference_mainModule(PREFERENCE_SM_COMMAND_PIR_OFF_SETTING));
+    //! 1.12.24 The  Semantic Marker command is sent on PIR, and the Command to send
+    SerialTemp.printf("PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING));
+
+    
+#ifdef M5CORE2_MODULE
+    SerialTemp.printf("PREFERENCE_M5Core2_SETTING:\n");
+#endif
 #if (SERIAL_DEBUG_CALL)
     // this is many lines long .. so only show in the CALL settting..
     SerialTemp.printf("PREFERENCE_DEBUG_INFO_SETTING: %s\n", getPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING));

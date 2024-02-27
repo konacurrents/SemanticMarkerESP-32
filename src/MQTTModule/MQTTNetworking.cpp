@@ -200,8 +200,8 @@ boolean _MQTTRunning = false;
 #define MAX_MESSAGE 2024
 #else
 #define MAX_MESSAGE 1024
-
 #endif
+#define MAX_MESSAGE_DOCFOLLOW 300
 //!message received on subscription
 char _fullMessageIn[MAX_MESSAGE];
 //! message to send out
@@ -231,6 +231,12 @@ char* _jsonLocationString;
 //!this is sent from the backend as a message {'guest':'guest password'}  .. but lets' add to the credentials..
 //char* _mqttGuestPasswordString = NULL;
 
+/**
+ 2 kinds of #remoteMe messages, one JSON the other URL query
+ For now skip the URL
+ MessageArrived: '#remoteMe {AliensOnMars} {#connectedMe} {I,F}  {'T':'1706135533','dev':'AliensOnMars','user':'scott@konacurrents.com','location':'Buckley, WA','ble':'PTFeeder','v':'Version-(2.9a)-1.16.2024-ESP_32_FEEDER_GROUPS3_WIFI_AP',}', onTopic=usersP/bark/scott@konacurrents.com
+ MessageArrived: '#remoteMe {M5AtomSocket} {AVM=status?v=v7&dev=M5AtomSocket&b=100&temp=00&c=0&t=0&socket=off&W=on&M=on&B=off&C=off&A=off&T=off&S=on&bleS=PTClicker:M5AtomSocket&Z=off&G=off}', onTopic=usersP/bark/scott@konacurrents.com
+ **/
 
 //! whether message should be skipped for display and debug printouts
 //! uses _fullMessageIn global
@@ -240,7 +246,13 @@ boolean skipMessageProcessing()
     if (containsSubstring(_fullMessageIn, ACK_FEED)
         || containsSubstring(_fullMessageIn, ACK_FEED2)
         || containsSubstring(_fullMessageIn, REMOTE2)
-        || containsSubstring(_fullMessageIn, REMOTEME))
+#ifdef M5CORE2_MODULE
+        //! 1.24.24 let the JSON versions of #remoteMe go to the display text..
+        || (containsSubstring(_fullMessageIn, REMOTEME) && containsSubstring(_fullMessageIn, "AVM="))
+#else
+        || containsSubstring(_fullMessageIn, REMOTEME)
+#endif
+        )
         skip = true;
     return skip;
 }
@@ -348,7 +360,12 @@ void publishBinaryFile(char *topic, uint8_t * buf, size_t len)
         //String fileURL = "http://" + serverName + ":" + String(serverPort) + "/examples/uploads/" + filename;
        //!send this out as a DOCFOLLOW message (but different syntax)
        
-        sprintf(_semanticMarkerString,"#url {%s} {http://%s:%d/examples/uploads/%s}", getDeviceNameMQTT(), &serverName[0], serverPort, &filename[0]);
+        //sprintf(_semanticMarkerString,"#url {%s} {http://%s:%d/examples/uploads/%s}", getDeviceNameMQTT(), &serverName[0], serverPort, &filename[0]);
+        //! 1.20.24 There is an alias on KnowledgeShark.me that points to the http upload location
+        //! /home/ec2-user/httpd/conf/httpd.conf
+        //! Alias /uploads "/var/lib/tomcat8/webapps/examples/uploads"
+        sprintf(_semanticMarkerString,"#url {%s} {https://KnowledgeShark.me/uploads/%s}", getDeviceNameMQTT(),  &filename[0]);
+
         //sendSemanticMarkerDocFollow_mainModule(&fileURL[0]);
         //! for now only send if it start message starts with "#"
         publishMQTTMessageDefaultTopic(_semanticMarkerString);
@@ -357,6 +374,8 @@ void publishBinaryFile(char *topic, uint8_t * buf, size_t len)
     else
     {
         SerialDebug.printf("Connection NOT successful! ");
+        publishMQTTMessageDefaultTopic((char*)"Publish of image not successful");
+
     }
 
     
@@ -453,7 +472,7 @@ const char* getDynamicStatusFunc()
 //!https://SemanticMarker.org/bot/status?v=v5&dev=M55&b=94&temp=54&c=1&t=2&W=on&M=on&B=on&C=on&A=off&T=off&S=on&bleS=PTClicker:M55&Z=off&G=off&t=2
 
 //!storage for last doc follow semantic marker
-char _lastDocFollowSemanticMarker[200];
+char _lastDocFollowSemanticMarker[MAX_MESSAGE_DOCFOLLOW];
 //! retrieves the last DocFollow SemanticMarker (from the message #DOCFOLLOW | #followMe {AVM=<SM>}
 //! Or the JSON:  {'set':'semanticMarker','val','<URL>}
 char *getLastDocFollowSemanticMarker_MQTTNetworking()
@@ -470,7 +489,7 @@ void setLastDocFollowSemanticMarker_MQTTNetworking(char *semanticMarker)
 //! a counter to erase the last message if not changed in N calls..
 int _countSinceLastChangedMessageStatus = 0;
 //!storage of the last message status
-char _lastMessageStatusURL[100];
+char _lastMessageStatusURL[MAX_MESSAGE_DOCFOLLOW];
 
 //! Put all the storage initialization here..
 void initAllArrayStorage()
@@ -1082,7 +1101,7 @@ String get_WIFIInfoString()
 #else
 String get_WIFIInfoString()
 {
-    char buf[30];
+    char buf[50];
     sprintf(buf,"%s",WiFi.SSID());
     return "\n WIFI SSID: " + String(WiFi.SSID());
 }
@@ -1276,6 +1295,9 @@ void callbackMQTTHandler(char* topic, byte* payload, unsigned int length)
             return;
         }
     }
+    
+    //! 1.14.24 https://github.com/konacurrents/ESP_IOT/issues/297
+    //! Only lets group messages for specific messages. For now, lets have a method() that
 
 
     //!NOTE: This assumes the callbackMQTTHandler is only called once per message processed, as the next time in the loop(), it processes this _fullMessage since the _newMQTTMessageArrived == true
@@ -1657,6 +1679,9 @@ void cleanEPROM_MQTTNetworking()
 //! for now only send if it start message starts with "#"
 void sendMessageMQTT(char *message)
 {
+    sendMessageMQTT_Topic(message, _mqttTopicString);
+
+#ifdef REFACTOR
     if   (_MQTTRunning)
     {
         //Basically if we send {'cmd':'buzzon'} -- it comes back to us.. and infinite loop
@@ -1676,11 +1701,61 @@ void sendMessageMQTT(char *message)
 #endif
         }
     }
+#endif
 }
+
+//! for now only send if it start message starts with "#"
+void sendMessageMQTT_Topic(char *message, char *topic)
+{
+    if   (_MQTTRunning)
+    {
+        //Basically if we send {'cmd':'buzzon'} -- it comes back to us.. and infinite loop
+        // for now only send if it start message starts with "#"
+        if (containsSubstring(message, "#"))
+        {
+            sprintf(_fullMessageOut,"%s {%s}", message, _deviceNameString);
+            
+            //publish this message..
+            //            _mqttClient.publish(_mqttTopicString, _fullMessageOut);
+            //            SerialTemp.printf("Sending message:%s %s\n",_mqttTopicString,  _fullMessageOut);
+#ifdef TRY_MORE_ASYNC_PROCESSING
+            //publish back on topic
+            publishMQTTMessage(topic, _fullMessageOut);
+#else
+            _mqttClient.publish(topic, _fullMessageOut);
+#endif
+        }
+    }
+}
+
+//! just send a message but without any extras
+void sendMessageNoChangeMQTT_Topic(char *message, char *topic)
+{
+    if   (_MQTTRunning)
+    {
+        //Basically if we send {'cmd':'buzzon'} -- it comes back to us.. and infinite loop
+        // for now only send if it start message starts with "#"
+        
+        sprintf(_fullMessageOut,"%s", message);
+        
+        //publish this message..
+        //        _mqttClient.publish(_mqttTopicString, _fullMessageOut);
+        //        SerialTemp.printf("Sending message:%s %s\n",_mqttTopicString,  _fullMessageOut);
+#ifdef TRY_MORE_ASYNC_PROCESSING
+        //publish back on topic
+        publishMQTTMessage(topic, _fullMessageOut);
+#else
+        _mqttClient.publish(topic, _fullMessageOut);
+#endif
+    }
+}
+
 
 //! just send a message but without any extras
 void sendMessageNoChangeMQTT(char *message)
 {
+    sendMessageNoChangeMQTT_Topic(message, _mqttTopicString);
+#ifdef REFACTORED
     if   (_MQTTRunning)
     {
         //Basically if we send {'cmd':'buzzon'} -- it comes back to us.. and infinite loop
@@ -1698,12 +1773,12 @@ void sendMessageNoChangeMQTT(char *message)
         _mqttClient.publish(_mqttTopicString, _fullMessageOut);
 #endif
     }
+#endif
 }
-
 //! sends the semantic marker as a doc follow message #remoteMe (vs STATUS, as that triggers a status reply.. )
 void sendStatusMessageMQTT_deviceName(char *deviceName, const char *semanticMarker)
 {
-    SerialCall.println("sendStatusMessageMQTT..");
+    SerialTemp.println("sendStatusMessageMQTT..");
     //! don't call main_currentStatusURL .. since it was already called
     sprintf(_fullMessageOut, "#remoteMe {%s} {AVM=%s}", deviceName, semanticMarker);
     //sprintf(_fullMessageOut, "#remoteMe {%s} {AVM=%s%s}", deviceName, semanticMarker, main_currentStatusURL(false));
@@ -1897,6 +1972,9 @@ void processBarkletMessage(String message, String topic)
     {
       //! flag for whether feed will occur. it won't if a device is specified and it's not our device (unless super topic)
         boolean performFeed = true;
+#ifdef ESP_M5_CAMERA
+        performFeed = false;
+#endif
         //!check against the super feeder. If super feeder, then feed all devices, otherwise logic below
         if (!isSuperTopic())
         //if (!stringMatch(topic, "/usersP/bark") && !stringMatch(topic, "/usersP/dawgpack"))
@@ -2019,7 +2097,7 @@ void processBarkletMessage(String message, String topic)
         messageValidToSendBack = true;
     }
     //!3.25.22 -- trying the CLEAN the ePROM SSID
-    else if (containsSubstring(message, "#CLEAN_SSID_EPROM") && !isDawgpackTopic())
+    else if (containsSubstring(message, "#CLEAN_SSID_EPROM") && !isDawgpackTopic() && !isGroupTopic())
     {
         //! call the callback for cleaning the SSID eprom..
         callCallbackMain(CALLBACKS_MQTT, MQTT_CLEAN_SSID_EPROM, (char*)"cleanSSID_EPROM");
@@ -2692,6 +2770,8 @@ void invokeCurrentSMModePage(char *topic)
 }
 
 //!process the JSON message (looking for FEED, etc). Note: topic can be nil, or if not, it's an MQTT topic (so send replies if you want)
+//!1.14.24 THIS is the main JSON processor of messages. But now that groups can send almost any message, there
+//!needs to be a way define a subset of messages that groups can send on..
 boolean processJSONMessageMQTT(char *ascii, char *topic)
 {
     SerialLots.println(" *** processJSONMessageMQTT ***");
@@ -2702,13 +2782,14 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             _mqttTopicString = (char*)"usersP/bark/test";
         topic = _mqttTopicString;
     }
+    //! sets the global so isGroupTopic() will work
     classifyTopic(topic);
     
     if (!ascii)
         return false;
     
     //! 7.26.23 don't process if a group message and FLAG not set
-    if (_MQTTMessageTopicType == groupTopic)
+    if (isGroupTopic())
     {
         // if the EPROM says not to process groups .. then skip this message..
         //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
@@ -2786,6 +2867,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
     if (processSMARTButton)
         processCommands = true;
 #endif
+    
     
     //try 5.12.22 {'set':'item'},{'val':'value'}
     //   eg. set:hightemp, val:80
@@ -2923,7 +3005,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
         }
         else if (cmd)
         {
-            
+            //! 1.14.24 use the isGroupTopic() where needed..
             //SerialDebug.printf("BLE CMD = '%s'\n", cmd);
             //note: we could have a mode for "testing" .. so the OTA for example does't fire.
             //smN
@@ -2936,10 +3018,11 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             if (whichSMMode >= 0)
             {
                 //! per #206 .. only change the page when not in doc_follow
+                //! 1.22.24 if switching to mode 0 then it's ok..
                 //! 11.9.22
                 int currentSMMode = getCurrentSMMode_mainModule();
                 SerialDebug.printf("currentSMMode = %d whichSMMode = %d\n", currentSMMode, whichSMMode);
-                if (currentSMMode == SM_doc_follow)
+                if (currentSMMode == SM_doc_follow && whichSMMode > 0)
                 {
                     //! Issue: #222 for #206, this sets the current mode to SM_doc_follow, but
                     //! when at that page in the the current mode (which is now SM_doc_follow) won't let
@@ -3135,13 +3218,13 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     showSemanticMarker_displayModule(_semanticMarkerString, title);
                 }
             } //end smMode 0..n
-            else if (strcasecmp(cmd,"ota")==0)
+            else if (strcasecmp(cmd,"ota")==0 && !isGroupTopic())
             {
                 SerialDebug.println("OTA via BLE");
                 //!calls the OTA update method (this doesn't return as device is rebooted...)
                 performOTAUpdateMethod();
             }
-            else if (strcasecmp(cmd,"clean")==0)
+            else if (strcasecmp(cmd,"clean")==0 && !isGroupTopic())
             {
                 SerialDebug.println("CLEAN via BLE");
                 //!calls the method for cleaning the SSID eprom. This calls the WIFI_APModule callback
@@ -3196,7 +3279,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 //! request a STATUS be sent.
                 processBarkletMessage("#STATUS", topic);
             }
-            else if (strcasecmp(cmd,"erase")==0)
+            else if (strcasecmp(cmd,"erase")==0 && !isGroupTopic())
             {
                 SerialDebug.println("ERASE via BLE");
                 main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_EPROM);
@@ -3243,7 +3326,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 }
             }
             //BLECLient
-            else if (strcasecmp(cmd,"bleclientOn")==0)
+            else if (strcasecmp(cmd,"bleclientOn")==0 && !isGroupTopic())
             {
                 if (deviceNameSpecified)
                 {
@@ -3253,7 +3336,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     rebootDevice_mainModule();
                 }
             }
-            else if (strcasecmp(cmd,"bleclientOff")==0)
+            else if (strcasecmp(cmd,"bleclientOff")==0 && !isGroupTopic())
             {
                 if (deviceNameSpecified)
                 {
@@ -3263,7 +3346,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     rebootDevice_mainModule();
                 }
             }
-            else if (strcasecmp(cmd,"bleserverOn")==0)
+            else if (strcasecmp(cmd,"bleserverOn")==0 && !isGroupTopic())
             {
                 if (deviceNameSpecified)
                 {
@@ -3273,7 +3356,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     rebootDevice_mainModule();
                 }
             }
-            else if (strcasecmp(cmd,"bleserverOff")==0)
+            else if (strcasecmp(cmd,"bleserverOff")==0 && !isGroupTopic())
             {
                 if (deviceNameSpecified)
                 {
@@ -3283,7 +3366,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     rebootDevice_mainModule();
                 }
             }
-            else if (strcasecmp(cmd,"reboot")==0)
+            else if (strcasecmp(cmd,"reboot")==0 && !isGroupTopic())
             {
                 if (deviceNameSpecified)
                 {
@@ -3341,7 +3424,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     redrawSemanticMarker_displayModule(START_NEW);
                 }
             }
-            else if (strcasecmp(cmd,"poweroff")==0)
+            else if (strcasecmp(cmd,"poweroff")==0 && !isGroupTopic())
             {
                 SerialDebug.println("ASYNC_POWEROFF OFF via BLE");
                 main_dispatchAsyncCommand(ASYNC_POWEROFF);
@@ -3377,7 +3460,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             {
                 sendStrings_SPIFFModule(10);
             }
-            else if (strcasecmp(cmd,"deletespiff")==0)
+            else if (strcasecmp(cmd,"deletespiff")==0 && !isGroupTopic())
             {
                 deleteFiles_SPIFFModule();
             }
@@ -3407,6 +3490,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             }
             
             //! 12.27.23 pass this onto those registered (which mainModule is handling..)
+            //! 1.14.24 .. what about groups??
             if (deviceNameSpecified)
             {
                 char* sendCmdString  = const_cast<char*>(cmd);
@@ -3421,7 +3505,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             _mqttGuestPasswordString = const_cast<char*>(guestCmd);
             SerialDebug.printf("guestCmd = '%s'\n", _mqttGuestPasswordString);
         }
-        // {'sm':'name/cat/uuid'}
+        // 'sm':'name/cat/uuid'
         else if (semanticMarkerCmd)
         {
             //char semanticMarkerString[200];
@@ -3451,11 +3535,11 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             SerialTemp.println(valCmdString);
             
             //! 12.27.23 pass this onto those registered (which mainModule is handling..)
-            if (deviceNameSpecified)
-            {
-                //! 8.28.23  Tell Main about the set,val and if others are registered .. then get informed
-                messageSetVal_mainModule(setCmdString, valCmdString);
-            }
+            //! 8.28.23  Tell Main about the set,val and if others are registered .. then get informed
+            //! 1.10.24 if deviceNameSpecified then this matches this device, otherwise for all.
+            //! It's up to the receiver to decide if it has to be specified
+            //! 1.14.24 for now, setVal in the ATOM will support GROUP commands if turned on (and if off it doesn't get here)
+            messageSetVal_mainModule(setCmdString, valCmdString, deviceNameSpecified);
 
             //!set flag (if a boolean command)
             boolean flag = isTrueString(valCmdString);
@@ -3486,6 +3570,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 {
                     resetLoopTimer_displayModule();
                 }
+                
                 else
                 {
                     SerialTemp.printf("Unknown cmd: %s\n", valCmdString);
@@ -3503,7 +3588,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
 
             else if (strcasecmp(setCmdString,"ble+wifi")==0)
             {
-                if (deviceNameSpecified)
+                if (deviceNameSpecified && !isGroupTopic())
                 {
                     //set ble+wifi transient state..
                     savePreferenceBoolean_mainModule(PREFERENCE_SENDWIFI_WITH_BLE, flag);
@@ -3511,7 +3596,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             }
             else if (strcasecmp(setCmdString,"factoryreset")==0)
             {
-                if (deviceNameSpecified)
+                if (deviceNameSpecified && !isGroupTopic())
                 {
                     // factory reset .. eventually
                     resetAllPreferences_mainModule();
@@ -3553,7 +3638,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
                 setDiscoverM5PTClicker(flag);
             }
-            else if (strcasecmp(setCmdString,"usespiff")==0)
+            else if (strcasecmp(setCmdString,"usespiff")==0 && !isGroupTopic())
             {
                 //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
                 savePreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_SETTING, flag);
@@ -3564,7 +3649,39 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
 
                 }
             }
-        
+        //!NOTE: thes PIR and ATOM settings could be done in their modules AtomSocket but the LUX is in the butto
+            //! 1.10.24 per issue#289 support PIR calling a SM in JSON (not just the FEED)
+            else if (strcasecmp(setCmdString,"PIR_UseSM")==0 && !isGroupTopic())
+            {
+                savePreferenceBoolean_mainModule(PREFERENCE_SM_ON_PIR_SETTING, flag);
+                //FOR now .. use the default that is to turn on all sockets...
+            }
+            //! 1.12.24 AtomSocketGlobalOnOff  to turn on/off global onoff
+            else if (strcasecmp(setCmdString,"AtomSocketGlobalOnOff")==0 && !isGroupTopic())
+            {
+                //! set global on/off is supported..
+                savePreferenceBoolean_mainModule(PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING, flag);
+            }
+            //! 1.12.24 set the value for the LUX sepearator from light and dark
+            else if (strcasecmp(setCmdString,"LUXdark")==0 && !isGroupTopic())
+            {
+                //! save temporally ..
+                setLUXThreshold_mainModule(THRESHOLD_KIND_DARK, atoi(valCmdString));
+            }
+            //! 1.13.24 scannedGroup temporary setting of the group name
+            else if (strcasecmp(setCmdString,"scannedGroup")==0 && !isGroupTopic())
+            {
+                //! save temporally ..
+                main_setScannedGroupName(valCmdString);
+            }
+            //! 1.13.24 scannedDevice temporary setting of the group name
+            else if (strcasecmp(setCmdString,"scannedDevice")==0 && !isGroupTopic())
+            {
+                //! save temporally ..
+                main_setScannedDeviceName(valCmdString);
+            }
+
+            
             //!MQTT:  set: timerdelay, val:seconds
             else if  (strcasecmp(setCmdString,"timerdelay")==0)
             {
@@ -3625,14 +3742,14 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 main_dispatchAsyncCommandWithString(ASYNC_CALL_OTA_FILE_UPDATE_PARAMETER, valCmdString);
             }
             //!set the location
-            else if (strcasecmp(setCmdString,"location")==0)
+            else if (strcasecmp(setCmdString,"location")==0 && !isGroupTopic())
             {
                 //perform the OTA via a file specified .. be careful..
                 _jsonLocationString = createCopy(valCmdString);
                 updatePreferencesInEPROM();
             }
             //! rename device
-            else if (strcasecmp(setCmdString,"device")==0)
+            else if (strcasecmp(setCmdString,"device")==0 && !isGroupTopic())
             {
                 //define the device
                 _deviceNameString = createCopy(valCmdString);
@@ -3647,7 +3764,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             //! for future. 10.24.22
             else if (strcasecmp(setCmdString,"pairnow")==0)
             {
-                if (deviceNameSpecified)
+                if (deviceNameSpecified && !isGroupTopic())
                 {
                     //! TRUE will pair, FALSE will unpair
                     if (flag)
@@ -3663,7 +3780,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             //! paireddev the paired device (used with BLEUsePairedDeviceName and gen3Only
             else if (strcasecmp(setCmdString,"pairdev")==0)
             {
-                if (deviceNameSpecified)
+                if (deviceNameSpecified && !isGroupTopic())
                 {
                     char *previousName = getPreference_mainModule(PREFERENCE_PAIRED_DEVICE_SETTING);
                     if (strcasecmp(valCmdString,previousName)!=0)
@@ -3704,7 +3821,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             }
             
             //! sets the PREFERENCE_SUPPORT_GROUPS_SETTING
-            else if (strcasecmp(setCmdString,"usegroups")==0)
+            else if (strcasecmp(setCmdString,"usegroups")==0 && !isGroupTopic())
             {
                 //! sets the PREFERENCE_SUPPORT_GROUPS_SETTING flag
                 savePreferenceBoolean_mainModule(PREFERENCE_SUPPORT_GROUPS_SETTING, flag);
@@ -3714,7 +3831,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
 
             }
             //! sets the PREFERENCE_GROUP_NAMES_SETTING
-            else if (strcasecmp(setCmdString,"groups")==0)
+            else if (strcasecmp(setCmdString,"groups")==0 && !isGroupTopic())
             {
                 //! sets the PREFERENCE_GROUP_NAMES_SETTING val (eg. atlasDogs, houndDogs) or (#) or ""
                 savePreference_mainModule(PREFERENCE_GROUP_NAMES_SETTING, valCmdString);
@@ -3745,7 +3862,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             //! BLEUsePairedDeviceName (Says to only look for BLEServers with the paired name..
             else if (strcasecmp(setCmdString,"BLEUsePairedDeviceName")==0)
             {
-                if (deviceNameSpecified)
+                if (deviceNameSpecified && !isGroupTopic())
                 {
 #ifdef NO_MORE_PREFERENCE_BLE_USE_DISCOVERED_PAIRED_DEVICE_SETTING
                     //! sets the bleusepaireddevicename flag
@@ -3756,7 +3873,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             //! sets the BLEUseDeviceName  flag == the BLEServer will add the name, eg PTFeeder:ScoobyDoo
             else if (strcasecmp(setCmdString,"BLEUseDeviceName")==0)
             {
-                if (deviceNameSpecified)
+                if (deviceNameSpecified && !isGroupTopic())
                 {
                     //! sets the bleusedevicename flag
                     savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING, flag);
@@ -3789,7 +3906,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             }
             else if (strcasecmp(setCmdString,"addwifi")==0)
             {
-                if (deviceNameSpecified)
+                if (deviceNameSpecified && !isGroupTopic())
                 {
                     //has to support "Cisco:"
                     //parse the valCmdString:  ssid:password
@@ -3861,7 +3978,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             //!8.17.22 SubDawgpack
             else if (strcasecmp(setCmdString,"SubDawgpack")==0)
             {
-                if (deviceNameSpecified)
+                if (deviceNameSpecified && !isGroupTopic())
                 {
                     SerialDebug.println("PREFERENCE_SUB_DAWGPACK_SETTING via BLE");
                     savePreferenceBoolean_mainModule(PREFERENCE_SUB_DAWGPACK_SETTING, flag);
@@ -3883,7 +4000,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             }
 
             //!TODO: duplicate and depreciate these and replace with set:buzz,val:on
-            else if (strcasecmp(setCmdString,"buzz")==0)
+            else if (strcasecmp(setCmdString,"buzz")==0 && !isGroupTopic())
             {
                 //! this uses the ASYNC since it involves a BLE command, and has to be done outside
                 //! of this WIFI (MQTT) operation..
@@ -3903,7 +4020,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             //BLECLient
             else if (strcasecmp(setCmdString,"bleclient")==0)
             {
-                if (deviceNameSpecified)
+                if (deviceNameSpecified && !isGroupTopic())
                 {
                     SerialDebug.println("PREFERENCE_MAIN_BLE_CLIENT_VALUE via BLE");
                     savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE
@@ -3915,7 +4032,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             // bleserver
             else if (strcasecmp(setCmdString,"bleserver")==0)
             {
-                if (deviceNameSpecified)
+                if (deviceNameSpecified && !isGroupTopic())
                 {
                     SerialDebug.println("PREFERENCE_MAIN_BLE_SERVER_VALUE via BLE");
                     savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE, flag);
@@ -3925,7 +4042,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             }
             else if (strcasecmp(setCmdString,"tilt")==0)
             {
-                if (deviceNameSpecified)
+                if (deviceNameSpecified && !isGroupTopic())
                 {
                     SerialDebug.println("PREFERENCE_SENSOR_TILT_VALUE  via BLE");
                     savePreferenceBoolean_mainModule(PREFERENCE_SENSOR_TILT_VALUE, flag);
@@ -3988,7 +4105,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 else if (strcasecmp(valCmdString,"shortpress")==0)
                     buttonB_ShortPress_mainModule();
             }
-            else if (strcasecmp(setCmdString,"M5AtomKind")==0)
+            else if (strcasecmp(setCmdString,"M5AtomKind")==0 && !isGroupTopic())
             {
                 //! new 1.4.24 setting ATOM kind (eg. M5AtomSocket, M5AtomScanner). MQTT message "set":"M5AtomKind", val=
                 savePreferenceATOMKind_MainModule(valCmdString);
@@ -3997,10 +4114,17 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 rebootDevice_mainModule();
             }
             
-            
+            else if (strcasecmp(setCmdString,"disk")==0)
+            {
+                SerialDebug.printf("Cloud DISK space = %s\n", valCmdString);
+            }
+            else if (strcasecmp(setCmdString,"feedcount")==0)
+            {
+                SerialDebug.printf("Global feed count = %s\n", valCmdString);
+            }
             else
             {
-                SerialMin.printf("Unknown cmd: %s\n", setCmdString);
+                SerialMin.printf("Unknown cmd: %s  (isGroupTopic=%d)\n", setCmdString, isGroupTopic());
             }
 
         }
@@ -4060,20 +4184,59 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 int status = base64_decode_chars(valCmdString, len, plaintext_out);
                 String decoded = String(plaintext_out);
                 decoded = MQTT_urlDecode(decoded);
+                
+                //! 1.11.24 the decoded value might have URL encoded like %7B for '{' and %7D }
+                //! ACTUALLY the MQTT_urlDecode is missing the 7's
+                //! https://www.arduino.cc/reference/en/language/variables/data-types/string/functions/indexof/
+                
                 SerialDebug.println(decoded);
                 // not case sensitive
-                if (strcasecmp(setCmdString,"semanticMarker")==0)
+                if (strcasecmp(setCmdString,"semanticMarker")==0 && !isGroupTopic())
                 {
+                    //! see if docFollow .. if not then don't show it
+                    boolean useDocFollow = getPreferenceBoolean_mainModule(PREFERENCE_USE_DOC_FOLLOW_SETTING);
+
                     //! 9.28.29 devOnlySM if set, then set to whether the deviceNameSpecified (eg. dev=...)
                     boolean showSM = true;
                     if (getPreferenceBoolean_mainModule(PREFERENCE_DEV_ONLY_SM_SETTING))
                         showSM = deviceNameSpecified;
                     
+                    if (!useDocFollow)
+                        showSM = false;
+                    
+                    //! 1.11.24 NOTE: this changes the page on the M5 (and I'm sending this message often
+                    //! for a demo of the watch -- SO: maybe there should be a mode to NOT accept the SM ??
                     if (showSM)
                         //!displays the Semantic Marker (a super QR code) on the M5 screen (title = to display)
                         showSemanticMarker_displayModule(decoded, "SemanticMarker");
                     else
                         SerialDebug.println("Not showing SemanticMarker ");
+                }
+                else if (strcasecmp(setCmdString,"PIR_SM_JSON")==0 && !isGroupTopic())
+                {
+                    //! 1.11.24 support setting the SM to use with the PIR (and eventually other commands)
+                    //!@see https://github.com/konacurrents/ESP_IOT/issues/289
+                    //!{"set":"PIR_UseSM", "val": "on/off"}
+                    //!{"set64":"PIR_SM_JSON", "val": "JSONbase64"}
+                    //! NOTE: this could turn on the PIR_UseSM at the same time..
+                    
+                    savePreferenceBoolean_mainModule(PREFERENCE_SM_ON_PIR_SETTING, true);
+                    savePreference_mainModule(PREFERENCE_SM_COMMAND_PIR_SETTING, decoded);
+                    //!let others know ??
+                   // sendMessageString_mainModule(decoded.c_str());
+                }
+                else if (strcasecmp(setCmdString,"PIR_OFF_SM_JSON")==0 && !isGroupTopic())
+                {
+                    //! 1.11.24 support setting the SM to use with the PIR (and eventually other commands)
+                    //!@see https://github.com/konacurrents/ESP_IOT/issues/289
+                    //!{"set":"PIR_UseSM", "val": "on/off"}
+                    //!{"set64":"PIR_SM_JSON", "val": "JSONbase64"}
+                    //! NOTE: this could turn on the PIR_UseSM at the same time..
+                    
+                    savePreferenceBoolean_mainModule(PREFERENCE_SM_ON_PIR_SETTING, true);
+                    savePreference_mainModule(PREFERENCE_SM_COMMAND_PIR_OFF_SETTING, decoded);
+                    //!let others know ??
+                    // sendMessageString_mainModule(decoded.c_str());
                 }
             }
             
@@ -4224,6 +4387,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
         //        _mqttUserString = NULL;
     }
     {
+        //! This should keep the deviceName to whatever was specified
         const char* a7 = myObject["deviceName"];
         if (a7 && strlen(a7)>0)
         {
@@ -4445,6 +4609,7 @@ void updatePreferencesInEPROM()
 
 
 //!Decode the URL
+//!@see https://www.w3schools.com/tags/ref_urlencode.ASP
 String MQTT_urlDecode(String input) {
     String s = input;
     s.replace("%20", " ");
@@ -4477,6 +4642,9 @@ String MQTT_urlDecode(String input) {
     s.replace("%5E", "^");
     s.replace("%5F", "-");
     s.replace("%60", "`");
+    s.replace("%7B", "{");
+    s.replace("%7D", "}");
+
     return s;
 }
 #endif //USE_MQTT_NETWORKING

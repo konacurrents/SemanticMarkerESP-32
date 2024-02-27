@@ -8,86 +8,7 @@
 
 #include "ButtonProcessing.h"
 #ifdef USE_BUTTON_MODULE
-//@see https://github.com/m5stack/M5StickC-Plus
-//@see https://github.com/m5stack/M5StickC-Plus/blob/master/src/utility/Button.h
 
-//! 3.3.22 Using the new JSON library which is supposed to catch syntax errors without blowing up
-//https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
-
-/**
- class Button {
- public:
- Button(uint8_t pin, uint8_t invert, uint32_t dbTime);
- uint8_t read();
- */
- /*----------------------------------------------------------------------*
- * isPressed() and isReleased() check the button state when it was last *
- * read, and return false (0) or true (!=0) accordingly.                *
- * These functions do not cause the button to be read.                  *
- *----------------------------------------------------------------------*/
-/*
- uint8_t isPressed();
- uint8_t isReleased();
- */
-/*----------------------------------------------------------------------*
- * wasPressed() and wasReleased() check the button state to see if it   *
- * changed between the last two reads and return false (0) or           *
- * true (!=0) accordingly.                                              *
- * These functions do not cause the button to be read.                  *
- *----------------------------------------------------------------------*/
-/*
- uint8_t wasPressed();
- uint8_t wasReleased();
- */
- /*----------------------------------------------------------------------*
- * pressedFor(ms) and releasedFor(ms) check to see if the button is     *
- * pressed (or released), and has been in that state for the specified  *
- * time in milliseconds. Returns false (0) or true (1) accordingly.     *
- * These functions do not cause the button to be read.                  *
- *----------------------------------------------------------------------*/
-
-/*
- uint8_t pressedFor(uint32_t ms);
- uint8_t releasedFor(uint32_t ms);
- uint8_t wasReleasefor(uint32_t ms);
- */
- /*----------------------------------------------------------------------*
- * lastChange() returns the time the button last changed state,         *
- * in milliseconds.                                                     *
- *----------------------------------------------------------------------*/
-/*
- uint32_t lastChange();
- */
-/*
-class Button {
-public:
-    Button(uint8_t pin, uint8_t invert, uint32_t dbTime);
-    uint8_t read();
-    uint8_t isPressed();
-    uint8_t isReleased();
-    uint8_t wasPressed();
-    uint8_t wasReleased();
-    uint8_t pressedFor(uint32_t ms);
-    uint8_t releasedFor(uint32_t ms);
-    uint8_t wasReleasefor(uint32_t ms);
-    uint32_t lastChange();
-    */
-
-#ifdef ESP_M5
-#include <M5StickCPlus.h>
-#endif
-
-#ifdef ESP_M5_TRY
-//!https://docs.m5stack.com/en/api/stickc/pwm
-//!
-int _freq = 1800;
-int _channelBuzzer = 0;
-int _channelREDLED = 1;
-
-int _resolution_bits = 8;
-int _buzzerPin = 2;
-int _LEDPin = 10;
-#endif
 
 //**** Delay Methods*******
 #define SINGLE_DELAY
@@ -435,7 +356,7 @@ void performProcessCurrentMode()
                 /// FOR NOW lets sed the dynamic status message..
                 //send this onto the DOCFollow message
                 //const char* sm = currentSemanticMarkerAddress_displayModule();
-                char *statusURL = main_currentStatusURL();
+                char *statusURL = main_currentStatusURL(true);
 
                 SerialTemp.print("SM_doc_follow: ");
                 SerialTemp.println(statusURL);
@@ -464,50 +385,19 @@ void performProcessCurrentMode()
     //now redraw the semantic marker (zoomed or not zoomed)
     redrawSemanticMarker_displayModule(KEEP_SAME);
 
-#endif
+#endif  //ESP_M5
 }
 
-//!invokes a buzzer sound on the M5
-void buzzerM5_buttonModule()
-{
-#ifdef ESP_M5_NOT_NOW
-    //!buzz the M5 (super complicated...)
-    M5.Beep.beep();
 
-#endif
-    
-#ifdef ESP_M5_TRY
-
-    //!try the RED LED TOO  .. turns it on but not off...
-    ledcSetup(_channelREDLED, _freq, _resolution_bits);
-    ledcAttachPin(_LEDPin, _channelREDLED);
-    
-    // ledcWrite(_channelBuzzer, 128);
-    ledcWrite(_channelBuzzer, 300);
-    delay(200);
-    ledcWrite(_channelBuzzer, 0);
-    
-    // ledcWrite(_channelBuzzer, 128);
-//    ledcWrite(_channelREDLED, 300);
-//    delay(200);
-    ledcWrite(_channelREDLED, 0);
-    
-//    ledcSetup(_channelREDLED, 0, 0);
-//    ledcAttachPin(_LEDPin, _channelREDLED);
-    
-#endif
-}
 //!defines M5 info: https://docs.rs-online.com/e4eb/A700000008182827.pdf
 
 //!long press on buttonA (top button)
 void buttonA_LongPress()
 {
-    SerialCall.println("long press.. processMode");
+    SerialTemp.println("long press.. processMode");
     
     //!long press
     performProcessCurrentMode();
-    //! buzz
-    buzzerM5_buttonModule();
 
 }
 
@@ -516,7 +406,7 @@ void buttonA_LongPress()
 void buttonA_ShortPress()
 {
     // always feed..
-    SerialCall.println("buttonA_ShortPress");
+    SerialTemp.println("buttonA_ShortPress");
         
     //! see if there is a model..
     ModelStateStruct *model = hasModelForSM_Mode(getCurrentSMMode_mainModule());
@@ -559,34 +449,6 @@ void buttonA_ShortPress()
     showText_displayModule("FEED..");
 }
 
-//!big button on front of M5StickC Plus
-void checkButtonA_ButtonProcessing()
-{
-    boolean buttonTouched = true;
-#ifdef ESP_M5
-    //was 1000
-    if (M5.BtnA.wasReleasefor(500))
-    {
-        buttonA_LongPress();
-    }
-    else if (M5.BtnA.wasReleased())
-    {
-        buttonA_ShortPress();
-    }
-    else
-    {
-        buttonTouched = false;
-    }
-    //if a button was touched, update the delay since no touch..
-    if (buttonTouched)
-    {
-        refreshDelayButtonTouched();
-    }
-
-    
-    
-#endif //ESP_M5
-}
 
 //!the long press of the side button
 void buttonB_LongPress()
@@ -622,9 +484,7 @@ void buttonB_LongPress()
     }
     
    
-    buzzerM5_buttonModule();
-
-#endif
+#endif //ESP_M5
 }
 
 //!the short press of the side button
@@ -661,169 +521,8 @@ void buttonB_ShortPress()
     //NOTE: starting at SM5, these are groups of 2 (on/off) and the drawing of the semantic marker
     invokeCurrentSemanticMarker();
     
-#endif
+#endif //ESP_M5
 }
-//!small button on right side of M5StickC Plus
-void checkButtonB_ButtonProcessing()
-{
-    //SerialTemp.println("checkButtonB_ButtonProcessing");
-    boolean buttonTouched = true;
-#ifdef ESP_M5
-    
-    //was 1000
-    if (M5.BtnB.wasReleasefor(500))
-    {
-        SerialCall.println("buttonB_LongPress");
-
-        buttonB_LongPress();
-    }
-    //side button.. cycles through choices..
-    else if (M5.BtnB.wasReleased())
-    {
-        SerialCall.println("buttonB_ShortPress");
-
-        buttonB_ShortPress();
-    }
-    else
-    {
-
-        buttonTouched = false;
-    }
-    //if a button was touched, update the delay since no touch..
-    if (buttonTouched)
-    {
-        SerialLots.println(" .. buttonB .. calling refresh");
-        refreshDelayButtonTouched();
-    }
-#endif // ESP_M5
-
-}
-
-
-
-#define SENSORS_MOTION_PIR
-#ifdef SENSORS_MOTION_PIR
-#define PIR_PIN 36 //passive IR Hat
-const uint32_t SLEEP_DURATION = 1 * 1000000;
-
-unsigned long _PrevSampleTime    = 0;
-unsigned long _PrevTriggerTime    = 0;
-unsigned long _InactivityTimeOut = 0;
-
-#define Elapsed3secs  3000
-#define Elapsed4secs  4000
-
-#define Elapsed3mins  180000 // 3 minutes in milliseconds
-struct IMUVariables
-{
-    float accX = 0.0F;
-    float accY = 0.0F;
-    float accZ = 0.0F;
-    float diffX   = 0.0F;
-    float diffY   = 0.0F;
-    float diffZ   = 0.0F;
-    float diffXYZ = 0.0F;
-    float prevX = 0.0F;
-    float prevY = 0.0F;
-    float prevZ = 0.0F;
-#ifdef GYRO
-    float gyroX = 0.0F;
-    float gyroY = 0.0F;
-    float gyroZ = 0.0F;
-#endif
-#ifdef PITCH_ROLL
-        float pitch = 0.0F;
-    float roll  = 0.0F;
-    float yaw   = 0.0F;
-#endif
-    float TILT_SENSITIVITY = 0.5;
-} _IMU;
-
-
-//!Return "true" on PIR (over sensitivity) and false otherwise
-//!This is just a sensor (if plugged in) - so any timing is on the caller of this
-bool checkPIR_ButtonProcessing()
-{
-//    if (!getPreferenceBoolean_mainModule(PREFERENCE_SENSOR_PIR_VALUE))
-//        return false;
-    
-    boolean triggeredPIR = digitalRead(PIR_PIN);
-    if (triggeredPIR)
-    {
-        if ((millis()-_PrevTriggerTime)>Elapsed4secs)
-        {
-            triggeredPIR = true;
-            _PrevTriggerTime = millis();
-            SerialLots.println("triggeredPIR = true");
-        }
-        else
-            triggeredPIR = false;
-    }
-    return triggeredPIR;
-}
-
-//!looks at M5.IMU sensor to see if changed since last time..
-//!Return "true" on motion (over sensitivity) and false otherwise
-bool checkMotion_ButtonProcessing()
-{
-#ifndef ESP_M5
-    return false;
-#endif
-    //! if the TILT isn't an option.. then never return true ..
-    if (!getPreferenceBoolean_mainModule(PREFERENCE_SENSOR_TILT_VALUE))
-    {
-        return false;
-    }
-    else
-    {
-//        main_printModuleConfiguration();
-//        SerialTemp.println("**** SENSOR TILT IS ON");
-//        main_printModuleConfiguration();
-    }
-
-    // 100ms sample interval
-    if ( (millis() - _PrevSampleTime) >100)
-    {
-        //update for next sample point
-        _PrevSampleTime = millis();
-#ifdef ESP_M5
-       // M5.IMU.getGyroData(&_IMU.gyroX,&_IMU.gyroY,&_IMU.gyroZ);
-
-        M5.IMU.getAccelData(&_IMU.accX,&_IMU.accY,&_IMU.accZ);
-      //  M5.IMU.getAhrsData(&_IMU.pitch,&_IMU.roll,&_IMU.yaw);
-
-        //debug print
-        //SerialTemp.printf("%5.2f  %5.2f  %5.2f   \n\r", _IMU.accX, _IMU.accY, _IMU.accZ);
-//        SerialTemp.printf("%5.2f  %5.2f  %5.2f   \n\r", _IMU.gyroX, _IMU.gyroY, _IMU.gyroZ);
-//        SerialTemp.printf("%5.2f  %5.2f  %5.2f   \n\r", _IMU.pitch, _IMU.roll, _IMU.yaw);
-
-#endif
-        _IMU.diffX =   abs(_IMU.prevX - _IMU.accX);
-        _IMU.diffY =   abs(_IMU.prevY - _IMU.accY);
-        _IMU.diffZ =   abs(_IMU.prevZ - _IMU.accZ);
-        _IMU.diffXYZ = _IMU.diffX + _IMU.diffY + _IMU.diffZ;
-        
-        //save x,y,z from this cycle for next cycle
-
-        _IMU.prevX = _IMU.accX;
-        _IMU.prevY = _IMU.accY;
-        _IMU.prevZ = _IMU.accZ;
-    }
-    //if the movement is above threshold sensitivity then broadcast and start IGNORE time
-    if ( (_IMU.diffXYZ > _IMU.TILT_SENSITIVITY) && ((millis()-_PrevTriggerTime)>Elapsed4secs) )
-    {
-        _PrevTriggerTime = millis();
-        SerialLots.printf("diff:  %.2f  \r\n", _IMU.diffXYZ);
-        // TILT has exceed threshold
-        return true;
-    }
-    else
-    {
-        //movement does not exceed threshold
-        return false;
-    }
-}  // end of CheckMotion
-#endif // SENSORS_MOTION_PIR
 
 
 //!the setup for buttonProcessing (extension of ButtonModule)
@@ -831,26 +530,7 @@ bool checkMotion_ButtonProcessing()
 void setup_ButtonProcessing()
 {
     setCurrentSMMode_mainModule(0);
-    
-#ifdef ESP_M5
-    //!setup the plugin PIR (if there..)
-    pinMode(PIR_PIN,INPUT_PULLUP);
-    
-    //M5.begin();  already called..
-    //Init IMU.  初始化IMU
-
-    M5.Imu.Init(); 
-    M5.Axp.begin();
-    _InactivityTimeOut = Elapsed3mins;
-    
-    //!https://docs.m5stack.com/en/api/stickc/pwm
-    //!
-//    ledcSetup(_channelBuzzer, _freq, _resolution_bits);
-//    ledcAttachPin(_buzzerPin, _channelBuzzer);
-  //  M5.Beep.begin();
-
-
-#endif
+ 
 }
 
 boolean _firstLoopProcessing = true;
@@ -863,47 +543,11 @@ void loop_ButtonProcessing()
         invokeCurrentSemanticMarker();
         _firstLoopProcessing = false;
     }
-
-#ifdef ESP_M5
-    M5.update(); //Read the press state of the key. ONLY call once per loop or the status of B button is lost
-#endif
-  
-   
-
-#ifdef LATER
-    if ( (millis() - PrevTriggerTime) > InactivityTimeOut) {
-        M5.Axp.PowerOff(); // shutoff after no activity
-    }
-#endif
-   
-    //try..
-    
-    // check for tilt etc..
-    if (checkMotion_ButtonProcessing())
-    {
-        SerialTemp.println("motion detected");
-        sendMessageString_mainModule((char*)"TiltDetected");
-
-        //This (in mainModule) will look if connected so sends over BLE, otherwise MQTT (if connected)
-        main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
-    }
-    
-    // check for PIR etc..
-    if (checkPIR_ButtonProcessing())
-    {
-        SerialTemp.println("PIR detected");
-        sendMessageString_mainModule((char*)"PIRDetected");
-
-        //This (in mainModule) will look if connected so sends over BLE, otherwise MQTT (if connected)
-        main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
-    }
-    
-    //checkBothPressed_ButtonProcessing();
-    checkButtonA_ButtonProcessing();
-    checkButtonB_ButtonProcessing();
     
     //see if the time is up..
-    checkDelaySinceButtonTouched();
+//    checkDelaySinceButtonTouched();
+
 }
+
 
 #endif //USE_BUTTON_MODULE

@@ -7,6 +7,25 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		D22F159D2B8E85EA000D2C8A /* Sonic_I2CSensorClass.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Sonic_I2CSensorClass.cpp; sourceTree = "<group>"; };
+		D22F159E2B8E85EA000D2C8A /* makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = makefile; sourceTree = "<group>"; };
+		D22F159F2B8E85EA000D2C8A /* KeyUnitSensorClass.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = KeyUnitSensorClass.h; sourceTree = "<group>"; };
+		D22F15A02B8E85EA000D2C8A /* SensorClassType.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SensorClassType.h; sourceTree = "<group>"; };
+		D22F15A12B8E85EA000D2C8A /* KeyUnitSensorClass.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = KeyUnitSensorClass.cpp; sourceTree = "<group>"; };
+		D22F15A22B8E85EA000D2C8A /* Sonic_I2CSensorClass.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Sonic_I2CSensorClass.h; sourceTree = "<group>"; };
+		D22F15A32B8E85EA000D2C8A /* SensorClassType.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = SensorClassType.cpp; sourceTree = "<group>"; };
+		D22F15A42B8E85EA000D2C8A /* PIRSensorClass.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PIRSensorClass.h; sourceTree = "<group>"; };
+		D22F15A52B8E85EA000D2C8A /* PIRSensorClass.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PIRSensorClass.cpp; sourceTree = "<group>"; };
+		D22F15A72B8E85EA000D2C8A /* M5ButtonModule.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = M5ButtonModule.cpp; sourceTree = "<group>"; };
+		D22F15A82B8E85EA000D2C8A /* M5ButtonModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = M5ButtonModule.h; sourceTree = "<group>"; };
+		D22F15AA2B8E85EA000D2C8A /* StepperDriver.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StepperDriver.h; sourceTree = "<group>"; };
+		D22F15AB2B8E85EA000D2C8A /* AtomStepMotorModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AtomStepMotorModule.h; sourceTree = "<group>"; };
+		D22F15AC2B8E85EA000D2C8A /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		D22F15AD2B8E85EA000D2C8A /* StepperDriver.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = StepperDriver.cpp; sourceTree = "<group>"; };
+		D22F15AE2B8E85EA000D2C8A /* AtomStepMotorModule.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = AtomStepMotorModule.cpp; sourceTree = "<group>"; };
+		D22F15B02B8E85EA000D2C8A /* M5Core2Module.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = M5Core2Module.cpp; sourceTree = "<group>"; };
+		D22F15B12B8E85EA000D2C8A /* M5Core2Module.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = M5Core2Module.h; sourceTree = "<group>"; };
+		D22F15B22B8E85EA000D2C8A /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		D24B006E2B1A8B0B00D29C0A /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 		D24B00702B1EA0EA00D29C0A /* M5Camera.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = M5Camera.jpeg; sourceTree = "<group>"; };
 		D24B00712B1EA0EA00D29C0A /* IOT_MQTT_Namespace.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = IOT_MQTT_Namespace.png; sourceTree = "<group>"; };
@@ -89,6 +108,53 @@
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		D22F159C2B8E85EA000D2C8A /* SensorClass */ = {
+			isa = PBXGroup;
+			children = (
+				D22F159D2B8E85EA000D2C8A /* Sonic_I2CSensorClass.cpp */,
+				D22F159E2B8E85EA000D2C8A /* makefile */,
+				D22F159F2B8E85EA000D2C8A /* KeyUnitSensorClass.h */,
+				D22F15A02B8E85EA000D2C8A /* SensorClassType.h */,
+				D22F15A12B8E85EA000D2C8A /* KeyUnitSensorClass.cpp */,
+				D22F15A22B8E85EA000D2C8A /* Sonic_I2CSensorClass.h */,
+				D22F15A32B8E85EA000D2C8A /* SensorClassType.cpp */,
+				D22F15A42B8E85EA000D2C8A /* PIRSensorClass.h */,
+				D22F15A52B8E85EA000D2C8A /* PIRSensorClass.cpp */,
+			);
+			path = SensorClass;
+			sourceTree = "<group>";
+		};
+		D22F15A62B8E85EA000D2C8A /* M5Module */ = {
+			isa = PBXGroup;
+			children = (
+				D22F15A72B8E85EA000D2C8A /* M5ButtonModule.cpp */,
+				D22F15A82B8E85EA000D2C8A /* M5ButtonModule.h */,
+			);
+			path = M5Module;
+			sourceTree = "<group>";
+		};
+		D22F15A92B8E85EA000D2C8A /* AtomStepMotor */ = {
+			isa = PBXGroup;
+			children = (
+				D22F15AA2B8E85EA000D2C8A /* StepperDriver.h */,
+				D22F15AB2B8E85EA000D2C8A /* AtomStepMotorModule.h */,
+				D22F15AC2B8E85EA000D2C8A /* README.md */,
+				D22F15AD2B8E85EA000D2C8A /* StepperDriver.cpp */,
+				D22F15AE2B8E85EA000D2C8A /* AtomStepMotorModule.cpp */,
+			);
+			path = AtomStepMotor;
+			sourceTree = "<group>";
+		};
+		D22F15AF2B8E85EA000D2C8A /* M5Core2Module */ = {
+			isa = PBXGroup;
+			children = (
+				D22F15B02B8E85EA000D2C8A /* M5Core2Module.cpp */,
+				D22F15B12B8E85EA000D2C8A /* M5Core2Module.h */,
+				D22F15B22B8E85EA000D2C8A /* README.md */,
+			);
+			path = M5Core2Module;
+			sourceTree = "<group>";
+		};
 		D24B006F2B1EA0EA00D29C0A /* images */ = {
 			isa = PBXGroup;
 			children = (
@@ -144,6 +210,10 @@
 		D2E4306A2B02DC5900E2C80B /* src */ = {
 			isa = PBXGroup;
 			children = (
+				D22F15A92B8E85EA000D2C8A /* AtomStepMotor */,
+				D22F15AF2B8E85EA000D2C8A /* M5Core2Module */,
+				D22F15A62B8E85EA000D2C8A /* M5Module */,
+				D22F159C2B8E85EA000D2C8A /* SensorClass */,
 				D2CC849B2B3E2F7B00294F65 /* ATOM_LED_Module */,
 				D2CC84962B3E2F7B00294F65 /* ATOM_SocketModule */,
 				D2E4306B2B02DC5900E2C80B /* ATOM_QRCode_Module */,

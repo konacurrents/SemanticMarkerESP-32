@@ -56,7 +56,7 @@ void setupSecureRESTCall()
 
     SerialDebug.println("setCACert");
     _secureClient.setCACert(_SemanticMarker_org_root_ca);
-    SerialDebug.println("done setCACert");
+    SerialDebug.printf("done setCACert = %p\n", _secureClient);
     
 }
 

@@ -39,12 +39,21 @@ void restartProcessesForOTAUpdate_mainModule();
 #endif
 
 #define TOPIC_TO_SEND (char*)"usersP/bark"
+//#define GROUP_TOPIC_TO_SEND (char*)"/usersP/groups"
+//!returns a groupTopic to use as a topic
+char *groupTopicFullName(char *groupName);
 
 //!10000 == no poweroff
 #define NO_POWEROFF_AMOUNT_MAIN 10000
 #define NO_POWEROFF_AMOUNT_STRING_MAIN (char*)"10000"
 
 
+//! 1.12.24 add a temporary LUX dark
+//! threshholdKind = 0 (LIGHT), 1=(DARK) .. others might be 2=super dark
+#define THRESHOLD_KIND_LIGHT 0
+#define THRESHOLD_KIND_DARK 1
+void setLUXThreshold_mainModule(int thresholdKind, int luxVal);
+int  getLUXThreshold_mainModule(int thresholdKind);
 
 //! processes a message that might save in the EPROM.. the cmd is still passed onto other (like the stepper module)
 //! returns true if finished processing, otherwise this can be sent onto other modules (like stepper)
@@ -60,6 +69,10 @@ void processClientCommandChar_mainModule(char cmd);
 #define CALLBACKS_BLE_SERVER 3
 #define CALLBACKS_MODULE_MAX 4
 
+
+#define SINGLE_CLICK_BM 0
+#define MAX_CALLBACKS_BM 1
+
 //!register the callback based on the callbackType. use the callbacksModuleId for which one..
 void registerCallbackMain(int callbacksModuleId, int callbackType, void (*callback)(char*));
 //!performs the indirect callback based on the callbackType
@@ -67,6 +80,9 @@ void callCallbackMain(int callbacksModuleId, int callbackType, char *message);
 
 //!adding a synchronous call to send a message over the network (assuming MQTT but not specified), this tacks on {device} and {t:time}
 void sendMessageString_mainModule(char *messageString);
+
+//!adding a synchronous call to send a message over the network (assuming MQTT but not specified), this tacks on {device} and {t:time}
+void sendMessageStringTopic_mainModule(char *messageString, char*topicString);
 
 #ifdef USE_MQTT_NETWORKING
 //!example callback: but the scope would have the pCharacteristic defined, etc..
@@ -143,7 +159,12 @@ char *main_getPassword();
 char *main_getScannedDeviceName();
 //! set the scanned device name
 void main_setScannedDeviceName(char *deviceName);
-
+//! set the scanned group name
+//! 1.7.24
+void main_setScannedGroupName(char *groupName);
+//! return groupname -- returns "" or nil if not set,
+//! or the FULL group name topic, or nil
+char *main_getScannedGroupNameTopic();
 //! TODO: make this a registeration approach
 
 //! 3.21.22 these are to setup for the next time the main loop() runs to call these commands..
@@ -185,14 +206,16 @@ void main_setScannedDeviceName(char *deviceName);
 //! the max one greater than last one
 #define ASYNC_CALL_MAX 16  //don't forget to update this MAX (last one + 1)
 
-//!these are the async with a string parameter. This sends a BLE command
+//!these are the async with a string parameter. This sends a BLE command unless MQTT
 #define ASYNC_CALL_BLE_CLIENT_PARAMETER 0
 //!these are the async with a string parameter
 #define ASYNC_CALL_OTA_FILE_UPDATE_PARAMETER 1
 //!these are the async with a string parameter
 #define ASYNC_JSON_MESSAGE_PARAMETER 2
+//!these are the async with a string parameter
+#define ASYNC_JSON_MQTT_MESSAGE_PARAMETER 3
 //! the max one greater than last one
-#define ASYNC_CALL_PARAMETERS_MAX 3
+#define ASYNC_CALL_PARAMETERS_MAX 4
 
 //! dispatches a call to the command specified. This is run on the next loop()
 void main_dispatchAsyncCommand(int asyncCallCommand);
@@ -378,6 +401,7 @@ char *getFullBLEDeviceName_mainModule();
 //!returns address part of name.
 char *connectedBLEDeviceNameAddress_mainModule();
 
+//! 1.22.24 refactored to only ButtonModule knows about plugins..
 //! BUTTON PROCESSING abstraction  (NOTE these are only for the M5 since the M5 Atom has it backwards)
 //!short press on buttonA (top button)
 void buttonA_ShortPress_mainModule();
@@ -387,16 +411,21 @@ void buttonA_LongPress_mainModule();
 void buttonB_LongPress_mainModule();
 //!the short press of the side button
 void buttonB_ShortPress_mainModule();
-
 //!restarts all the menu states to the first one .. useful for getting a clean start. This doesn't care if the menu is being shown
 void restartAllMenuStates_mainModule();
+//! 1.22.24 add setup and loop at main so it can call appropriate plugs
+void loop_Sensors_mainModule();
+//! setup of buttons and sensors
+void setup_Sensors_mainModule();
 
 //!whether the string is TRUE, ON, 1
 boolean isTrueString_mainModule(String valCmdString);
 
 //! 8.28.23  Adding a way for others to get informed on messages that arrive
-//! for the set,val
-void messageSetVal_mainModule(char *setName, char* valValue);
+//! for the set,val. 
+//! 1.10.24 if deviceNameSpecified then this matches this device, otherwise for all.
+//! It's up to the receiver to decide if it has to be specified 
+void messageSetVal_mainModule(char *setName, char* valValue, boolean deviceNameSpecified);
 //! 12.28.23, 8.28.23  Adding a way for others to get informed on messages that arrive
 //! for the set,val
 void messageSend_mainModule(char *sendValue);
