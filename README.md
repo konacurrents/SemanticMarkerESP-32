@@ -1,11 +1,11 @@
-# Semantic Marker&trade; for ESP-32 IOT Framework v2.0
+# Semantic Marker&reg; for ESP-32 IOT Framework v2.0
 
-This repository contains the software for building the runtime capability for the ESP-32 set of boards. In particular this repository supports the Semantic Marker&trade; vision described at [https://SemanticMarker.org](https://SemanticMarker.org). This includes displays and internet messaging. 
+This repository contains the software for building the runtime capability for the ESP-32 set of boards. In particular this repository supports the Semantic Marker&reg; vision described at [https://SemanticMarker.org](https://SemanticMarker.org). This includes displays and internet messaging. 
 
 > [!NOTE]
-> To implement this vision, the Semantic Marker&trade; for ESP-32 IOT designed and implemented a generic framework for communicating with the various messaging API's [API Document](https://github.com/konacurrents/SemanticMarkerAPI).
+> To implement this vision, the Semantic Marker&reg; for ESP-32 IOT designed and implemented a generic framework for communicating with the various messaging API's [API Document](https://github.com/konacurrents/SemanticMarkerAPI).
 
-Conditionally including modules (with #ifdef statements) will add and manipulate various IoT capabilities. These will leverate the Semantic Marker&trade; cloud messaging framework to connect the various devices. The ESP-32 devices support bluetooth and WIFI but have a limited user interface. The M5 based ESP-32 extends with a display, speaker, temperature, axcelerometor sensers. Other devices such as M5 V2 incorporate a camera with machine learning functionality.
+Conditionally including modules (with #ifdef statements) will add and manipulate various IoT capabilities. These will leverate the Semantic Marker&reg; cloud messaging framework to connect the various devices. The ESP-32 devices support bluetooth and WIFI but have a limited user interface. The M5 based ESP-32 extends with a display, speaker, temperature, axcelerometor sensers. Other devices such as M5 V2 incorporate a camera with machine learning functionality.
 
 ![Module Configuration Options](https://knowledgeshark.me/docs/ESP_IOT/html/dir_68267d1309a1af8e8297ef4c3efbcdba_dep.png)
 
@@ -47,48 +47,48 @@ This includes:
 
 # API Document
 
-Another GitHub repository describes the API aspects of the Semantic Marker&trade; framework leveraged by the ESP-32 IoT devices.
+Another GitHub repository describes the API aspects of the Semantic Marker&reg; framework leveraged by the ESP-32 IoT devices.
 
 [API Document](https://github.com/konacurrents/SemanticMarkerAPI)
 
 # Architecture Document
 
-Another aspect of the Semantic Marker&trade; Architecture document is included as follows:
+Another aspect of the Semantic Marker&reg; Architecture document is included as follows:
 <a href="https://KnowledgeShark.me/docs/ESP_IOT/html">Documented Architecture and Code</a>
 
 This Architecture Document provides valuable diagrams to help users understand the flow, for example this diagram.
 ![Main Loop](https://knowledgeshark.me/docs/ESP_IOT/html/_e_s_p___i_o_t_8ino_afe461d27b9c48d5921c00d521181f12f_cgraph.png)
 
-# Semantic Marker&trade; Examples
+# Semantic Marker&reg; Examples
 
-Numerous examples are described that show the use of ESP-32/M5 IoT Devices to spport the Semantic Marker&trade; vision.
+Numerous examples are described that show the use of ESP-32/M5 IoT Devices to spport the Semantic Marker&reg; vision.
 
-## Semantic Marker&trade; and M5 Display
+## Semantic Marker&reg; and M5 Display
 
-The power of the small M5 display as it expands it's visual capabilities by leveraging the Semantic Marker&trade; as shown in the following diagram. Here the M5 (as built above) interacts through the MQTT messaging to perform numerous operations and acting like a display capability (by intelligent decoding of the visual Semantic Marker&trade;)
+The power of the small M5 display as it expands it's visual capabilities by leveraging the Semantic Marker&reg; as shown in the following diagram. Here the M5 (as built above) interacts through the MQTT messaging to perform numerous operations and acting like a display capability (by intelligent decoding of the visual Semantic Marker&reg;)
 
 ![M5 Semantic Marker Vision](https://semanticmarker.org/KSNetworking/KSNetworking.018.jpeg)
 
 The small M5 display has been leveraged to create a small footprint of information, including using the buttons
-to move around like menues. As this display is so small, the Semantic Marker&trade; is used to abstract information
-into a small image - the Semantic Marker&trade; as shown here stuck to a common household microwave (the M5 has a magnet). 
+to move around like menues. As this display is so small, the Semantic Marker&reg; is used to abstract information
+into a small image - the Semantic Marker&reg; as shown here stuck to a common household microwave (the M5 has a magnet). 
 
 <img src="https://SemanticMarker.org/vision/M5onMicrowave.jpg" width="300">
 
-Here the Semantic Marker&trade; is continually changing to reflect the sensor information. For example of the sensor information
+Here the Semantic Marker&reg; is continually changing to reflect the sensor information. For example of the sensor information
 follow this [SMART Button Sensor Status](https://semanticmarker.org/bot/status?v=v2&dev=Fibi&b=87&temp=10&c=0&t=0&W=on&M=on&A=off&T=off&S=on&bleS=PTFeeder&Z=on&G=off)
 ```url
 https://semanticmarker.org/bot/status?v=v2&dev=Fibi&b=87&temp=10&c=0&t=0&W=on&M=on&A=off&T=off&S=on&bleS=PTFeeder&Z=on&G=off
 ```
 
 
-## Semantic Marker&trade; in-situ and scanned by a user
-Another Semantic Marker&trade; example is to send messages to a device with the embedded ESP-32 device. (This version, called a PetTutor, is from [Smart_Animal_Training](https://smartanimaltraining.com). In this example, a Semantic Marker&trade; has been printed and attached to the device. Users can then scan the Semantic Marker&trade; which will effectively connect to this device and perform the desired operation.
+## Semantic Marker&reg; in-situ and scanned by a user
+Another Semantic Marker&reg; example is to send messages to a device with the embedded ESP-32 device. (This version, called a PetTutor, is from [Smart_Animal_Training](https://smartanimaltraining.com). In this example, a Semantic Marker&reg; has been printed and attached to the device. Users can then scan the Semantic Marker&reg; which will effectively connect to this device and perform the desired operation.
 ![PetTutor Mini](images/GreyGoose.jpg)
 
 A nice short clip that shows this scanning in action is at: [M5 in action video](https://semanticmarker.org/vision/AR_SM.mov)
 
-# Semantic Marker&trade; Architecture Documents
+# Semantic Marker&reg; Architecture Documents
 
 The Networking architecture is shown here:
 ![ESP_IOT Diagram](images/KSNetworking.004.jpeg)

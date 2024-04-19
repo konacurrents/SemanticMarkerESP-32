@@ -317,7 +317,7 @@ void checkButtonB_M5Core2Module()
     }
     else if (M5.BtnB.wasReleasefor(1000))
     {
-        // since button touched .. to quick vibrate
+        // since blong utton touched .. do long vibrate
         vibrate_M5Core2Module(LONG_VIBRATE);
         //! 1.24.24 Goto the scrolling text mode .. if flag
         setShowingScrollingTextMode_displayModule(false);
@@ -360,7 +360,7 @@ void checkButtonA_M5Core2Module()
     //was 1000  (from 500)
     if (M5.BtnA.wasReleasefor(3500))
     {
-        // since button touched .. to quick vibrate
+        // since long button touched .. do long  vibrate
         vibrate_M5Core2Module(LONG_VIBRATE);
         //        buttonA_longPress_M5Core2Module();
         SerialDebug.println(" **** LONG LONG PRESS ***");
@@ -369,7 +369,7 @@ void checkButtonA_M5Core2Module()
     }
     else if (M5.BtnA.wasReleasefor(1000))
     {
-        // since button touched .. to quick vibrate
+        // since button touched .. do long vibrate
         vibrate_M5Core2Module(LONG_VIBRATE);
         //! 1.24.24 Goto the scrolling text mode .. if flag
         setShowingScrollingTextMode_displayModule(false);
@@ -384,7 +384,7 @@ void checkButtonA_M5Core2Module()
     }
     else if (M5.BtnA.wasReleased())
     {
-        // since button touched .. to quick vibrate
+        // since button touched .. do quick vibrate
         vibrate_M5Core2Module(SHORT_VIBRATE);
         //! 1.24.24 Goto the scrolling text mode .. if flag
         setShowingScrollingTextMode_displayModule(false);
@@ -483,7 +483,11 @@ void loop_M5Core2Module()
                 //This (in mainModule) will look if connected so sends over BLE, otherwise MQTT (if connected)
                 main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
                 
+                //!vibrate the display
                 vibrate_M5Core2Module(LONG_LONG_VIBRATE);
+                
+                //! 2.27.24 make the button seem to be touched
+                showButtonTouched_displayModule();
             }
         }
     }

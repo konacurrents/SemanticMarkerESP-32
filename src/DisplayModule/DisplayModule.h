@@ -84,6 +84,9 @@ void toggleShowingScrollingTextMode_displayModule();
 //! 1.24.24 Goto the scrolling text mode .. if flag 
 void setShowingScrollingTextMode_displayModule(boolean flag);
 
+//! 2.27.24 make the button seem to be touched
+void showButtonTouched_displayModule();
+
 //! add a loop for the alternate display
 void loop_Alternate_displayModule();
 
