@@ -31,6 +31,9 @@ boolean stopAllProcesses_mainModule();
 //!restart all loops... while OTA working..
 void restartProcessesForOTAUpdate_mainModule();
 
+//! 8.18.24 setting this will check for the factory setting..
+void setClockwiseMotorDirection_mainModule(boolean isClockwiseFlag);
+
 #define PT_SERVICE_UUID        "b0e6a4bf-cccc-ffff-330c-0000000000f0"  //Pet Tutor feeder service for feed  NOTE: Lower case for GEN3 compatability
 #define PT_CHARACTERISTIC_UUID "b0e6a4bf-cccc-ffff-330c-0000000000f1"  //Pet Tutor feeder characteristic  NOTE: Lower case for GEN3 compatability
 
@@ -214,8 +217,10 @@ char *main_getScannedGroupNameTopic();
 #define ASYNC_JSON_MESSAGE_PARAMETER 2
 //!these are the async with a string parameter
 #define ASYNC_JSON_MQTT_MESSAGE_PARAMETER 3
+//!send REST call 
+#define ASYNC_REST_CALL_MESSAGE_PARAMETER 4
 //! the max one greater than last one
-#define ASYNC_CALL_PARAMETERS_MAX 4
+#define ASYNC_CALL_PARAMETERS_MAX 5
 
 //! dispatches a call to the command specified. This is run on the next loop()
 void main_dispatchAsyncCommand(int asyncCallCommand);
@@ -229,6 +234,11 @@ void initAsyncCallFlags();
 
 //!checks if any async commands are in 'dispatch' mode, and if so, invokes them, and sets their flag to false
 void invokeAsyncCommands();
+
+//! 3.17.24 get the chip id 
+uint32_t getChipId();
+//! 3.17.24 get the chip id as a string
+char* getChipIdString();
 
 // **** Helper Methods
 //!If nil it create one with just the null, so strlen = 0

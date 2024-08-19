@@ -82,7 +82,13 @@ void publishMQTTMessage(char *topic, char *message);
 void publishMQTTMessageDefaultTopic(char *message);
 
 //! publish a binary file..
-void publishBinaryFile(char *topic, uint8_t * buf, size_t len);
+//! fileExtension is .jpg, .json, .txt etc
+void publishBinaryFile(char *topic, uint8_t * buf, size_t len, String fileExtension);
+
+
+//! send semantic /smrun
+//! 3.25.24 this is an HTTP not https
+void publishSMRunMessage(char* smrunMessage);
 
 //! sends the semantic marker as a doc follow message #remoteMe (vs STATUS, as that triggers a status reply.. )
 void sendStatusMessageMQTT(const char *semanticMarker);
@@ -127,6 +133,15 @@ void cleanMQTTpasswordsUpdateInEPROM();
 
 //!Decode the URL (exposed 12.17.23 for the scanner
 String MQTT_urlDecode(String input);
+
+//! 3.22.24 get the WIFI SSID for the status
+String get_WIFI_SSID();
+
+#ifdef USE_SPIFF_MODULE
+//! publish a binary file..
+//! fileExtension is .jpg, .json, .txt etc
+void publishSPIFFFile(char *topic, char *path, int len);
+#endif
 
 #endif // USE_MQTT_NETWORKING
 

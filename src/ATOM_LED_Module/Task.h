@@ -1,6 +1,9 @@
-#ifndef _TASK_PERSION_H_
-#define _TASK_PERSION_H_
+#ifndef TASK_PERSION_H_
+#define TASK_PERSION_H_
 
+#include "../../Defines.h"
+
+#ifdef USE_FAST_LED
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -34,6 +37,6 @@ private:
 	/* data */
 };
 
-
+#endif
 
 #endif //_TASK_PERSION_H_

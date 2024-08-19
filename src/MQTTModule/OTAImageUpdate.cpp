@@ -36,6 +36,8 @@ String _hostIP = "KnowledgeShark.org";
 //! Non https. For HTTPS 443. As of today, HTTPS doesn't work.
 int _port = 80;
 
+//! for the ESP_M5 there are different builds (some with same m5stick_c_plus.bin names so they are
+//! NOTE: these are for the installed "main" executables. The SMART web page provides names for the others
 #ifdef ESP_M5
 //!location of bin file
 String _binName = "/OTA/ESP_IOT.ino.m5stick_c_plus.bin"; // bin file name with a slash in front.

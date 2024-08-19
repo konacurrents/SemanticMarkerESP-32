@@ -1,6 +1,7 @@
 #ifndef KeyUnitSensorClass_h
 #define KeyUnitSensorClass_h
-
+#include "../../Defines.h"
+#if defined(ESP_M5) && !defined(ESP_M5_MINIMAL_SENSORS)
 #include "SensorClassType.h"
 #include <FastLED.h>
 
@@ -40,5 +41,5 @@ private:
     uint8_t _ledColor = 0;
     CRGB *_leds;        // Define the array of leds.  定义LED阵列.
 };
-
+#endif
 #endif

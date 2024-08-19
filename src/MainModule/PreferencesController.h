@@ -67,7 +67,7 @@
 
 //! 8.17.22 to turn on/off subscribing to the dawgpack topic
 #define PREFERENCE_SUB_DAWGPACK_SETTING 28
-//! 8.22.22 to turn on/off SPIFF use
+//! 8.22.22 to turn on/off SPIFF use (more below..)
 #define PREFERENCE_USE_SPIFF_SETTING 29
 
 //!the paired device for guest device feeding (6.6.22) .. but the Address 9.3.22
@@ -76,7 +76,10 @@
 //!retreives the motor direction| 1) = default, clockwise; 0 = REVERSE, counterclockwise 9.8.22
 //! false = reverse == counterclockwise
 //! TRUE == default
-#define PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING 31
+//! 8.18.24 note this changes so you can switch directions. the FACTORY_CLOCKWISE
+//! below is the original one time setting.
+//! Renamed to FACTORY for backward compatible
+#define PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING 31
 
 //! sends the WIFI to all except current device if set
 #define PREFERENCE_SENDWIFI_WITH_BLE 32
@@ -120,9 +123,35 @@
 //! 1.12.24 Whether the AtomSocket accepts global on/off messages
 #define PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING 45
 
-//! *******  1 greater than last value **** IMPORTANT *** and no gaps..
-#define MAX_MAIN_PREFERENCES 46
+//! 4.4.24 Adding SPIFF for MQTT and QRATOM seperately
+//! For MQTT writing to the SPIFF
+#define PREFERENCE_USE_SPIFF_MQTT_SETTING 46
+//! For MQTT writing to the QRATOM
+#define PREFERENCE_USE_SPIFF_QRATOM_SETTING 47
 
+//! 8.2.24 to let older Tumbler NOT do the auto direction (back and forth)
+//! Isue #332
+//! it will set via message: autoMotorDirection
+//! {"set":"autoMotorDirection","val":"true"}
+#define PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING 48
+
+//! 8.2.24 don't change subscription but include these groups (eg. safeHouse,atlasDogs)
+#define PREFERENCE_INCLUDE_GROUP_NAMES_SETTING 49
+
+//!retreives the motor direction| 1) = default, clockwise; 0 = REVERSE, counterclockwise 9.8.22
+//! false = reverse == counterclockwise
+//! TRUE == default
+//! 8.18.24 this one changes ...
+#define PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING 50
+
+//! *******  1 greater than last value **** IMPORTANT *** and no gaps..
+#define MAX_MAIN_PREFERENCES 51
+
+//! 8.2.24 retrieve the includeGroup
+//! really ask a topic if it's in the include group
+boolean topicInIncludeGroup(char *topic);
+//! 8.2.24 set the include group (and cache it), called from MQTT
+void setIncludeGroups(char *groups);
 
 //!initialize the _preferencesMainLookup with EPROM lookup names
 void initPreferencesMainModule();
@@ -177,8 +206,11 @@ void savePreferenceInt_mainModule(int preferenceID, int val);
 //!sets an int, but only if a valid integer, and no signs
 void savePreferenceIntFromString_mainModule(int preferenceID, char* val);
 
-//! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
+//! called to get a preference (which will be an identifier and a string, which can be converted to a number or boolean)
 float getPreferenceFloat_mainModule(int preferenceID);
+
+//! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
+void savePreferenceFloat_mainModule(int preferenceID, float val);
 
 //!set some defaults on boot - that override EPROM this can be called on the HOME screen to set back to normal mode..
 void setOnBootPreferences_mainModule();

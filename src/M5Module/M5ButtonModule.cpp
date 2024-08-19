@@ -126,7 +126,9 @@ void M5CallbackValue(char *parameter, int value)
  uint32_t lastChange();
  */
 #ifdef ESP_M5
-#include <M5StickCPlus.h>
+#ifdef M5STICKCPLUS2
+//#include <M5StickCPlus.h>
+#endif
 #endif
 
 
@@ -453,7 +455,8 @@ bool checkMotion_ButtonProcessing()
         _PrevSampleTime = millis();
 #ifdef ESP_M5
         // M5.IMU.getGyroData(&_IMU.gyroX,&_IMU.gyroY,&_IMU.gyroZ);
-        
+#ifndef M5STICKCPLUS2
+
         M5.IMU.getAccelData(&_IMU.accX,&_IMU.accY,&_IMU.accZ);
         //  M5.IMU.getAhrsData(&_IMU.pitch,&_IMU.roll,&_IMU.yaw);
         
@@ -461,7 +464,7 @@ bool checkMotion_ButtonProcessing()
         //SerialTemp.printf("%5.2f  %5.2f  %5.2f   \n\r", _IMU.accX, _IMU.accY, _IMU.accZ);
         //        SerialTemp.printf("%5.2f  %5.2f  %5.2f   \n\r", _IMU.gyroX, _IMU.gyroY, _IMU.gyroZ);
         //        SerialTemp.printf("%5.2f  %5.2f  %5.2f   \n\r", _IMU.pitch, _IMU.roll, _IMU.yaw);
-        
+#endif
 #endif
         _IMU.diffX =   abs(_IMU.prevX - _IMU.accX);
         _IMU.diffY =   abs(_IMU.prevY - _IMU.accY);
@@ -526,8 +529,11 @@ void setup_M5ButtonModule()
     //M5.begin();  already called..
     //Init IMU.  初始化IMU
     
+#ifndef M5STICKCPLUS2
+
     M5.Imu.Init();
     M5.Axp.begin();
+#endif
     _InactivityTimeOut = Elapsed3mins;
     
     //!https://docs.m5stack.com/en/api/stickc/pwm
@@ -538,7 +544,10 @@ void setup_M5ButtonModule()
     
     //! M5DHAT hangs with 2.1.0 M5 board..
 //#if defined(M5STACK_VERSION) && ("2.0.4" == "2.0.4")
+#ifdef M5STICKCPLUS2
+#else
 #define M5DHAT
+#endif
 #ifdef  M5DHAT
     SerialDebug.println("_M5DLightSensor sensor begin.....");
     Wire.begin(0,26);
@@ -573,6 +582,7 @@ void checkButtonB_M5ButtonProcessing()
     boolean buttonTouched = true;
 #ifdef ESP_M5
     
+#ifndef M5STICKCPLUS2
     //was 1000
     if (M5.BtnB.wasReleasefor(500))
     {
@@ -581,7 +591,9 @@ void checkButtonB_M5ButtonProcessing()
         buttonB_LongPress();
     }
     //side button.. cycles through choices..
-    else if (M5.BtnB.wasReleased())
+    else
+#endif // not Cplus2
+        if (M5.BtnB.wasReleased())
     {
         SerialTemp.println("buttonB_ShortPress");
         
@@ -606,13 +618,16 @@ void checkButtonA_M5ButtonProcessing()
 {
     boolean buttonTouched = true;
 #ifdef ESP_M5
+#ifndef M5STICKCPLUS2
     //was 1000
     if (M5.BtnA.wasReleasefor(500))
     {
         SerialDebug.println("buttonA LONG touched");
         buttonA_LongPress();
     }
-    else if (M5.BtnA.wasReleased())
+    else 
+#endif
+        if (M5.BtnA.wasReleased())
     {
         SerialDebug.println("buttonA SHORT touched");
 

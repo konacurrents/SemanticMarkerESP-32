@@ -20,6 +20,7 @@
 //!retrieves the state model for the modelKind
 ModelStateStruct *getModel(ModelKindEnum modelKind);
 
+#ifdef ESP_M5
 //!storage of mapping
 int _menuToSMMode[MenusModel_Max];
 //!init the mapping
@@ -68,7 +69,8 @@ void initMenuToSMMode()
         }
     }
 }
-//! 
+#endif //ESP_M5
+//!
 //!create state variables for the ModelKindEnum entries
 ModelStateStruct _modelStateStructs[ModelKindEnumMax];
 char _timerBuffer[10];
@@ -77,7 +79,9 @@ char _timerBuffer[10];
 void initModelStructs_ModelController()
 {
     strcpy(_timerBuffer,"5");
+#ifdef ESP_M5
     initMenuToSMMode();
+#endif //ESP_M5
     
     for (int i=0;i< ModelKindEnumMax;i++)
     {
@@ -85,6 +89,7 @@ void initModelStructs_ModelController()
         _modelStateStructs[i].currentItem = 0;
         switch (i)
         {
+#ifdef ESP_M5
             case pairedDeviceModel:
                 _modelStateStructs[i].perfersBigText = false;
                 _modelStateStructs[i].SM_Mode = SM_pair_dev;
@@ -106,6 +111,7 @@ void initModelStructs_ModelController()
                 _modelStateStructs[i].perfersBigText = false;
                 _modelStateStructs[i].SM_Mode = SM_home_simple_3;
                 break;
+#endif //ESP_M5
             case timerModel:
                 //!initialize the random:
                 //!@see https://www.arduino.cc/reference/en/language/functions/random-numbers/random/
@@ -673,6 +679,7 @@ char *menuForState(ModelKindEnum modelKind, int item)
     char *menu;
     switch (modelKind)
     {
+#ifdef ESP_M5
         case pairedDeviceModel:
         {
             switch (deviceState->pairedDeviceStateEnum)
@@ -883,7 +890,7 @@ char *menuForState(ModelKindEnum modelKind, int item)
             }
         }
             break;
-           
+#endif //ESP_M5
             //menuForState. Max == 2 if running (showing STOP , TIME)
             //!                       Max == 4 if not running (START, TIME, MAXTIME, DELAY)
         case timerModel:
@@ -947,6 +954,7 @@ boolean invokeMenuState(ModelKindEnum modelKind)
     int item = deviceState->currentItem;
     switch (modelKind)
     {
+#ifdef ESP_M5
             //! the pairdDeviceModel kind
         case pairedDeviceModel:
         {
@@ -1175,6 +1183,7 @@ boolean invokeMenuState(ModelKindEnum modelKind)
                 printPreferenceValues_mainModule();
         }
             break;
+#endif //ESP_M5
         case timerModel:
         {
             //invokeMenuState

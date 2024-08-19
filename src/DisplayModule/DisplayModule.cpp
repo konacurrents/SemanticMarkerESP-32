@@ -67,6 +67,9 @@ void drawBitmapIcon()
 
 #ifdef M5CORE2_MODULE
 boolean _showScrollingTextWindow = false;
+
+#define SHOW_BIG_BUTTON
+//! the BIG BUTTON is green and says Feed
 /**
  1.24.24 First attempt at using the M5Core2 display to show something other than the M5 display
  1. scrolling text
@@ -75,7 +78,7 @@ boolean _showScrollingTextWindow = false;
 
 //! 1.24.24 as alternate display windows are introducted,
 //! let others know and don't overright stuff..
-boolean inAlternateDisplay()
+boolean inAlternateDisplay_displayModule()
 {
 #ifdef M5CORE2_MODULE
     //! if showing the scrolling window .. don't do the rest ..
@@ -395,6 +398,43 @@ void showOTAUpdatingMessage()
 #endif
 }
 
+//! set so it can be erased on next loop
+boolean _fullScreenMessageDisplayed = false;
+
+//! 4.3.24 show text in big letters
+//!@see https://github.com/konacurrents/ESP_IOT/issues/323
+//!show full screen message..
+void displayFullscreenMessage(String text, boolean turnOn)
+{
+#ifdef ESP_M5
+    if (turnOn)
+    {
+        _fullScreenMessageDisplayed = true;
+       // M5.Lcd.fillScreen(BLUE);
+
+        // blank the area
+        M5.Lcd.fillRect(0, 0, 135, 240, BLUE);
+        M5.Lcd.setTextColor(WHITE, BLACK);
+        M5.Lcd.setCursor(10, 90);
+        M5.Lcd.setTextSize(3);
+        M5.Lcd.print(text);
+        
+        // delay then clear
+      //  delay(50);
+      //  redrawSemanticMarker_displayModule(false);
+        //wakeupScreen_displayModule();
+    }
+    else
+    {
+        _fullScreenMessageDisplayed = false;
+
+        wakeupScreen_displayModule();
+
+       // M5.blankscreen();
+    }
+#endif
+}
+
 //! init the text
 void setupTextPosition(TextPositionStruct textP)
 {
@@ -670,8 +710,8 @@ void blankScreen_displayModule()
     
     //!draw the device name (not including the parired or not paired .. as it can change dynaically...
     printTextAtTextPosition(deviceName_mainModule(),_sensorStatusTextPosition);
-#endif //TRY_DEVICES_AND_PAIRED
-#endif //ESP_M5
+#endif
+#endif
 }
 
 //!wakes up the screen
@@ -703,9 +743,9 @@ void clearScreen_displayModule()
     //! DON"T rotate -- for the M5Core2 display
 #else
     M5.Lcd.setRotation(0);
-#endif //M5CORE2_MODULE
+#endif
     M5.Lcd.fillScreen(BLACK);
-#endif //ESP_M5
+#endif
 }
 
 //!whether screen is blank (so the button can be a wake, vs action..)
@@ -738,6 +778,10 @@ void setupESP_M5()
 {
     SerialMin.println("setupESP_M5");
     
+#ifdef M5STICKCPLUS2
+//! 4.20.24 add config
+    M5.config();
+#endif
 #ifdef M5CORE2_MODULE
     /*
      https://arduino.stackexchange.com/questions/9092/how-do-you-call-a-class-method-with-named-parameters
@@ -770,7 +814,7 @@ void setupESP_M5()
 #else
     //!Init M5StickC Plus.  初始化 M5StickC Plus
     M5.begin();
-#endif //M5CORE2_MODULE
+#endif
     
     //!Set font size.
     //!Set the font color to yellow.  设置字体颜色为黄色
@@ -789,7 +833,7 @@ void setupESP_M5()
 #else
     //!Rotate the screen. 将屏幕旋转
     M5.Lcd.setRotation(0);
-#endif //M5CORE2_MODULE
+#endif
     //!set the cursor location.  设置光标位置
     
     //!Set font size.
@@ -820,7 +864,7 @@ void setup_displayModule()
 {
 #ifdef ESP_M5
     setupESP_M5();
-#endif //ESP_M5
+#endif
 
     //this is supposed to say it's not in blank screen...
     //stopDelay();
@@ -828,19 +872,34 @@ void setup_displayModule()
 
 }
 
+//! used to create a mini
+int _fullscreenLoopCount = 0;
+
 //! called for the loop() of this plugin
 void loop_displayModule()
 {
-    
+    //! set so it can be erased on next loop
+    if (_fullScreenMessageDisplayed)
+    {
+        _fullscreenLoopCount ++;
+        if (_fullscreenLoopCount > 10)
+        {
+            displayFullscreenMessage("", false);
+            _fullscreenLoopCount = 0;
+        }
+        else
+            return;
+
+    }
 #ifdef M5CORE2_MODULE
     //! 1.24.24 if alternate display then return ..
-    if (inAlternateDisplay())
+    if (inAlternateDisplay_displayModule())
     {
 
         loop_Alternate_displayModule();
         return;
     }
-#endif //M5CORE2_MODULE
+#endif
 
     //!check if a delay was running..
     if (delayFinished())
@@ -873,7 +932,7 @@ void loop_displayModule()
             SerialCall.println("loop_displayModule: isBlankScreen");
             blankScreen_displayModule();
         }
-#endif //TRY_BLANKSCREEN_IN_LOOP
+#endif
         _markerTimer = 0;
         if (_semanticMarkerShown)
         {
@@ -890,7 +949,7 @@ void loop_displayModule()
     M5.Lcd.drawRect(155,235, 10, 3, WHITE);
     M5.Lcd.drawRect(258,235, 10, 3, WHITE);
     //! 240 too low..
-#endif //M5CORE2_MODULE
+#endif
 }
 
 // ************ Drawing of the Action, Mode and Status  ***************
@@ -1041,7 +1100,7 @@ void drawSensorStatus(int screenType)
     isConnectedBLEClient();
 #else
     false;
-#endif //USE_BLE_CLIENT_NETWORKING
+#endif
     
     //!add the Gateway status.. Now, if the preference is only GEN3 and not connected, then show a Gx, but if connected then G3, and g if any kind but not connected
     String gStatus = "g";
@@ -1181,7 +1240,7 @@ void drawSensorStatus(int screenType)
     
                           //!draw the text
     printText(infoString,multilineScreenType?_multilineStatusTextPosition.maxLen:_sensorStatusTextPosition.maxLen);
-#endif //ESP_M5
+#endif //m5
 }
 //!draws the text and differeent if ON or OFF
 void drawStatusText(String text, boolean isOn)
@@ -1192,7 +1251,7 @@ void drawStatusText(String text, boolean isOn)
     else
         M5.Lcd.setTextColor(WHITE, BLACK);
     M5.Lcd.print(text);
-#endif //ESP_M5
+#endif
 }
 
 //! returns if the modesDesired contains a mode character, but also true if modesDesired in null
@@ -1899,8 +1958,11 @@ void addToTextMessages_displayModule(String text)
     //! if showing the scrolling window .. don't do the rest ..
     if (_showScrollingTextWindow)
     {
+#ifdef  SHOW_BIG_BUTTON
+#else
         //! 1.24.24 Adding scrolling text (if that window on the M5Core2 is shown)
         addToScrollingText_displayModule(text);
+#endif
         return;
     }
 #endif
@@ -1934,6 +1996,14 @@ void addToTextMessages_displayModule(String text)
             break;
         default:
             drawAction(text, _currentScreenType);
+            
+         
+    }
+    
+    //! testing 4.3.24 for large text
+    if (text.compareTo("FEED")==0)
+    {
+        displayFullscreenMessage(text, true);
     }
 }
 
@@ -1958,7 +2028,9 @@ void addToScrollingText_displayModule(String textString)
         int X = M5.Lcd.getCursorX();
         int Y = M5.Lcd.getCursorY();
         SerialDebug.printf("cursor(%d,%d)\n", X, Y);
-
+        
+        if (Y > 213)
+            M5.Lcd.setCursor(0,0);
     }
 }
 
@@ -1968,11 +2040,16 @@ void toggleShowingScrollingTextMode_displayModule()
     boolean flag = !_showScrollingTextWindow;
     setShowingScrollingTextMode_displayModule(flag);
     //! now change perminately ...
-    _showScrollingTextWindow = !_showScrollingTextWindow;
+    //_showScrollingTextWindow = !_showScrollingTextWindow;
 
 }
 
-#define SHOW_BIG_BUTTON
+//! 2.29.24 Leap Year day
+//! Returns whether the Scrolling Text window is shown
+boolean scrollingTextWindowVisible_displayModule()
+{
+    return _showScrollingTextWindow;
+}
 
 //! 2.27.24 make the button seem to be touched, if being shown
 void showButtonTouched_displayModule()
@@ -2002,15 +2079,19 @@ void showButtonTouched_displayModule()
 #endif
 }
 
-//! 1.24.24 Goto the scrolling text mode .. if flag (different)
+//! 1.24.24 Goto the scrolling text mode .. if flag
 void setShowingScrollingTextMode_displayModule(boolean flag)
 {
     SerialDebug.printf("setShowingScrollingTextMode_displayModule(%d, s=%d)\n", flag,_showScrollingTextWindow );
+
+    //! now change perminately ...
+    _showScrollingTextWindow = flag;
+
     //! only do something if changed state
-    if (flag == _showScrollingTextWindow)
-        return;
+//    if (flag == _showScrollingTextWindow)
+//        return;
     
-    if (flag)
+    if (_showScrollingTextWindow)
     {
         //! stop timers, etc
         //!stop the delay which says delay finished .. so don't show anything..  8.9.22
@@ -2025,6 +2106,8 @@ void setShowingScrollingTextMode_displayModule(boolean flag)
         M5.Lcd.setTextSize(5);
         M5.Lcd.setCursor(100, 110);
         M5.Lcd.print("Feed");
+        
+        //M5.Lcd.setCursor(0,0);
 #else
         // blank the area
         //  M5.Lcd.fillRect(0, 60, 135, 140, WHITE);
@@ -2047,7 +2130,7 @@ void setShowingScrollingTextMode_displayModule(boolean flag)
     }
 }
 
-//! scrolls the displayed text
+//! scrolls the displayed text   NOT YET ...
 void scrollText_displayModule()
 {
     if (_showScrollingTextWindow)
@@ -2170,4 +2253,4 @@ void resetLoopTimer_displayModule()
 {
     _loopCounter_displayModule = 0;
 }
-#endif //DISPLAY_MODULE
+#endif

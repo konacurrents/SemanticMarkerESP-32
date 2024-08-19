@@ -45,9 +45,25 @@ void clear()
     if (_M5DisplaySetup)
         _dis.clear();
 }
+char *colorName(CRGB Color)
+{
+    if (Color == (CRGB) 0xff0000)
+        return (char*)"L_RED";
+    else if (Color == (CRGB) 0x00ff00)
+        return (char*)"L_GREEN";
+    else if (Color == (CRGB) 0x0000ff)
+        return (char*)"L_BLUE";
+    else if (Color == (CRGB) 0xe0e0e0)
+        return (char*)"L_WHITE";
+    else if (Color == (CRGB) 0xfff000)
+        return (char*)"L_YELLOW";
+    else
+        return (char*)"UNKNOWN";
+}
 
 void fillpix(CRGB Color)
 {
+    SerialDebug.printf("atom.fillPix %s\n", colorName(Color));
     if (_M5DisplaySetup)
         _dis.fillpix(Color);
 }

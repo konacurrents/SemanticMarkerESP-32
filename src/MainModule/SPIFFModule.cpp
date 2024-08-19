@@ -67,6 +67,7 @@ void readFile(fs::FS &fs, const char * path)
         return;
     
     SerialDebug.printf("Reading file: %s\r\n", path);
+    SerialDebug.printf(" *** Done reading ****");
     
     File file = fs.open(path);
     if(!file || file.isDirectory()){
@@ -129,9 +130,9 @@ void renameFile(fs::FS &fs, const char * path1, const char * path2)
     if (!useSpiff())
         return;
     
-    SerialLots.printf("Renaming file %s to %s\r\n", path1, path2);
+    SerialMin.printf("Renaming file %s to %s\r\n", path1, path2);
     if (fs.rename(path1, path2)) {
-        SerialLots.println("- file renamed");
+        SerialMin.println("- file renamed");
     } else {
         SerialDebug.println("- rename failed");
     }
@@ -143,9 +144,9 @@ void deleteFile(fs::FS &fs, const char * path)
     if (!useSpiff())
         return;
     
-    SerialLots.printf("Deleting file: %s\r\n", path);
+    SerialMin.printf("Deleting file: %s\r\n", path);
     if(fs.remove(path)){
-        SerialLots.println("- file deleted");
+        SerialMin.println("- file deleted");
     } else {
         SerialDebug.println("- delete failed");
     }
@@ -257,6 +258,33 @@ void printFile_SPIFFModule()
     readFile(SPIFFS, SPIFF_FILE_NAME);
 }
 
+
+//! calculate the length of the SPFF file
+int len_SPIFFFile(fs::FS &fs, const char * path)
+{
+    int len = 0;
+    File file = fs.open(path);
+
+    if(!file || file.isDirectory()){
+        SerialDebug.println("- failed to open file for reading");
+        return 0;
+    }
+    
+    //now the rest of the lines can be sent..
+    while(file.available())
+    {
+        String line = file.readString();
+        
+        //char * cstr = new char [str.length()+1];
+        if (line)
+        {
+            len += line.length();
+        }
+    }
+    file.close();
+    return len;
+}
+
 //!reads the file name specified. returning the number of lines..
 int linesInFile_SPIFFModule(fs::FS &fs, const char * path)
 {
@@ -280,11 +308,23 @@ int linesInFile_SPIFFModule(fs::FS &fs, const char * path)
     return lines;
 }
 
+#ifdef OLD
+#define BUFFER_MAX 15000f
+char *_buffer = NULL;
+#endif
+
 //! sends SPIFF module strings over MQTT, starting at the number back specified. This will use the current users MQTT credentials..
 void sendStrings_SPIFFModule(int numberOfLines)
 {
     if (!useSpiff())
         return;
+    //! publish a binary file..
+    //! fileExtension is .jpg, .json, .txt etc
+    
+    int len = len_SPIFFFile(SPIFFS, SPIFF_FILE_NAME);
+    SerialDebug.printf("sendStrings_SPIFFModule (%d)\n", len);
+    publishSPIFFFile((char*)"usersP/bark/images", SPIFF_FILE_NAME, len);
+#ifdef OLD
     
     SerialDebug.println("sendStrings_SPIFFModule");
     
@@ -294,15 +334,19 @@ void sendStrings_SPIFFModule(int numberOfLines)
     SerialDebug.printf("linesMax = %d\n", linesMax);
     //somehow send over MQTT..
 #ifdef USE_MQTT_NETWORKING
-    if (numberOfLines > 20)
-        numberOfLines = 5;
-  
+//    if (numberOfLines > 120)
+//        numberOfLines = 120;
+    // no limit
+    numberOfLines = 500;
+
     
     //fast forward lines - numberOfLines
     // eg. if # = 100, but only want last 10, then
     int skipLines = linesMax - numberOfLines;
     if (skipLines < 0)
         skipLines = 0;
+    
+    //! PROBLEM: if only N lines fit into buffer .. how to delete only up to those lines?
     
     File file = fs.open(path);
     if(!file || file.isDirectory()){
@@ -315,36 +359,59 @@ void sendStrings_SPIFFModule(int numberOfLines)
         file.readString();
         counter++;
     }
-#ifdef NOT_WORKING_YET
+#define POST_AS_BUFFER
+#ifdef  POST_AS_BUFFER
 
+    if (!_buffer)
+    {
+        _buffer = (char*) calloc(1,BUFFER_MAX);
+    }
+    
     //!send a header
-    sendMessageNoChangeMQTT((char*)"Sending Post Mortum Debug");
+    //sendMessageNoChangeMQTT((char*)"Sending Post Mortum Debug");
     counter = 0;
-    char buffer[200];
+//#define BUFFER_MAX 15000
+//    char buffer[BUFFER_MAX];
     //now the rest of the lines can be sent..
-    while(file.available() && counter < 5)
+    while(file.available() && counter < numberOfLines)
     {
         String line = file.readString();
         SerialDebug.println(line);
         //char * cstr = new char [str.length()+1];
         if (line)
         {
-            //strcpy (buffer, line.c_str());
-            strcpy (buffer, (char*)"ScottyBoy");
+            
+            //! get out if too big..
+            if (strlen(_buffer) > line.length() + 100)
+            {
+                sendMessageNoChangeMQTT((char*)"BUFFER too big for SPIFF POST");
 
+                SerialDebug.println(" **** BUFFER too big stopping");
+                numberOfLines = 0;
+            }
+            else
+            
+                //strcpy (buffer, line.c_str());
+                strcpy (_buffer, line.c_str());
+            
+            
             //send the string verbatum..
-            sendMessageNoChangeMQTT(buffer);
+            //sendMessageNoChangeMQTT(buffer);
         }
         counter++;
     }
     file.close();
     //!send a header
-    sendMessageNoChangeMQTT((char*)"Done Post Mortum Debug");
+    //sendMessageNoChangeMQTT((char*)"Done Post Mortum Debug");
+    SerialDebug.printf("now publishBinary(%d)\n", strlen(_buffer));
+    publishBinaryFile((char*)"usersP/bark/images",(uint8_t*) _buffer, strlen(_buffer),"json");
+
 #else
     sendMessageNoChangeMQTT((char*)"Sending Post Mortum Debug ..todo");
 
 #endif
 #endif
+#endif // OLD
 }
 
 //!writes a FB to a file..
@@ -408,7 +475,34 @@ void loop_SPIFFModule()
 {
 }
 
-//!prints a timestamp
+//! sends the Semantic Marker onto the SPIFF
+//! format-  {'time':time, 'SM':'<sm>'}
+void printSM_SPIFFModule(char *semanticMarker)
+{
+    println_SPIFFModule_JSON((char*)"SM",semanticMarker);
+
+}
+
+//! 4.4.24 output a line in JSON format adding timestamp as well
+//!  {'time':time, 'attribute':'value'}
+void println_SPIFFModule_JSON(char *attribute, char *value)
+{
+    if (getPreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_QRATOM_SETTING))
+    {
+        //!print a time too..
+        //!NEED a format for this to distinguish from others..
+        print_SPIFFModule((char*) "{\"time\":\"");
+        printInt_SPIFFModule(getTimeStamp_mainModule());
+        print_SPIFFModule((char*) "\",");
+        print_SPIFFModule((char*) "\"");
+        print_SPIFFModule(attribute);
+        print_SPIFFModule((char*)"\":\"");
+        print_SPIFFModule(value);
+        println_SPIFFModule((char*)"\"},");
+    }
+}
+
+//!prints a timestamp  time: <time> :
 void printTimestamp_SPIFFModule()
 {
     if (!useSpiff())
@@ -661,6 +755,13 @@ void loop_SPIFFModule()
 
 //!prints a timestamp
 void printTimestamp_SPIFFModule()
+{
+    
+}
+
+//! sends the Semantic Marker onto the SPIFF
+//! format-  {'time':time, 'SM':'<sm>'}
+void printSM_SPIFFModule(char *semanticMarker)
 {
     
 }

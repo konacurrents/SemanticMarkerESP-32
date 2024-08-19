@@ -1,6 +1,8 @@
 
 #ifndef Sonic_I2CSensorClass_h
 #define Sonic_I2CSensorClass_h
+#include "../../Defines.h"
+#ifdef ESP_M5
 
 #include "SensorClassType.h"
 #include <Unit_Sonic.h>
@@ -40,5 +42,7 @@ private:
     //! state specific info
     SONIC_I2C _sensor;
 };
+
+#endif
 
 #endif

@@ -11,6 +11,14 @@ char _preferenceBuffer[100];
 //!buffer for the string
 char _preferenceBufferString[100];
 
+//! 8.2.24 includeGroups
+//! 8.2.24 break up the list..
+#define NUMBER_GROUPS 4
+#define STRING_MAX_SIZE 40
+int _includeGroupLen = 0;
+//!resulting group names
+char _includeGroupsStringArray[NUMBER_GROUPS][STRING_MAX_SIZE];
+
 
 //!Issue #103
 //!NOTE: the EPROM space might be limiting: https://github.com/espressif/arduino-esp32/blob/master/tools/partitions/default.csv
@@ -98,7 +106,7 @@ char _preferenceBufferString[100];
 //!retreives the motor direction| true default, clockwise; false = REVERSE, counterclockwise 9.8.22
 //! false = reverse == counterclockwise
 //! true = default
-#define EPROM_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING "31md"
+#define EPROM_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING "31md"
 
 //!send WIFI to all except our device (and our paired) when
 #define EPROM_SENDWIFI_WITH_BLE "32wb"
@@ -140,6 +148,25 @@ char _preferenceBufferString[100];
 //! 1.12.24 Whether the AtomSocket accepts global on/off messages
 #define EPROM_PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING "45sock"
 
+//! 4.4.24 for MQTT use of spiff (or not)
+#define EPROM_USE_SPIFF_MQTT_SETTING "46spiff"
+//! 4.4.24 for QRATOM use of spiff (or not)
+#define EPROM_USE_SPIFF_QRATOM_SETTING "47spiff"
+
+//! 8.2.24 to let older Tumbler NOT do the auto direction (back and forth)
+//! Isue #332
+//! it will set via message: autoMotorDirection
+//! {"set":"autoMotorDirection","val":"true"}
+#define EPROM_STEPPER_AUTO_MOTOR_DIRECTION_SETTING "48a"
+
+//! include these topics groups..
+#define EPROM_INCLUDE_GROUP_NAMES_SETTING "49e"
+
+//!retreives the  FACTORY motor direction| true default, clockwise; false = REVERSE, counterclockwise 9.8.22
+//! false = reverse == counterclockwise
+//! true = default
+#define EPROM_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING "50sf"
+
 //!the EPROM is in preferences.h
 #include <Preferences.h>
 //!name of main prefs eprom
@@ -168,6 +195,99 @@ int _cachedPreferenceIntValues[MAX_MAIN_PREFERENCES];
 
 //!array of boolean if the ID is cached..
 boolean _isCachedPreferenceInt[MAX_MAIN_PREFERENCES];
+
+//! 8.2.24 retrieve the includeGroup
+//! really ask a topic if it's in the include group
+//! modifies the _
+boolean topicInIncludeGroup(char *topic)
+{
+    // for now just see if topc in groups..
+    //! 8.2.24 just string match for now..
+    //! NOTE: topic is a full path ..  but
+    //! MessageArrived: '#FEED {'deviceName':'MaggieMae'}', onTopic=usersP/groups/atlasDogs
+    boolean found = false;
+    
+    //! find the topic (eg. usersP/groups/atlasDogs , is atlasDogs
+    char *topicName = rindex(topic,'/');
+    //! go past the "/"
+    topicName++;
+    
+    //! go through list..
+    for (int i=0; i< _includeGroupLen; i++)
+    {
+        char *group = _includeGroupsStringArray[i];
+        if (group && strlen(group) == 0)
+        {
+            //!empty is a find .. not specified
+            found = true;
+            break;
+        }
+        //! note "group" the short name is 2nd so it's asking if "/userP/groups/atlasDogs contains string atlasDogs
+        //! that way the topic doesn't need to be parsed.. (although it could be wrong :eg  atlas also matches..
+        //if (containsSubstring(topic, group))
+        SerialTemp.printf("compare: %s to %s\n", topicName, group);
+        if (strcmp(topicName, group) == 0)
+        {
+            found = true;
+            break;
+        }
+    }
+    if (_includeGroupLen == 0)
+    {
+        found = true;
+    }
+
+    SerialTemp.printf("topicInIncludeGroup(%s) =%d\n", topicName, found);
+    return found;
+}
+
+//! 8.2.24 set the include group (and cache it), called (indirectly from MQTT via setIncludeGroups
+void parseIncludeGroups(char *groups)
+{
+    SerialTemp.printf("parseIncludeGroups %s\n", groups);
+
+    //! parse the groups (if nothing, then it's ok if no "," use full string)
+    /**
+     The strtok_r() function is a reentrant version strtok(). The saveptr argument is a pointer to a char * variable that is used internally by strtok_r() in order to maintain context between successive calls that parse the same string.
+     On the first call to strtok_r(), str should point to the string to be parsed, and the value of saveptr is ignored. In subsequent calls, str should be NULL, and saveptr should be unchanged since the previous call.
+     
+     char *strtok_r(char *str, const char *delim, char **saveptr);
+     @see https://www.tutorialspoint.com/c_standard_library/c_function_strtok.htm
+     @see https://linux.die.net/man/3/strtok_r
+     */
+    
+    _includeGroupLen = 0;
+    if (!index(groups,','))
+    {
+        //!no comma
+        strcpy(_includeGroupsStringArray[_includeGroupLen], groups);
+        _includeGroupLen++;
+        SerialTemp.printf("Add Group[%d] %s\n", _includeGroupLen, groups);
+    }
+    else
+    {
+        char *str = groups;
+        char *rest = NULL;
+        char *token;
+        for (token = strtok_r(str,",",&rest); token != NULL; token = strtok_r(NULL, ",", &rest))
+        {
+            strcpy(_includeGroupsStringArray[_includeGroupLen], token);
+            SerialTemp.printf("Add Group[%d] %s\n", _includeGroupLen, _includeGroupsStringArray[_includeGroupLen]);
+            _includeGroupLen ++;
+
+        }
+    }
+}
+
+//! 8.2.24 set the include group (and cache it), called from MQTT
+void setIncludeGroups(char *groups)
+{
+    //!process the groups..
+    parseIncludeGroups(groups);
+    
+    //!save persistently
+    savePreference_mainModule(PREFERENCE_INCLUDE_GROUP_NAMES_SETTING, groups);
+}
 
 //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
 void savePreference_mainModule(int preferenceID, String preferenceValue)
@@ -361,10 +481,21 @@ int getPreferenceInt_mainModule(int preferenceID)
 //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
 float getPreferenceFloat_mainModule(int preferenceID)
 {
+    //!TODO: 8.18.24 add a cache for floats ..
+    //!actially cache the string value??
     char* val = getPreference_mainModule(preferenceID);
     float fval = atof(val);
     return fval;
 }
+//! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
+void savePreferenceFloat_mainModule(int preferenceID, float val)
+{
+    //!convert to a string..
+    char str[20];
+    sprintf(str,"%f",val);
+    savePreference_mainModule(preferenceID, str);
+}
+
 //! clean the preferencesMainModule in EPROM
 void cleanEPROM_mainModule()
 {
@@ -442,6 +573,8 @@ void readPreferences_mainModule()
             case PREFERENCE_SENSOR_TILT_VALUE:
             case PREFERENCE_USE_DOC_FOLLOW_SETTING:
             case PREFERENCE_DEV_ONLY_SM_SETTING:
+                //!8.2.24
+            case PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING:
 
                 //SerialLots.printf("setting Cached[%d] = %s\n", i, preferenceValue);
                 _isCachedPreferenceBoolean[i] = true;
@@ -457,6 +590,25 @@ void readPreferences_mainModule()
                 _cachedPreferenceIntValues[i] = atoi(&preferenceValue[0]);
                 break;
                 
+                //! 8.2.24 set the includeGroups
+            case PREFERENCE_INCLUDE_GROUP_NAMES_SETTING:
+                //! grab the state at the start, then it's only modified from a MQTT message
+            {
+                char *groups = getPreferenceString_mainModule(PREFERENCE_INCLUDE_GROUP_NAMES_SETTING);
+                //!save
+                //! parse (do it this way, instead of setIncludeGroups (as that stored in eprom again)
+                parseIncludeGroups(groups);
+            }
+                break;
+#ifdef TODO_THIS_CACHE
+                //! 8.18.24 figure this out ..
+                //! the UNO is not using this .. so let's not worry about it for now ... only Tumbler.
+            case PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING:
+            {
+                //! do this in the "string" part, not the float part..
+                break;
+            }
+#endif
             default:
                 break;
         }
@@ -584,7 +736,7 @@ void initPreferencesMainModule()
                  */
                 _preferenceMainModuleLookupEPROMNames[i] =
                 (char*) EPROM_STEPPER_ANGLE_FLOAT_SETTING;
-                _preferenceMainModuleLookupDefaults[i] = (char*)"45";
+                _preferenceMainModuleLookupDefaults[i] = (char*)"22.5";
                 break;
             case PREFERENCE_TIMER_INT_SETTING:
                 _preferenceMainModuleLookupEPROMNames[i] = (char*) EPROM_PREFERENCE_TIMER_INT_SETTING;
@@ -742,6 +894,16 @@ void initPreferencesMainModule()
                 _preferenceMainModuleLookupDefaults[i] = (char*)"0";
                 
                 break;
+                //! 8.18.24 the factory setting
+                ///!retreives the motor direction| 0 (false) = default, clockwise; 1 (true) = REVERSE, counterclockwise 9.8.22
+                //! TRUE = reverse == counterclockwise
+                //! FALSE = default
+            case PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING;
+                _preferenceMainModuleLookupDefaults[i] = (char*)"1";
+                
+                break;
                 
                 //! 10.4.22
             case PREFERENCE_SENDWIFI_WITH_BLE:
@@ -835,6 +997,42 @@ void initPreferencesMainModule()
                 _preferenceMainModuleLookupDefaults[i] = (char*)"1";
                 break;
                 
+                //!//! 4.4.24 to turn on/off SPIFF use  (not cached yet as it's an infrequent event)
+            case PREFERENCE_USE_SPIFF_MQTT_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_USE_SPIFF_MQTT_SETTING;
+#ifdef USE_SPIFF_MQTT_SETTING
+                _preferenceMainModuleLookupDefaults[i] = (char*)"1";
+#endif //USE_SPIFF_MQTT_SETTING
+                break;
+                //!//! 4.4.24 to turn on/off SPIFF use  (not cached yet as it's an infrequent event)
+            case PREFERENCE_USE_SPIFF_QRATOM_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_USE_SPIFF_QRATOM_SETTING;
+#ifdef USE_SPIFF_QRATOM_SETTING
+                _preferenceMainModuleLookupDefaults[i] = (char*)"1";
+#endif //USE_SPIFF_QRATOM_SETTING
+                break;
+                
+                
+                //! 8.2.24 to let older Tumbler NOT do the auto direction (back and forth)
+                //! Isue #332
+                //! it will set via message: autoMotorDirection
+                //! {"set":"autoMotorDirection","val":"true"}
+            case PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_STEPPER_AUTO_MOTOR_DIRECTION_SETTING;
+                _preferenceMainModuleLookupDefaults[i] = (char*)"1";
+                break;
+              
+                //! 8.2.24 include these groups (or none)
+                //! {"set":"includeGroups","val":"group1,group2"}
+            case PREFERENCE_INCLUDE_GROUP_NAMES_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_INCLUDE_GROUP_NAMES_SETTING;
+                _preferenceMainModuleLookupDefaults[i] = (char*)"";
+                break;
+                
             default:
                 SerialError.printf(" ** NO default for preference[%d]\n", i);
         }
@@ -851,6 +1049,8 @@ void printPreferenceValues_mainModule()
 #ifdef SERIAL_DEBUG_TEMP
     SerialTemp.println("******************");
     SerialTemp.println(VERSION);
+    SerialTemp.printf("CHIP_ID: %s\n", getChipIdString());
+
     //ouch.. this sets 2 values ..
     //  readPreferences_mainModule();
     SerialTemp.printf("STEPPER_KIND: %d  1=UNO,2=MINI,3=TUMBLER\n", getPreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE));
@@ -880,6 +1080,10 @@ void printPreferenceValues_mainModule()
     
     SerialTemp.printf("PREFERENCE_SUB_DAWGPACK_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_SUB_DAWGPACK_SETTING));
     SerialTemp.printf("PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING));
+    SerialTemp.printf("PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING));
+    SerialTemp.printf("AUTO_MOTOR_DIRECTION: %d  1=reverseEachTime,2=dont\n", getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING));
+    //! don't change subscription but include these groups (eg. safeHouse,atlasDogs)
+    SerialTemp.printf("PREFERENCE_INCLUDE_GROUP_NAMES_SETTING: %s\n", getPreference_mainModule(PREFERENCE_INCLUDE_GROUP_NAMES_SETTING));
     SerialTemp.printf("PREFERENCE_SENDWIFI_WITH_BLE: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_SENDWIFI_WITH_BLE));
     SerialTemp.printf("PREFERENCE_ONLY_GEN3_CONNECT_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_ONLY_GEN3_CONNECT_SETTING));
     SerialTemp.printf("PREFERENCE_SUPPORT_GROUPS_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_SUPPORT_GROUPS_SETTING));

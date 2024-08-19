@@ -81,17 +81,27 @@ void showOTAUpdatingMessage();
 void addToScrollingText_displayModule(String textString);
 //! 1.24.24 Goto the scrolling text mode ..
 void toggleShowingScrollingTextMode_displayModule();
-//! 1.24.24 Goto the scrolling text mode .. if flag 
+//! 1.24.24 Goto the scrolling text mode .. if flag  -- saves value
 void setShowingScrollingTextMode_displayModule(boolean flag);
-
 //! 2.27.24 make the button seem to be touched
-void showButtonTouched_displayModule();
+//void showButtonTouched_displayModule();
+//! 2.29.24 Leap Year day
+//! Returns whether the Scrolling Text window is shown
+//! 1.24.24 as alternate display windows are introducted,
+//! let others know and don't overright stuff..
+boolean inAlternateDisplay_displayModule();
 
 //! add a loop for the alternate display
 void loop_Alternate_displayModule();
 
 //! scrolls the displayed text
 void scrollText_displayModule();
+
+//! 4.3.24 show text in big letters
+//!@see https://github.com/konacurrents/ESP_IOT/issues/323
+//!show full screen message..
+void displayFullscreenMessage(String text, boolean turnOn);
+
 #endif
 
 #endif // DisplayModule

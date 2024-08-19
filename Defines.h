@@ -16,11 +16,15 @@
 //! 5. M5 Camera,
 //! 6. M5Core2
 //! ******** 1.22.24 ***********************
+//! *** CURRENTLY:  1
+//! ****************************************
 
 //turn on or off which configuration is desired..
 //BOARD = M5Stick-C-Plus,  type : make uploadFlashM5TEST
 // *** 1
-//#define ESP_M5_SMART_CLICKER_CONFIGURATION
+#define ESP_M5_SMART_CLICKER_CONFIGURATION
+//! comment out the following to use the SENSORS (like KeyUnitSensor)
+//#define ESP_M5_MINIMAL_SENSORS
 
 //original feeder: (and any without PetTutor board. Otherwise Blue light doesn't flash)
 //BOARD = ESP32 Dev Modulef   type: make uploadFlashOrigTEST
@@ -63,7 +67,7 @@
 
 
 //!global to all releases (for now) used in Status for M5 (only 2 characters)
-#define VERSION_SHORT "v6"
+#define VERSION_SHORT "v7"
 
 //!used to force using the BLE Device name in SERVER( eg. PTFEEDER:ScoobyDoo)
 //NOT NOW 9.14.22 (no)
@@ -83,11 +87,13 @@
 
 
 // *** Start of Configurations ***
-#define M5STACK_VERSION "2.0.4"    
-#define DHAT not working.. with 2.1.0
+#define M5STACK_VERSION "2.0.4"
+//#define DHAT not working.. with 2.1.0
 //#define M5STACK_VERSION "2.0.7"  //9.24.23  (didn't seem to have heap space to start BLE server)
 // 2.1 is too BIG .. 2.22.24   (ALSO: issue OTA of too big an app...)
 //#define M5STACK_VERSION "2.1.0"
+
+//! 4.20.24  using library M5GFX 0.1.15 (was 0.0.20) for the M5StickCPlus2
 
 /* *************************** CONFIGURATIONS **********************************/
 //! ****** MAIN:  M5 ****
@@ -96,7 +102,7 @@
 #ifdef ESP_M5_SMART_CLICKER_CONFIGURATION
 //#define VERSION "Version-(2.17b)-11.29.2023-ESP_M5_SMART_CLICKER_BLE_GROUPS_SM_RAND"
 //! 2.5.24 (scotty birthday)
-#define VERSION "Version-(3.5b)-2.23.24-ESP_M5_SMART_CLICKER_KEY_SONIC_CLASS_30K"
+#define VERSION "Version-(3.7)-4.2.24-ESP_M5_SMART_CLICKER_KEY_SONIC_CLASS_30K_CHIPID_AUDIO"
 //#define VERSION "Version-(3.6a)-2.22.24-BOOTSTRAP"
 
 #define ESP_M5
@@ -108,18 +114,34 @@
 #define USE_DISPLAY_MODULE
 #define M5BUTTON_MODULE
 
-//#define USE_SPIFF_MODULE
+//! 4.20.24 Beau Birthday, 4.20, etc
+//! trying the M5StickCPlus2 (which uses M5.unified) YELLOW version (not red)
+//#define M5STICKCPLUS2
+#ifdef  M5STICKCPLUS2
+#define ESP_M5_MINIMAL_SENSORS
+#else
+#define USE_SPIFF_MODULE
+#endif
+#define USE_SPIFF_MQTT_SETTING
+#define USE_SPIFF_QRATOM_SETTING
+//!@see https://github.com/konacurrents/ESP_IOT/issues/322
 //#define USE_AUDIO_MODULE
 //TODO: #define USE_FAST_LED
+
+//! if not minimal sensors .. then include whatever is desired
+#ifndef ESP_M5_MINIMAL_SENSORS
 
 //! Sensors:  2.8.24 (30K above pacific)
 #define KEY_UNIT_SENSOR_CLASS
 #define USE_LED_BREATH
 
-//! Ultrasonic-I2C 
-//! 2.23.24 after nice ski day, Da King beautiful weather (Laura along)
+//! Ultrasonic-I2C
+//! 2.23.24 after nice ski day, Da King beautiful weather (Laura along - not king)
 //! NOTE: won't work at same time as KEY_UNIT (overlapping). So how to fix that?
 //#define ULTRASONIC_I2C_SENSOR_CLASS //NOTE: this is taking time away from M5 button presses...
+
+#endif //not ESP_M5_MINIMAL_SENSORS
+
 
 //The M5_CAPTURE_SCREEN is an attempt to get the image of the M5. not working yet.. 8.25.22
 // This issue is the backing store of the bitmap isn't there, so grabbing the pixels are blank
@@ -153,6 +175,8 @@
 
 #define USE_BLE_CLIENT_NETWORKING
 #define USE_DISPLAY_MODULE
+
+
 #endif //ESP_M5_SMART_CLICKER_CONFIGURATION_MINIMAL
 
 #ifdef ESP_32_FEEDER_WITH_BOARD
@@ -162,12 +186,23 @@
 
 //This is an easy way to turn on the esp-32 feeder configuration...
 #ifdef ESP_32_FEEDER
+
+//! 3.28.24 -- feed when booted up (so HUBSpace can turn on/off feeder via TDSnap via Eye Gaze)
+//! 5.3.24 but on
+#if defined (BOARD)
+#else
+//! original feeder (like PumpkinUno) will feed on startup..
+//! SEEMS this is only compiler flag for now.. Default OFF anyway
+#define FEED_ON_STARTUP
+#endif
+
+// *************************** case 3 ESP32 with BOARD *********************************
 #if defined(BOARD)
 #ifdef  ESP_32_FEEDER_BLE_GEN3
 #define VERSION "Version-(2.15b)-7.16.2023-ESP_32_FEEDER_GROUPS2"
 #else
-//!normal BOARD - or the main feeders !! MODIFY THIS ONE...
-#define VERSION "Version-(2.10)-2.17.2024-ESP_32_FEEDER_GROUPS3_WIFI_AP_NOSPACES"
+//!normal BOARD - or the main feeders !! MODIFY THIS ONE...  **********************
+#define VERSION "Version-(2.17g)-8.18.2024-ESP_32_FEEDER_TUMBLER_REVERSE_H_GROUPS_FACTORY_CW_CCW"
 #endif
 
 #else // orig
@@ -175,7 +210,8 @@
 #define VERSION "Version-(v2.12g)-10.23.2022-ESP_32_FEEDER-BLE_GEN3"
 #else
 //THIS IS WHERE VERSION FOR ORIGINAL ESP feeder (without board)  12.31.22
-#define VERSION "Version-(2.10)-2.17.2024-ESP_32_FEEDER_GROUPS3_WIFI_AP_NOSPACES"
+//#define VERSION "Version-(2.16a)-6.14.2024-ESP_32_FEEDER_GROUPS3_WIFI_AP_STARTUP_FEED"
+#define VERSION "Version-(2.16g)-8.9.2024-ESP_32_FEEDER_GROUPS3_WIFI_AP_STARTUP_FEED_JerryGarcia"
 
 
 #endif
@@ -231,10 +267,10 @@
 //! library:  not using M5Stack-ATOM (actually using M5Stack-C-Plus)
 //! 12.26.23 day after xmas
 //! https://docs.m5stack.com/en/atom/atom_socket
-//! ALSO: use the Minimal SPIFF 
+//! ALSO: use the Minimal SPIFF
 //! 2.25.23 Sketch uses 1497093 bytes (76%) of program storage space. Maximum is 1966080 bytes.
 #ifdef ESP_M5_ATOM_LITE
-#define VERSION "Version-(3.5b)-2.5.24-ESP_M5_ATOM_QR_SCAN_SOCKET_SMART_GROUP_CLASS"
+#define VERSION "Version-(3.11)-4.6.24-ESP_M5_ATOM_QR_SCAN_SOCKET_SMART_GROUP_CHIPID_SSID_TOMCAT_SPIFF2"
 #define ESP_M5
 #define M5_ATOM
 #define USE_MQTT_NETWORKING
@@ -253,25 +289,36 @@
 #define USE_FAST_LED
 
 //! Sensors:  2.8.24 (30K above pacific)
-//#define KEY_UNIT_SENSOR_CLASS
-//#define USE_LED_BREATH
+#define KEY_UNIT_SENSOR_CLASS
+#define USE_LED_BREATH
 
 //! 11.14.23 try "https" secure web call (to SemanticMarker.org/bot/...)
 //!  See https://GitHub.com/konacurrents/SemanticMarkerAPI for more info
-#define USE_REST_MESSAGING
+//crashing .. 3.22.24 (just send DOCFOLLOW for now)
+//#define USE_REST_MESSAGING
+//! 3.25.24 try again ... (not working)
+
+//! 4.4.24 (after glacier skiing at Crystal ice, but snowing)
+#define USE_SPIFF_MODULE
+#define USE_SPIFF_MQTT_SETTING
+#define USE_SPIFF_QRATOM_SETTING
+
+//! 4.10.24 GPS sensor
+//#define USE_GPS_SENSOR_CLASS
 
 #endif //ESP_M5_ATOM_LITE
 
 //! 1.22.24 M5CORE2 uses M5Core2 Library (not M5StackC-Plus)
 #ifdef M5CORE2_MODULE
-#define VERSION "Version-(4.2)-2.8.24-ESP_M5CORE2_OurM5Dsp_Touch_30KPacific_KeyUnit"
+#define VERSION "Version-(3.8)-4.5.24-ESP_M5CORE2_OurM5Dsp_Touch_30KPacific_KeyUnit_ClickAudio_SPIFF"
+//#define VERSION "Version-(3.6)-3.17.24-ESP_M5CORE2_OurM5Dsp_Touch_30KPacific_KeyUnit_ChipID"
 #define ESP_M5
 #define USE_MQTT_NETWORKING
 #define USE_BUTTON_MODULE  ///... ATOMQButtons.cpp
 #define USE_WIFI_AP_MODULE
 #define USE_BLE_SERVER_NETWORKING
 #define USE_BLE_CLIENT_NETWORKING //try to be a smart clicker too..
-#define USE_DISPLAY_MODULE  
+#define USE_DISPLAY_MODULE
 
 //! 11.14.23 try "https" secure web call (to SemanticMarker.org/bot/...)
 //!  See https://GitHub.com/konacurrents/SemanticMarkerAPI for more info
@@ -283,6 +330,14 @@
 //! Sensors:  2.8.24 (30K above pacific)
 #define KEY_UNIT_SENSOR_CLASS
 #define USE_LED_BREATH
+
+//! 4.2.24 try the audio .. but for the double click
+#define USE_AUDIO_MODULE
+
+//! 4.4.24 (after glacier skiing at Crystal ice, but snowing)
+#define USE_SPIFF_MODULE
+#define USE_SPIFF_MQTT_SETTING
+#define USE_SPIFF_QRATOM_SETTING
 
 #endif //M5CORE2_MODULE
 
@@ -342,7 +397,15 @@ Error only one of ESP_M5 or ESP_32 or M5_ATOM or M5CORE2_MODULE must be defined
 #ifdef M5CORE2_MODULE
 #include <M5Core2.h>
 #else
+//fix this... 4.25.24
+#ifdef  M5STICKCPLUS2
+#include <M5StickCPlus2.h>
+#else
 #include <M5StickCPlus.h>
+#endif
+
+//! see https://github.com/m5stack/M5Stack/issues/97
+#undef min
 #endif //M5Core2
 #else
 #include <Arduino.h>
@@ -466,5 +529,6 @@ Error only one of ESP_M5 or ESP_32 or M5_ATOM or M5CORE2_MODULE must be defined
   ....
   #endif //ButtonModule_h
 */
+
 
 #endif // Defines_h

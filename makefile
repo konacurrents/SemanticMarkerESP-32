@@ -63,7 +63,7 @@ uploadFlashBoard_MAIN: .
 uploadFlashM5_MAIN: .
 	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/MAIN
 
-## QA Testing
+## QA Testing ********************* QA ******
 
 uploadFlashBoard_QA: .
 	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.esp32.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/QA_OTA_Board
@@ -73,22 +73,28 @@ uploadFlashM5_QA: .
 
 ## Testing of DEV
 
-# feeder original (pumpkin uno, scooby doo)
-uploadFlashOrigTEST: .
-	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.esp32.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/ORIG
 
-# MAIN feeder
+# MAIN feeder ********************* DEV ******
+# ** This one... 
 uploadFlashBoardTEST: .
 	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.esp32.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/OTA_Board
 
 uploadFlashM5TEST: .
 	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5
 
+# Other, original feeder, Camera
+# feeder original (pumpkin uno, scooby doo) ***
+uploadFlashOrigTEST: .
+	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.esp32.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/ORIG
+
+uploadFlashM5TEST_SENSORS: .
+	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5/SENSORS
+
 uploadFlashM5CameraTEST: .
 	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stack_timer_cam.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5
 	
 
-# Module M5ATOM Generically morphs to different ones
+# Module M5ATOM Generically morphs to different ones ********** M5 Atom ***********
 uploadFlashM5AtomLiteTEST: .
 	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5Atom
 	

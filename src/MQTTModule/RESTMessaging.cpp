@@ -54,14 +54,14 @@ const char *_SemanticMarkerServer = "SemanticMarker.org";
 void setupSecureRESTCall()
 {
 
-    SerialDebug.println("setCACert");
+    SerialDebug.println("setupSecureRESTCall: setCACert");
     _secureClient.setCACert(_SemanticMarker_org_root_ca);
     SerialDebug.printf("done setCACert = %p\n", _secureClient);
     
 }
 
 //! 11.14.23  Amber's in Europe
-
+//! 3.6.24 nice but cold.TODO  Retrieve image @see https://forum.arduino.cc/t/download-image-from-internet-to-esp32-and-display-it-out-to-a-tft-display/1075289/2
 //! these are sent to SemanticMarker.org and use that hosts security
 void sendSecureRESTCall(String message)
 {
@@ -70,10 +70,10 @@ void sendSecureRESTCall(String message)
     SerialDebug.println(message);
     //setupSecureNetwork();
    
-    
+    SerialDebug.println("calling _secureClient.connect");
     if (!_secureClient.connect(_SemanticMarkerServer, 443))
     {
-        SerialDebug.println("HTTTPS Connection failed!");
+        SerialDebug.println("HTTPS Connection failed!");
     }
     else
     {
@@ -84,6 +84,8 @@ void sendSecureRESTCall(String message)
         
          char buffer[300];
         sprintf(buffer,"GET %s HTTP/1.1", message.c_str());
+        SerialDebug.println(buffer);
+        
         _secureClient.println(buffer);
         /*
         _secureClient.println("GET ");
@@ -95,16 +97,19 @@ void sendSecureRESTCall(String message)
         _secureClient.println("Connection: close");
         _secureClient.println();
         
-        while (_secureClient.connected()) {
+        while (_secureClient.connected()) 
+        {
             String line = _secureClient.readStringUntil('\n');
-            if (line == "\r") {
+            if (line == "\r") 
+            {
                 SerialDebug.println("headers received");
                 break;
             }
         }
         // if there are incoming bytes available
         // from the server, read them and print them:
-        while (_secureClient.available()) {
+        while (_secureClient.available()) 
+        {
             char c = _secureClient.read();
             SerialDebug.write(c);
         }

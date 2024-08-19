@@ -81,4 +81,4 @@ void Task::setCore(BaseType_t coreID)
 }
 
 
-#endif //M5_ATOM
+#endif //USE_FAST_LED

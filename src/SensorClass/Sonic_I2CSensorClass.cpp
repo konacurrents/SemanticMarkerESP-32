@@ -1,16 +1,22 @@
 
-#include <iostream>
-#include <string.h>
-#include <stdio.h>
+
 #include "Sonic_I2CSensorClass.h"
 
 #include "../../defines.h"
+#if defined(ESP_M5) && !defined(ESP_M5_MINIMAL_SENSORS)
+//#include <iostream>
+#include <string.h>
+#include <stdio.h>
 
 #ifdef ESP_M5
 #ifdef M5CORE2_MODULE
 #include <M5Display.h>
 #else
+
+#ifdef M5STICKCPLUS2
 #include <M5StickCPlus.h>
+#endif
+
 #include <Unit_Sonic.h>
 //!@see https://github.com/m5stack/M5Unit-Sonic/blob/master/examples/Unit_SonicI2C_M5StickCPlus/Unit_SonicI2C_M5StickCPlus.ino
 #endif
@@ -86,3 +92,4 @@ void Sonic_I2CSensorClass::setup()
     
     setupSonic_I2C();
 }
+#endif

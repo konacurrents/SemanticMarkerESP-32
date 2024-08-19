@@ -737,7 +737,9 @@ void poweroff_mainModule()
     SerialTemp.println(" **** POWEROFF ***");
 
 #ifndef ESP_M5_CAMERA
+#ifndef M5STICKCPLUS2
     M5.Axp.PowerOff();
+#endif
 #endif
 
 #endif
@@ -1084,6 +1086,20 @@ void invokeAsyncCommands()
                         sendMessageString_mainModule(_asyncParameter);
                 }
                     break;
+                    
+                    //! 3.9.24 REST call 
+                case ASYNC_REST_CALL_MESSAGE_PARAMETER:
+                {
+                    //process the message
+                    SerialDebug.print("ASYNC_REST_CALL_MESSAGE_PARAMETER: ");
+                    SerialDebug.println(_asyncParameter);
+#ifdef USE_REST_MESSAGING
+                    sendSecureRESTCall(_asyncParameter);
+#endif
+
+                    
+                }
+                    break;
             }
             
         }
@@ -1415,6 +1431,35 @@ void invokeAsyncCommands()
     }
 }
 
+
+//!3.17.24  the unqiue chip id
+uint32_t _chipID_MainModule = 0;
+//! string like: 10311304
+char _chipIdString_MainModule[15];
+
+
+//! 3.17.24 get the chip id
+uint32_t getChipId()
+{
+    if (_chipID_MainModule == 0)
+    {
+        //get chip ID
+        for (int i = 0; i < 17; i = i + 8) {
+            _chipID_MainModule |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
+        }
+        sprintf(_chipIdString_MainModule,"%ld", _chipID_MainModule);
+    }
+    return _chipID_MainModule;
+    
+}
+
+//! 3.17.24 get the chip id as a string
+char* getChipIdString()
+{
+    getChipId();
+    return _chipIdString_MainModule;
+}
+
 //! 1.12.24 add a temporary LUX dark
 //! threshholdKind = 0 (LIGHT), 1=(DARK) .. others might be 2=super dark
 //#define THRESHOLD_KIND_LIGHT 0
@@ -1676,9 +1721,15 @@ void main_printModuleConfiguration()
     SerialMin.println(F("[ ] BOARD"));
 #endif
 #ifdef USE_SPIFF_MODULE
-    SerialMin.println(F("[x] USE_SPIFF_MODULE"));
+    SerialMin.printf("[%d] USE_SPIFF_MODULE/_SETTING\n",  getPreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_SETTING));
 #else
-    SerialMin.println(F("[ ] USE_SPIFF_MODULE"));
+    SerialMin.println("[ ] USE_SPIFF_MODULE");
+#endif
+#ifdef USE_SPIFF_MQTT_SETTING
+    SerialMin.printf("[%d] USE_SPIFF_MQTT_SETTING\n",getPreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_MQTT_SETTING));
+#endif
+#ifdef USE_SPIFF_QRATOM_SETTING
+    SerialMin.printf("[%d] USE_SPIFF_QRATOM_SETTING\n", getPreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_QRATOM_SETTING));
 #endif
 
 #ifdef USE_FAST_LED
@@ -1766,6 +1817,8 @@ float getBatPercentage_mainModule()
     float batVoltage = 1;
     float batPercentage = 100; //plugged in
 #ifdef ESP_M5
+#ifndef M5STICKCPLUS2
+
 #ifdef M5_ATOM
     //! the M5.Axp.GetBatVoltage() is VERY slow on the M5 (as there isn't one..)
 #elif defined(M5CORE2_MODULE)
@@ -1782,6 +1835,7 @@ float getBatPercentage_mainModule()
     double vbat = vbatData * 1.1 / 1000;
     batPercentage =  100.0 * ((vbat - 3.0) / (4.07 - 3.0));
 #endif
+#endif // M5STICKCPLUS2
 #endif
  
     if (batPercentage > 100.0)
@@ -1847,7 +1901,9 @@ float getTemperature_mainModule()
     float temperature;
 #ifdef M5_ATOM
 #else
+#ifndef M5STICKCPLUS2
     M5.IMU.getTempData(&temperature);
+#endif
 #endif
     
 #ifdef USER_THE_MAX_TEMP_FEATURE
@@ -1907,7 +1963,7 @@ float getTemperature_mainModule()
 ]
 }
 */
-//!status in JSON format
+//!status in JSON format, needs to return something as a ',' is already added before calling this..
 char* main_currentStatusJSON()
 {
     //returns a JSON string..
@@ -1943,7 +1999,7 @@ char* main_currentStatusJSON()
     return currentStatusJSON_M5Core2Module();
 #endif
     
-    return (char*)"";
+    return (char*)"'tbd':'x'";
 }
 
 //! TODO: fix syntax. If just sensor sensor status: ....
@@ -2019,6 +2075,7 @@ void addMoreStatusQueryString()
     addStatusStringFlag("can",  getPreferenceString_mainModule(PREFERENCE_STEPPER_KIND_VALUE));
     addStatusStringFlag("stp",  getPreferenceString_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING));
     addStatusStringFlag("dir",  getPreferenceString_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING));
+    addStatusStringFlag("fdir",  getPreferenceString_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING));
 
 #endif
 }
@@ -2124,6 +2181,40 @@ void sendSemanticMarkerDocFollow_mainModule(const char* SMDocFollowAddress)
 
 }
 
+//! 8.18.24 setting this will check for the factory setting..
+void setClockwiseMotorDirection_mainModule(boolean isClockwiseFlag)
+{
+    boolean factoryMotorClockwise = getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING);
+    SerialDebug.printf("factoryMotorClockwise = %d, isClockwiseFlag = %d\n",factoryMotorClockwise, isClockwiseFlag);
+
+    if (factoryMotorClockwise && isClockwiseFlag)
+    {
+        SerialDebug.println("setClockwiseMotorDirection -- same so no change");
+    }
+    else if (factoryMotorClockwise && !isClockwiseFlag)
+    {
+        //!toggle flag and save as that mode..
+        isClockwiseFlag = !isClockwiseFlag;
+        //! this says: factory is CW and we want to turn CCW
+        //! so we have to go the opposite direction (!CW)
+    }
+    else if (!factoryMotorClockwise && isClockwiseFlag)
+    {
+        //! toggle flag as well,
+        isClockwiseFlag = !isClockwiseFlag;
+        //! this says: factory is CCW and we want to turn CW
+        //! so we have to go the opposite direction (!CW)
+    }
+    else if (!factoryMotorClockwise && !isClockwiseFlag)
+    {
+        SerialDebug.println("setClockwiseMotorDirection -- same so no change");
+    }
+    //! set to what it thinks it is...
+    savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING, isClockwiseFlag);
+
+}
+
+
 //!Keep ProcessClientCmd short to let the callback run. instead change the feeder state flag
 //! processes a message that might save in the EPROM.. the cmd is still passed onto other (like the stepper module)
 void processClientCommandChar_mainModule(char cmd)
@@ -2168,18 +2259,34 @@ void processClientCommandChar_mainModule(char cmd)
     {
         SerialLots.println("Setting feederType = UNO");
         savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_UNO);
+        
+        //!Issue #332 8.17.2024
+        savePreferenceInt_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 45);
+        //! set autoRotoate as well..
+        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, false);
+        //! default to  clockwise == 0
+        //! 8.18.24 setting this will check for the factory setting..
+        setClockwiseMotorDirection_mainModule(true);
     }
     else if (cmd == 'm')
     {
         SerialLots.println("Setting feederType = MINI");
         //save preference
         savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_MINI);
+        // turn clockwise..
+        //! 8.18.24 setting this will check for the factory setting..
+        setClockwiseMotorDirection_mainModule(true);
     }
     else if (cmd == 'L')
     {
         SerialLots.println("Setting feederType = Tumbler");
         //save preference
         savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
+        //!Issue #332 8.17.2024
+        savePreferenceInt_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 200);
+        //! set autoRotoate as well..
+        //! 8.18.24 setting this will check for the factory setting..
+        setClockwiseMotorDirection_mainModule(true);
     }
     else if (cmd == 'B')
     {
@@ -2286,13 +2393,14 @@ void processClientCommandChar_mainModule(char cmd)
     }
     else if (cmd == 'D')
     {
+        //!NOTE: no current mode to specify CCW or CW dynamically (non factory reset)
         // motor direction = counterclockwise
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING,false);
+        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING,false);
     }
     else if (cmd == 'd')
     {
         // motor direction ==  (clockwise)
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING,true);
+        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING,true);
     }
     //! 9.30.23 reverse direction
     else if (cmd == 'Q')
@@ -2323,11 +2431,25 @@ void processClientCommandChar_mainModule(char cmd)
         // reboot
         rebootDevice_mainModule();
     }
+    //! 8.16.24 per #332
     else if (cmd == 'H')
+    {
+        // autoMotorDirection ON
+        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
+
+    }
+    //! 8.16.24 per #332
+
+    else if (cmd == 'h')
+    {
+        // autoMotorDirection off
+        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, false);
+    }
+    else if (cmd == '.')
     {
         
         SerialLots.println("Valid Commands: ");
-        SerialLots.println("         H == help, this message");
+        SerialLots.println("         . = help, this message");
         SerialLots.println(" 0x0, s, c == Single Feed ");
         SerialLots.println("         a == AutoFeed On");
         SerialLots.println("         A == AutoFeed Off");
@@ -2357,6 +2479,8 @@ void processClientCommandChar_mainModule(char cmd)
         SerialLots.println("         e == use naming PTFeeder:name");
         SerialLots.println("         Z == Setting SM Zoom = zoomed");
         SerialLots.println("         z == Setting SM Zoom = full SM");
+        SerialLots.println("         H == autoMotorDirection on");
+        SerialLots.println("         h == autoMotorDirection off");
 
         //!print out stuff
         main_printModuleConfiguration();
@@ -2395,6 +2519,7 @@ int getTimeStamp_mainModule()
 //!returns an index from 0..max of SM matching cmd, or -1 if none
 int whichSMMode_mainModule(char *cmd)
 {
+#ifdef ESP_M5
     //https://www.cplusplus.com/reference/cstring
     if (strncmp(cmd,"sm",2) == 0)
     {
@@ -2412,6 +2537,7 @@ int whichSMMode_mainModule(char *cmd)
         return num;
     }
     else
+#endif //ESP_M5
     {
         return -1;
     }

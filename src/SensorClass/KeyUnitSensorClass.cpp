@@ -1,15 +1,21 @@
-#include <iostream>
-#include <string.h>
-#include <stdio.h>
+
 #include "KeyUnitSensorClass.h"
 
 #include "../../defines.h"
+#if defined(ESP_M5) && !defined(ESP_M5_MINIMAL_SENSORS)
+
+//#include <iostream>
+#include <string.h>
+#include <stdio.h>
 
 #ifdef ESP_M5
 #ifdef M5CORE2_MODULE
 #include <M5Display.h>
 #else
+#ifdef M5STICKCPLUS2
 #include <M5StickCPlus.h>
+#endif
+
 #endif
 #endif
 
@@ -32,8 +38,12 @@ KeyUnitSensorClass::~KeyUnitSensorClass()
 #ifdef USE_LED
 #include <FastLED.h>
 
+#ifdef ATOM_QRCODE_MODULE
+//! port b
+#define DATA_PIN 26
+#else
 #define DATA_PIN 32  // Define LED pin.  定义LED引脚.
-
+#endif
 #endif
 
 //#define USE_LED_BREATH  //not working, (working for M5button and Core2)
@@ -51,7 +61,12 @@ void KeyUnitSensorClass::startTaskImpl(void* _this)
 }
 #define KEY_UNIT_GROVE
 #ifdef  KEY_UNIT_GROVE
+#ifdef ATOM_QRCODE_MODULE
+//! port b
+#define KEY_PIN 32
+#else
 #define KEY_PIN 33 //Define Key Pin.  定义Key引脚
+#endif
                    //!setup the KeyUnit
 void KeyUnitSensorClass::setupKeyUnit()
 {
@@ -160,3 +175,5 @@ void KeyUnitSensorClass::setup()
     
     setupKeyUnit();
 }
+
+#endif //ESP_M5

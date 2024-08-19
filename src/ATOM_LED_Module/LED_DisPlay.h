@@ -1,6 +1,8 @@
-#ifndef _LED_DISPLAY_H_
-#define _LED_DISPLAY_H_
+#ifndef LED_DISPLAY_H_
+#define LED_DISPLAY_H_
+#include "../../Defines.h"
 
+#ifdef USE_FAST_LED
 /**
  * Code is from M5Atom.h object, but refactored to be it's own object
  */
@@ -71,5 +73,7 @@ private:
     void _displaybuff(uint8_t *buffptr, int32_t offsetx = 0, int32_t offsety = 0);
 };
 
+
+#endif //USE_FAST_LED
 
 #endif //_LED_DISPLAY_H_

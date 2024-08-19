@@ -1,6 +1,7 @@
 //! from: https://github.com/m5stack/M5Atom/blob/master/examples/ATOM_BASE/ATOM_Socket/AtomSocket.cpp
 #include "AtomSocket.h"
 //#include "../../Defines.h"
+#ifdef ATOM_SOCKET_MODULE
 
 void ATOMSOCKET::Init(HardwareSerial& SerialData, int _RelayIO, int _RXD) {
     AtomSerial = &SerialData;
@@ -143,3 +144,4 @@ bool ATOMSOCKET::Checksum() {
         return false;
     }
 }
+#endif // ATOM_SOCKET_MODULE

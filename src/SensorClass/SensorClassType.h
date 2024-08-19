@@ -3,12 +3,19 @@
 #ifndef SensorClassType_h
 #define SensorClassType_h
 #include "../../defines.h"
+#ifdef ESP_M5
 
-//a pointer to a callback function that takes (char*) and returns void
+//!a pointer to a callback function that takes (char*) and returns void
 typedef void sensorCallbackSignature(char *, boolean);
 
-//a pointer to a callback function that takes (char*) and returns void
+//!a pointer to a callback function that takes (char*) and returns void
+//!optional
 typedef void sensorCallbackValueSignature(char *, int);
+
+
+//!a pointer to a callback function that takes (char*) in JSON format
+//!optional
+typedef void sensorCallbackJSONSignature(char *);
 
 //! An abstract class
 //! @see https://www.geeksforgeeks.org/pure-virtual-functions-and-abstract-classes/
@@ -45,11 +52,20 @@ public:
     //! This is provided on instantiation
     void registerCallbackValue(sensorCallbackValueSignature *callback);
     
+    
+    //! the callback when events in the sensorClass occur
+    //! This is provided on instantiation
+    void registerCallbackJSON(sensorCallbackJSONSignature *callback);
+    
+    
     //!call the callback
     void callCallback(char *info, boolean flag);
     
     //!call the callback
     void callCallbackValue(char *info, int value);
+    
+    //!call the callback for JSON
+    void callCallbackJSON(char *JSONString);
 private:
     
     //! callback storage
@@ -57,6 +73,12 @@ private:
     
     //! callback storage for the value
     sensorCallbackValueSignature* _callbackValue = NULL;
+    
+    //! callback storage for the JSON
+    sensorCallbackJSONSignature* _callbackJSON = NULL;
+    
 };
+
+#endif
 
 #endif

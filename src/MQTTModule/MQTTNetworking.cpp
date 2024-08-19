@@ -177,6 +177,21 @@ void cleanSSID_EPROM_Method();
 //!calls the FEED message via the callback (which calls the BLE code)
 void performFeedMethod(char* topic);
 
+//! the short version
+char _shortVersion[30];
+
+//! return a short version of VERSION
+char *shortVersion()
+{
+    return _shortVersion;
+}
+//! init short version
+void initShortVersion()
+{
+    int len = strlen("Version-(3.7)-3.22.24")+3;
+    strncpy(_shortVersion,VERSION, len);
+    _shortVersion[len] = '\0';
+}
 //  *********************** END SPECIFICATION AND GLOBAL VARIABLES ******
 
 //!returns seconds since first booted
@@ -199,7 +214,13 @@ boolean _MQTTRunning = false;
 //!define this storage once, and use everwhere..
 #define MAX_MESSAGE 2024
 #else
+#ifdef ESP_M5
 #define MAX_MESSAGE 1024
+#else
+#define MAX_MESSAGE 600
+//1235178, 63708  (600 max)
+//1235178  64980   1024
+#endif //ESP_M5
 #endif
 #define MAX_MESSAGE_DOCFOLLOW 300
 //!message received on subscription
@@ -207,7 +228,9 @@ char _fullMessageIn[MAX_MESSAGE];
 //! message to send out
 char _fullMessageOut[MAX_MESSAGE];
 
+#ifdef ESP_M5
 char _semanticMarkerString[MAX_MESSAGE];
+#endif //SEP_M5
 
 //!saves the group topic .. to write back on ..
 char _lastGroupTopic[100];
@@ -257,6 +280,8 @@ boolean skipMessageProcessing()
     return skip;
 }
 
+
+
 //!the publishMQTTMessage is placed here as a placeholder for making the mqtt publish. If needed, this could be moved
 //!to another thread (or the next loop)
 #define TRY_MORE_ASYNC_PROCESSING
@@ -287,6 +312,88 @@ void publishMQTTMessageDefaultTopic(char *message)
     publishMQTTMessage(_mqttTopicString, message);
 }
 
+
+//! send semantic /smrun
+//! 3.25.24 this is an HTTP not https
+void publishSMRunMessage(char* smrunMessage)
+{
+    SerialMin.printf("publishSMRunMessage: %s\n", smrunMessage);
+#ifdef ATOM_QRCODE_MODULE
+    //   _mqttClient.publish(_mqttTopicString, buf, len);
+    //!https://randomnerdtutorials.com/esp32-http-get-post-arduino/
+    //!https://randomnerdtutorials.com/esp32-cam-post-image-photo-server/
+    //!https://raw.githubusercontent.com/RuiSantosdotme/ESP32-CAM-Arduino-IDE/master/ESP32-CAM-HTTP-POST-Image/ESP32-CAM-HTTP-POST-Image.ino
+    //! Lets do a POSt to my whats-this site..
+    
+    //!create a WIFI client that talks to just our upload servlet
+    WiFiClient postClient;
+    
+    String serverName = "knowledgeshark.me";   // REPLACE WITH YOUR Raspberry Pi IP ADDRESS
+                                               //String serverName = "example.com";   // OR REPLACE WITH YOUR DOMAIN NAME
+    String serverPath = "/examples/servlets/servlet/RequestParamExample";
+    //!tomcat server.. 8080
+    int serverPort = 8080;
+    SerialDebug.println("2. Connecting to server: " + serverName);
+    
+    //!@see https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST
+    //! WORKS  3.25.24 !!!
+    if (postClient.connect(serverName.c_str(), serverPort))
+    {
+        String firstname = smrunMessage;
+        //! change the & to the %26
+        firstname.replace("&","%26");
+        
+        //! also look for "smart" or "smflowinfo" and change to "smrun"
+        firstname.replace("smart","smrun");
+        firstname.replace("smflowinfo","smrun");
+       
+        //firstname = "ScottyBoy";
+        
+        SerialDebug.printf("RequstParamExample Connection successful! \n");
+        String head = "--KonaCurrents\r\nContent-Disposition: form-data; name=\"firstname\"\r\nContent-Type: image/jpeg\r\n\r\n";
+        String tail = "\r\n--KonaCurrents--\r\n";
+
+        
+        head = "firstname=" + firstname;
+        tail = "";
+        uint32_t imageLen = 0;
+        uint32_t extraLen = head.length() +  tail.length();
+        uint32_t totalLen = imageLen + extraLen;
+        
+        postClient.println("POST " + serverPath + " HTTP/1.1");
+        postClient.println("Host: " + serverName);
+        //postClient.println("Content-Type: multipart/form-data; boundary=KonaCurrents");
+        postClient.println("Content-Type: application/x-www-form-urlencoded");
+        postClient.println("Content-Length: " + String(totalLen));
+
+        postClient.println();
+        postClient.print(head);
+        postClient.print(tail);
+        //!stop this client (it's recreated each publish)
+        postClient.stop();
+        
+        //! WORKS FIRST TIME FROM M5 Camera, to tomcat on KnowledgeShark: 3.25.24 (previosuly the image was 9.17.22)
+       
+        
+        SerialTemp.println("POST " + serverPath + " HTTP/1.1");
+        SerialTemp.println("Host: " + serverName);
+        SerialTemp.println("Content-Type: application/x-www-form-urlencoded");
+        SerialTemp.println("Content-Length: " + String(totalLen));
+        SerialTemp.println();
+        SerialTemp.print(head);
+        SerialTemp.println(tail);
+        
+    }
+    else
+    {
+        SerialDebug.printf("Connection NOT successful! ");
+        publishMQTTMessageDefaultTopic((char*)"Publish of smrun not successful");
+        
+    }
+#endif //ATOM_QRCODE_MODULE
+
+}
+                
 #ifdef USE_CAMERA_MODULE
 
 //! Users/scott/Library/Arduino15/packages/m5stack/hardware/esp32/2.0.3/tools/sdk
@@ -295,18 +402,20 @@ void publishMQTTMessageDefaultTopic(char *message)
 
 #endif
 //! publish a binary file..
-void publishBinaryFile(char *topic, uint8_t * buf, size_t len)
+//! fileExtension is .jpg, .json, .txt etc
+void publishBinaryFile(char *topic, uint8_t * buf, size_t len, String fileExtension)
 {
     SerialMin.printf("Publish binary file(%s), len=%d\n", topic, len);
+#ifdef ESP_M5
+
     //   _mqttClient.publish(_mqttTopicString, buf, len);
     //!https://randomnerdtutorials.com/esp32-http-get-post-arduino/
     //!https://randomnerdtutorials.com/esp32-cam-post-image-photo-server/
     //!https://raw.githubusercontent.com/RuiSantosdotme/ESP32-CAM-Arduino-IDE/master/ESP32-CAM-HTTP-POST-Image/ESP32-CAM-HTTP-POST-Image.ino
     //! Lets do a POSt to my whats-this site..
-#ifdef USE_CAMERA_MODULE
+//#ifdef USE_CAMERA_MODULE
     
-#define NEW_WAY
-#ifdef NEW_WAY
+
     //!create a WIFI client that talks to just our upload servlet
     WiFiClient postClient;
 
@@ -320,7 +429,7 @@ void publishBinaryFile(char *topic, uint8_t * buf, size_t len)
     if (postClient.connect(serverName.c_str(), serverPort))
     {
         SerialDebug.printf("Connection successful! len = %d\n", len);
-        String filename = "esp32-cam-" + String(getDeviceNameMQTT()) + "-" + String(random(0xffff), HEX) + ".jpg";
+        String filename = String(_mqttUserString) + "-" + String(getDeviceNameMQTT()) + "-" + String(random(0xffff), HEX) + "." + fileExtension;
         String head = "--KonaCurrents\r\nContent-Disposition: form-data; name=\"imageFile\"; filename=\"" +
                          filename + "\"\r\nContent-Type: image/jpeg\r\n\r\n";
         String tail = "\r\n--KonaCurrents--\r\n";
@@ -378,11 +487,120 @@ void publishBinaryFile(char *topic, uint8_t * buf, size_t len)
 
     }
 
+#endif // ESP_M5
     
-#endif  //newway
-    
-#endif
+//#endif // USE_CAMERA_MODULE
+
 }
+
+#ifdef USE_SPIFF_MODULE
+
+#include "FS.h"
+#include "SPIFFS.h"
+
+//! publish a binary file..
+//! fileExtension is .jpg, .json, .txt etc
+void publishSPIFFFile(char *topic, char *path, int len)
+{
+    char *fileExtension = (char*)"json";
+    
+    SerialMin.printf("publishSPIFFFile topid=%s, file(%s) len = %d\n", topic, path, len);
+    //   _mqttClient.publish(_mqttTopicString, buf, len);
+    //!https://randomnerdtutorials.com/esp32-http-get-post-arduino/
+    //!https://randomnerdtutorials.com/esp32-cam-post-image-photo-server/
+    //!https://raw.githubusercontent.com/RuiSantosdotme/ESP32-CAM-Arduino-IDE/master/ESP32-CAM-HTTP-POST-Image/ESP32-CAM-HTTP-POST-Image.ino
+    //! Lets do a POSt to my whats-this site..
+    
+    //!create a WIFI client that talks to just our upload servlet
+    WiFiClient postClient;
+    
+    String serverName = "knowledgeshark.me";   // REPLACE WITH YOUR Raspberry Pi IP ADDRESS
+                                               //String serverName = "example.com";   // OR REPLACE WITH YOUR DOMAIN NAME
+    String serverPath = "/examples/servlets/UploadServlet";
+    //!tomcat server.. 8080
+    int serverPort = 8080;
+    SerialDebug.println("2. Connecting to server: " + serverName);
+    
+    //! to make this json, need to add '[' at front and {}] on back so ..
+    char *addFront = (char*) "[";
+    char *addBack  = (char*) "{}]";
+    len = len + strlen(addFront) + strlen(addBack);
+    
+    if (postClient.connect(serverName.c_str(), serverPort))
+    {
+        SerialDebug.printf("Connection successful! len = %d\n", len);
+        String filename = String(_mqttUserString) + "-" + String(getDeviceNameMQTT()) + "-" + String(random(0xffff), HEX) + "." + fileExtension;
+        String head = "--KonaCurrents\r\nContent-Disposition: form-data; name=\"imageFile\"; filename=\"" +
+        filename + "\"\r\nContent-Type: file/JSON\r\n\r\n";
+        String tail = "\r\n--KonaCurrents--\r\n";
+        
+        uint32_t imageLen = len;
+        uint32_t extraLen = head.length() + tail.length();
+        uint32_t totalLen = imageLen + extraLen;
+        
+        postClient.println("POST " + serverPath + " HTTP/1.1");
+        postClient.println("Host: " + serverName);
+        postClient.println("Content-Length: " + String(totalLen));
+        postClient.println("Content-Type: multipart/form-data; boundary=KonaCurrents");
+        postClient.println();
+        postClient.print(head);
+        
+        
+        fs::FS fs = SPIFFS;
+        //char *path = path;
+ 
+        //! PROBLEM: if only N lines fit into buffer .. how to delete only up to those lines?
+        
+        File file = fs.open(path);
+        if(!file || file.isDirectory()){
+            SerialDebug.println("- failed to open file for reading");
+            return;
+        }
+        
+        // add front
+        postClient.write(addFront, strlen(addFront));
+               
+        //now the rest of the lines can be sent..
+        while(file.available())
+        {
+            String line = file.readString();
+            SerialDebug.println(line);
+            //char * cstr = new char [str.length()+1];
+            if (line)
+            {
+                postClient.write(line.c_str(), line.length());
+            }
+        }
+        // add back of JSON string..
+        postClient.write(addBack, strlen(addBack));
+        
+        file.close();
+        
+       //! output the tail
+        postClient.print(tail);
+        //!stop this client (it's recreated each publish)
+        postClient.stop();
+        
+        //! 1.20.24 There is an alias on KnowledgeShark.me that points to the http upload location
+        //! /home/ec2-user/httpd/conf/httpd.conf
+        //! Alias /uploads "/var/lib/tomcat8/webapps/examples/uploads"
+        sprintf(_semanticMarkerString,"#url {%s} {https://KnowledgeShark.me/uploads/%s}", getDeviceNameMQTT(),  &filename[0]);
+        
+        //sendSemanticMarkerDocFollow_mainModule(&fileURL[0]);
+        //! for now only send if it start message starts with "#"
+        publishMQTTMessageDefaultTopic(_semanticMarkerString);
+        //seems to be sent 2 times ...
+    }
+    else
+    {
+        SerialDebug.printf("Connection NOT successful! ");
+        publishMQTTMessageDefaultTopic((char*)"Publish of image not successful");
+        
+    }
+    
+}
+
+#endif // USE_SPIFF
 
 //! These are set by the MQTT callback..
 //! flag to let the processor know there are new messages
@@ -429,28 +647,35 @@ char *getDeviceNameMQTT()
 }
 
 
-uint32_t _chipId = 0;
+// uint32_t _chipId = 0;
 char _chipName[100];
 
 //!create a unique ID (but it needs to be stored.. otherwise it's unique each time??
 void getChipInfo()
 {
-    
+    uint32_t chipId = getChipId();
+#ifdef MOVED_TO_MAIN
     //get chip ID
     for (int i = 0; i < 17; i = i + 8) {
         _chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
     }
-    
+#endif
     if (_deviceNameString)
-        sprintf(_chipName, "%s-%d", _deviceNameString, _chipId);
+        sprintf(_chipName, "%s-%d", _deviceNameString, chipId);
     else
-        sprintf(_chipName, "esp.%d", _chipId);
+        sprintf(_chipName, "esp.%d", chipId);
     
+    Serial.printf("ESP32 Chip model = %s Rev %d\n", ESP.getChipModel(), ESP.getChipRevision());
+    Serial.printf("This chip has %d cores\n", ESP.getChipCores());
+    Serial.print("Chip ID: "); Serial.println(getChipIdString());
+    Serial.print("Chip Name: "); Serial.println(_chipName);
+
     //chipName = "esp." + chipId;
-    SerialInfo.println(_chipName);
+    //SerialInfo.println(_chipName);
     
 }
 
+#ifdef ESP_M5
 //!This uses the String (*getStatusFunc)(void))  to re-create this..
 //!used by the displayModule to call this for each new status
 const char* getDynamicStatusFunc()
@@ -467,6 +692,7 @@ const char* getDynamicStatusFunc()
     
     return _semanticMarkerString;
 }
+#endif
 //!examples
 //!https://SemanticMarker.org/bot/status?v=v5&dev=M5WRR&b=71&temp=59&c=0&t=8&W=on&M=on&B=on&C=off&A=off&T=off&S=on&bleS=PTClicker:M5WRR&Z=off&G=on&P=DukeGEN3&t=8
 //!https://SemanticMarker.org/bot/status?v=v5&dev=M55&b=94&temp=54&c=1&t=2&W=on&M=on&B=on&C=on&A=off&T=off&S=on&bleS=PTClicker:M55&Z=off&G=off&t=2
@@ -496,6 +722,9 @@ void initAllArrayStorage()
 {
     strcpy(_lastMessageStatusURL,"startup");
     strcpy(_lastDocFollowSemanticMarker,"https://SemanticMarker.org");
+    
+    //!3.22.24 add the short version
+    initShortVersion();
 }
 
 //! retrieves a token string.. without spaces.
@@ -542,6 +771,7 @@ char* currentMessageStatusURL()
     return _lastMessageStatusURL;
 }
 
+#ifdef ESP_M5
 //!used by the displayModule to call this for each new status
 const char* getDynamicMessageFunc()
 {
@@ -557,7 +787,7 @@ const char* getDynamicMessageFunc()
     
     return _semanticMarkerString;
 }
-
+#endif //ESP_M5
 //! 4.26.22  50 year anniverssery of Grateful Dead in Frankfurt 1972
 #define WIFI_MQTT_STATES
 #ifdef WIFI_MQTT_STATES
@@ -644,6 +874,62 @@ void stopDelay_WIFI_MQTTState()
 #endif  //MQTT STATES
 
 // *********************** END METHODS invoked from BLE (JSON) and MQTT messages ***************
+
+//! send SPIFF status
+//! 4.4.24
+void sendSpiffStatus()
+{
+#ifdef USE_SPIFF_MODULE
+#ifdef USE_SPIFF_MQTT_SETTING_NOT_NOW  // 4.14.24 too omuch..
+    if (getPreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_MQTT_SETTING))
+    {
+        switch (_WIFI_MQTTState)
+        {
+                // presetup WIFI
+            case preSetupWIFI:
+                println_SPIFFModule_JSON((char*)"WIFI_MQTTState", (char*)"preSetupWIFI");
+                break;;
+                //in a wait for WIFI mode
+            case waitingForWIFI:
+                println_SPIFFModule_JSON((char*)"WIFI_MQTTState", (char*)"waitingForWIFI");
+                break;;
+                //called to start the mqttClient (out of this thread)
+            case preSetupMQTT:
+                println_SPIFFModule_JSON((char*)"WIFI_MQTTState", (char*)"preSetupMQTT");
+                break;;
+                //in a wait for MQTT mode
+            case waitingForMQTT:
+                println_SPIFFModule_JSON((char*)"WIFI_MQTTState", (char*)"waitingForMQTT");
+                break;;
+                // all connected WIFI
+            case connectedWIFI:
+                println_SPIFFModule_JSON((char*)"WIFI_MQTTState", (char*)"connectedWIFI");
+                break;;
+                // connectged MQTT
+            case connectedMQTT:
+                println_SPIFFModule_JSON((char*)"WIFI_MQTTState", (char*)"connectedMQTT");
+                break;;
+                //all disconnected WIFI
+            case disconnectedWIFI:
+                println_SPIFFModule_JSON((char*)"WIFI_State", (char*)"disconnectedWIFI");
+                break;;
+                //all disconnected MQTT
+            case disconnectedMQTT:
+                println_SPIFFModule_JSON((char*)"MQTTState", (char*)"disconnectedMQTT");
+                break;;
+        }
+        println_SPIFFModule_JSON((char*)"DeviceName", getDeviceNameMQTT());
+        println_SPIFFModule_JSON((char*)"ChipName", getChipIdString());
+#ifdef ESP_M5_TOO_MUCH
+        println_SPIFFModule_JSON((char*)"DynamicState", (char*)getDynamicStatusFunc());
+#endif
+        println_SPIFFModule_JSON((char*)"WIFI_MQTTState", isConnectedWIFI_MQTTState()?(char*)"connected":(char*)"disconnected");
+        println_SPIFFModule_JSON((char*)"MQTT_MQTTState", isConnectedMQTT_MQTTState()?(char*)"connected":(char*)"disconnected");
+        println_SPIFFModule_JSON((char*)"MQTTConnected", _mqttClient.connected()?(char*)"connected":(char*)"disconnected");
+    }
+#endif // USE_SPIFF_MQTT_SETTING
+#endif //USE_SPIFF_MODULE
+}
 
 //!try a flag so setupMQTTnetworking only called 1 times..
 boolean _setupMQTTNetworkingAlready = false;
@@ -894,16 +1180,28 @@ void checkAndReconnectWIFI_MQTTNetworking()
                 tryReconnect = false;
             break ;
         case WL_CONNECT_FAILED:
-            printTimestamp_SPIFFModule();
-            println_SPIFFModule((char*)"WIFI WL_CONNECT_FAILED");
+//            printTimestamp_SPIFFModule();
+//            println_SPIFFModule((char*)"WIFI WL_CONNECT_FAILED");
+#ifdef TOO_MUCH
+            println_SPIFFModule_JSON((char*)"WIFI", (char*)"WL_CONNECT_FAILED");
+#endif
             break;
         case WL_CONNECTION_LOST:
-            printTimestamp_SPIFFModule();
-            println_SPIFFModule((char*)"WIFI WL_CONNECTION_LOST");
+//            printTimestamp_SPIFFModule();
+//            println_SPIFFModule((char*)"WIFI WL_CONNECTION_LOST");
+#ifdef TOO_MUCH
+            println_SPIFFModule_JSON((char*)"WIFI", (char*)"WL_CONNECTION_LOST");
+#endif
+
             break;
         case WL_DISCONNECTED:
-            printTimestamp_SPIFFModule();
-            println_SPIFFModule((char*)"WIFI WL_DISCONNECTED");
+//            printTimestamp_SPIFFModule();
+//            println_SPIFFModule((char*)"WIFI WL_DISCONNECTED");
+#ifdef TOO_MUCH
+
+            println_SPIFFModule_JSON((char*)"WIFI", (char*)"WL_DISCONNECTED");
+#endif
+
             break;
         default:
             break;
@@ -914,9 +1212,15 @@ void checkAndReconnectWIFI_MQTTNetworking()
     if (tryReconnect)
     {
         //!start outputing SPIFF info
-        printTimestamp_SPIFFModule();
-        print_SPIFFModule((char*)"WIFI Reconnect attempt: ");
-        println_SPIFFModule(wifiStatus_MQTT());
+//        printTimestamp_SPIFFModule();
+//        print_SPIFFModule((char*)"WIFI Reconnect attempt: ");
+//        println_SPIFFModule(wifiStatus_MQTT());
+        
+#ifdef TOO_MUCH
+
+        println_SPIFFModule_JSON((char*)"WIFI_RECONNECT", wifiStatus_MQTT());
+#endif
+        
         SerialMin.println("reconnectAttempt");
         //!restart the WIFI and then MQTT connection
         restartWIFI_MQTTState();
@@ -950,9 +1254,14 @@ void setupWIFI(char * arg_ssid, char * arg_password)
     appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, arg_ssid?arg_ssid:"No SSID");
     storePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, arg_password);
 
-    printTimestamp_SPIFFModule();
-    print_SPIFFModule((char*)"setupWIFI: ");
-    println_SPIFFModule(arg_ssid?arg_ssid:(char*)"empty");
+    //! 4.4.24 format as JSON
+    //!print a time too..
+    //!NEED a format for this to distinguish from others..
+#ifdef TOO_MUCH
+    println_SPIFFModule_JSON((char*)"setupWIFI", arg_ssid?arg_ssid:(char*)"empty");
+#endif
+
+    
 #ifdef NOT_HELPING
     //! 9.19.23 if null . set max loop
     if (!arg_ssid || (arg_ssid && strlen(arg_ssid)==0))
@@ -1107,6 +1416,12 @@ String get_WIFIInfoString()
 }
 #endif
 
+//! 3.22.24 get the WIFI SSID for the status
+String get_WIFI_SSID()
+{
+    return WiFi.SSID();
+}
+
 //! print the WIFI info
 void printWIFIInfo()
 {
@@ -1119,6 +1434,8 @@ void printWIFIInfo()
     SerialMin.print("signal strength (RSSI):");
     SerialMin.print(rssi);
     SerialMin.println(" dBm");
+    
+
 }
 
 //!end of WIFI loop..
@@ -1131,6 +1448,8 @@ void finishWIFI_Setup()
     
     //This creates a DHCP address
     printWIFIInfo();
+    
+
     
     addToTextMessages_displayModule("IP ADDRESS");
 
@@ -1294,6 +1613,13 @@ void callbackMQTTHandler(char* topic, byte* payload, unsigned int length)
             SerialDebug.printf("NOT PRocessing as PREFERENCE_SUPPORT_GROUPS_SETTING not set");
             return;
         }
+        //! 8.2.24 support the not receiving message on some topics (such as a users GuestTopic)
+        //! Idea would be some devices won't listen to the guest topic (instead only the user safe ones)
+        else if (!topicInIncludeGroup(topic))
+        {
+            SerialDebug.printf("2.NOT Processing as topic not in Include Group: %s", topic);
+            return;
+        }
     }
     
     //! 1.14.24 https://github.com/konacurrents/ESP_IOT/issues/297
@@ -1400,6 +1726,9 @@ void reconnectMQTT_loop()
     }
     else
     {
+#ifdef USE_REST_MESSAGING
+        //setupSecureRESTCall();
+#endif
         //Lets try to connect...
         //reset on connection, or new BLE config info...
         _globalMQTTAttempts++;
@@ -1452,7 +1781,7 @@ void reconnectMQTT_loop()
             //NOTE: no wildcards allowed on statusfeed.
             // Once connected, publish an announcement...
             //NOTE: _jsonLocationString is null... sometimes.
-            sprintf(_fullMessageOut, "%s {%s}{'mqttUser':'%s','location':'%s','uptime':'%d',%s,'v':'%s'}", REMOTEME, _deviceNameString?_deviceNameString:"NULL", _mqttUserString?_mqttUserString:"NULL", _jsonLocationString?_jsonLocationString:"somewhere", getUptime(), main_currentStatusJSON(), VERSION);
+            sprintf(_fullMessageOut, "%s {%s}{'mqttUser':'%s','location':'%s','uptime':'%d',%s,'v':'%s'}", REMOTEME, _deviceNameString?_deviceNameString:"NULL", _mqttUserString?_mqttUserString:"NULL", _jsonLocationString?_jsonLocationString:"somewhere", getUptime(), main_currentStatusJSON(), shortVersion());
             
             SerialInfo.println(_fullMessageOut);
             
@@ -1898,7 +2227,7 @@ void processBarkletMessage(String message, String topic)
                     pairedDevice,
                     _mqttUserString?_mqttUserString:"NULL",
                     _jsonLocationString?_jsonLocationString:"somewhere",
-                    VERSION,
+                    shortVersion(),
 #ifdef USE_BLE_SERVER_NETWORKING
                     //! retrieve the service name (PTFEEDER, PTFeeder:Name, PTClicker:Name, etc)
                     getServiceName_BLEServerNetworking()
@@ -1936,10 +2265,13 @@ void processBarkletMessage(String message, String topic)
             }
         }
 
+
+        //Version-(3.7)-3.22.24-ESP_M5_ATOM_QR_SCAN_SOCKET_SMART_GROUP_CHIPID_SSID'
+        // Need short version: "(3.7)-3.22.24"
         //sprintf(_fullMessageOut, "%s {%s} {%s} {I,F} {T=now}", REMOTEME, _deviceNameString, bluetoothOnline() ? CONNECTED : NOT_CONNECTED);
         // Once connected, publish an announcement...
         // sprintf(message, "#STATUS {%s} {%s}", _deviceNameString, chipName);
-        sprintf(_fullMessageOut, "%s {%s} {%s} {I,F}  {'T':'%d','dev':'%s','user':'%s','location':'%s','ble':'%s','v':'%s',%s}",
+        sprintf(_fullMessageOut, "%s {%s} {%s} {I,F}  {'T':'%d','dev':'%s','user':'%s','location':'%s','ble':'%s','v':'%s','k':'%s','chipid':'%s','ssid':'%s', %s}",
                 REMOTEME,
                 _deviceNameString?_deviceNameString:"NULL",
                 bluetoothOnline() ? CONNECTED : NOT_CONNECTED,
@@ -1953,7 +2285,14 @@ void processBarkletMessage(String message, String topic)
 #else
                 "none"
 #endif
-                , VERSION
+                
+                ,shortVersion()
+                //k='uno':'tblr"
+                ,(getFeederType_mainModule() == STEPPER_IS_UNO)?(char*)"uno":(char*)"tblr"
+                
+                ,getChipIdString()
+                ,get_WIFI_SSID().c_str()
+                //! last is the dynamic main_currentStatusJSON()
                 , main_currentStatusJSON()
                 );
         
@@ -1965,6 +2304,10 @@ void processBarkletMessage(String message, String topic)
         //this queues the sending of the StatusURL over MQTT.
         // This is async (next loop) since sending 2 MQTT messages can be hard to do in a row ..
         main_dispatchAsyncCommand(ASYNC_SEND_MQTT_STATUS_URL_MESSAGE);
+        
+        //! send SPIFF status
+        //! 4.4.24
+        sendSpiffStatus();
     }
     // else if (containsSubstring(message, "#FEED") || containsSubstring(message, "feedme"))
     //only use #FEED (the feedme will turn into #FEED)
@@ -2077,11 +2420,11 @@ void processBarkletMessage(String message, String topic)
         //sprintf(_fullMessageOut, "#M5_SCREEN {%s} {capturing screen as bmp}", _deviceNameString);
 #else
         //sprintf(_fullMessageOut, "#NO_CAN_CAMERA_CAPTURE {%s} {I am just a chip without a camera}", _deviceNameString);
-#endif // ESP_M5
+#endif // M5_CAPTURE_SCREEN
 #endif //ESP_M5_CAMERA
         messageValidToSendBack = false;
     }
-#endif // M5
+#endif // ESP_M5
     else if (containsSubstring(message, "#TEMP") && !isDawgpackTopic())
     {
 #ifdef ESP_M5
@@ -2332,7 +2675,7 @@ void performFeedMethod(char *topic)
         
     }
     //! output the main #actMe message .. but it get's nothing from the plugins - like ATOM status
-    sprintf(_fullMessageOut, "%s {%s} {'T':'%d','temp':'%2.0f','topic':'%s','user':'%s','v':'%s','location':'%s','paired':'%s', 'ble':'%s','connected':'%s','gateway':'%s'", ACK_FEED, _deviceNameString, time, temp, &topic[0]?&topic[0]:"NULL",_mqttUserString, VERSION_SHORT, _jsonLocationString?_jsonLocationString:"somewhere",pairedDevice, isConnectedBLE?"c":"x", connectedBLEDeviceName_mainModule()?connectedBLEDeviceName_mainModule():"none", isGateway?"on":"off");
+    sprintf(_fullMessageOut, "%s {%s} {'T':'%d','temp':'%2.0f','topic':'%s','user':'%s','v':'%s','location':'%s','paired':'%s', 'ble':'%s','connected':'%s','gateway':'%s','chipid':'%s','ssid':'%s'", ACK_FEED, _deviceNameString, time, temp, &topic[0]?&topic[0]:"NULL",_mqttUserString, VERSION_SHORT, _jsonLocationString?_jsonLocationString:"somewhere",pairedDevice, isConnectedBLE?"c":"x", connectedBLEDeviceName_mainModule()?connectedBLEDeviceName_mainModule():"none", isGateway?"on":"off",  getChipIdString(), get_WIFI_SSID().c_str());
     
     // send the FEED to the display (if any)
     addToTextMessages_displayModule("FEED");
@@ -2759,7 +3102,7 @@ function isFalseString(String valCmdString)
             valCmdString.equalsIgnoreCase("0") ||
             valCmdString.equalsIgnoreCase("false");
 }
-#endif
+#endif  //UNUSED
 
 //!send message to ourself to change to current specifed SM Mode
 void invokeCurrentSMModePage(char *topic)
@@ -2798,6 +3141,13 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             SerialDebug.printf("NOT Processing as PREFERENCE_SUPPORT_GROUPS_SETTING not set");
             return false;
         }
+        //! 8.2.24 support the not receiving message on some topics (such as a users GuestTopic)
+        //! Idea would be some devices won't listen to the guest topic (instead only the user safe ones)
+        else if (!topicInIncludeGroup(topic))
+        {
+            SerialDebug.printf("NOT Processing as topic not in Include Group: %s", topic);
+            return false;
+        }
     }
     
     //!empty the status for the last message. Then various places the feed or status, etc are set
@@ -2821,14 +3171,18 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
 #ifdef PROCESS_SMART_BUTTON_JSON
     DynamicJsonDocument myObject(2024);
 #else
+#ifdef ESP_m5
     DynamicJsonDocument myObject(1024);
+#else
+    DynamicJsonDocument myObject(1024); //was 600
+#endif //ESP_M5
 #endif
 
     deserializeJson(myObject, ascii);
     serializeJsonPretty(myObject, Serial);
 
     //NOTE: the ascii is now corrupted...
-    SerialDebug.print("JSON parsed = ");
+    SerialDebug.print("\nJSON parsed = ");
     // String output;
     String output1;
     serializeJson(myObject, output1);
@@ -2923,7 +3277,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
         {
             //default we only feed if our device or our gateway..
             processMessageOrGateway = false;
-#ifdef WILDCARD_DEVICE_NAME_SUPPORT
+#ifdef WILDCARD_DEVICE_NAME_SUPPORT  //yes
             //!parses a line of text, The caller then uses queryMatchesName() to see if their name matches
             parseQueryLine_mainModule((char*)devName);
             if (queryMatchesName_mainModule(_deviceNameString))
@@ -2931,6 +3285,14 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 SerialTemp.printf("Query: %s *** Matches our dev name: %s\n", devName, _deviceNameString);
                 processMessageOrGateway = true;
             }
+            //! per #314 support the chipId as well as the name..
+            //! 3.17.24
+            else if (stringMatch(devName, getChipIdString()))
+            {
+                SerialTemp.printf("ChipID: %s *** Matches our ChipID name: %s\n", devName, getChipIdString());
+                processMessageOrGateway = true;
+            }
+            
 #else
             //!If the dev name is specified, and our device is that name .. then good
             if (devName && strcmp(devName,_deviceNameString) == 0)
@@ -3013,7 +3375,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             //NOTE: the number here has to be updated in the ButtonProcessing code too..
             int whichSMMode = whichSMMode_mainModule((char*)cmd);
             SerialTemp.printf("MQTT or BLE CMD = '%s'\n", cmd);
-
+#ifdef ESP_M5
             // -1 if none..
             if (whichSMMode >= 0)
             {
@@ -3218,7 +3580,9 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     showSemanticMarker_displayModule(_semanticMarkerString, title);
                 }
             } //end smMode 0..n
-            else if (strcasecmp(cmd,"ota")==0 && !isGroupTopic())
+            else
+#endif //ESP_M5 display
+                if (strcasecmp(cmd,"ota")==0 && !isGroupTopic())
             {
                 SerialDebug.println("OTA via BLE");
                 //!calls the OTA update method (this doesn't return as device is rebooted...)
@@ -3245,34 +3609,19 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 //!print status of the WIFI and MQTT
                 SerialMin.printf("WIFI_MQTTState= %d\n",_WIFI_MQTTState);
                 SerialMin.printf("DeviceName= %s\n",getDeviceNameMQTT());
+                SerialMin.printf("ChipName= %s\n",getChipIdString());
+#ifdef ESP_M5
                 SerialMin.printf("DynamcState= %s\n",getDynamicStatusFunc());
                 SerialMin.printf("WIFI connected = %d, %s\n", isConnectedWIFI_MQTTState(), wifiStatus_MQTT());
+#endif
                 SerialMin.printf("MQTT connected = %d, %s\n", isConnectedMQTT_MQTTState(),_mqttClient.connected()?"connected":"not connected");
                 
-                if (getPreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_SETTING))
-                {
-                    printTimestamp_SPIFFModule();
-                    printInt_SPIFFModule(_WIFI_MQTTState);
-                    println_SPIFFModule((char*)"=WIFI_MQTTState");
+                
+                //! send SPIFF status
+                //! 4.4.24
+                sendSpiffStatus();
 
-                    print_SPIFFModule((char*)getDynamicStatusFunc());
-                    println_SPIFFModule((char*)"=DynamcState");
-
-                    printInt_SPIFFModule(isConnectedWIFI_MQTTState());
-                    println_SPIFFModule((char*)"=WIFIConnected");
-
-                    print_SPIFFModule((char*)wifiStatus_MQTT());
-                    println_SPIFFModule((char*)"=WIFI Status");
-
-                    printInt_SPIFFModule(isConnectedMQTT_MQTTState());
-                    println_SPIFFModule((char*)"=MQTTConnected");
-
-                    printInt_SPIFFModule(_mqttClient.connected());
-                    println_SPIFFModule((char*)"=MQTTConnected");
-
-                }
-
-
+                
                 //WL_NO_SSID_AVAIL .. to WL_DISCONNECTED
                 //but never reconnects ... 
                 SerialLots.println("cmd == status");
@@ -3448,7 +3797,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 //send to ourself.., recursively...
                 int val = processJSONMessageMQTT(credentials, topic);
             }
-            
+#ifdef USE_SPIFF_MODULE
             //new 7.29.22 SPIFF
             else if (strcasecmp(cmd,"readspiff")==0)
             {
@@ -3464,6 +3813,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             {
                 deleteFiles_SPIFFModule();
             }
+#endif //USE_SPIFF_MODULE
             else if (strcasecmp(cmd,"capture")==0)
             {
                 //! request a CAPTURE be sent.
@@ -3505,6 +3855,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             _mqttGuestPasswordString = const_cast<char*>(guestCmd);
             SerialDebug.printf("guestCmd = '%s'\n", _mqttGuestPasswordString);
         }
+#ifdef ESP_M5
         // 'sm':'name/cat/uuid'
         else if (semanticMarkerCmd)
         {
@@ -3523,6 +3874,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             else
                 SerialDebug.println("Not showing SemanticMarker ");
         }
+#endif //ESP_M5
         //!5.12.22
         else if (setCmd && valCmd)
         {
@@ -3586,6 +3938,31 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 }
             }
 
+            //! 8.2.24 to let older Tumbler NOT do the auto direction (back and forth)
+            //! Isue #332
+            //! it will set via message: autoMotorDirection
+            //! {"set":"autoMotorDirection","val":"true"}
+            else if (strcasecmp(setCmdString,"autoMotorDirection")==0)
+            {
+                if (deviceNameSpecified)
+                {
+                    savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, flag);
+                }
+            }
+            
+            //! 8.2.24 add includeGroups
+            //! Isue #332
+            //! it will set via message: includeGroups
+            //! {"set":"includeGroups","val":"group1,group2"}
+            else if (strcasecmp(setCmdString,"includeGroups")==0)
+            {
+                if (deviceNameSpecified)
+                {                    
+                    //! 8.2.24 set the include group (and cache it), called from MQTT
+                    setIncludeGroups(valCmdString);
+                }
+            }
+            
             else if (strcasecmp(setCmdString,"ble+wifi")==0)
             {
                 if (deviceNameSpecified && !isGroupTopic())
@@ -3616,6 +3993,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             }
             else if (strcasecmp(setCmdString,"stepperangle")==0)
             {
+                SerialDebug.printf("stepperAngle: %s\n", valCmdString);
                 //!set the stepperangle.
                 savePreference_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, valCmdString);
             }
@@ -3642,13 +4020,26 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             {
                 //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
                 savePreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_SETTING, flag);
+#ifdef USE_SPIFF_MODULE
                 if (flag)
                 {
                     //! the setup for this module
                     setup_SPIFFModule();
-
                 }
+#endif //USE_SPIFF_MODULE
             }
+            //! 4.4.24
+            else if (strcasecmp(setCmdString,"usespiff_mqtt")==0 && !isGroupTopic())
+            {
+                //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
+                savePreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_MQTT_SETTING, flag);
+            }
+            else if (strcasecmp(setCmdString,"usespiff_qratom")==0 && !isGroupTopic())
+            {
+                //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
+                savePreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_QRATOM_SETTING, flag);
+            }
+#ifdef ESP_M5
         //!NOTE: thes PIR and ATOM settings could be done in their modules AtomSocket but the LUX is in the butto
             //! 1.10.24 per issue#289 support PIR calling a SM in JSON (not just the FEED)
             else if (strcasecmp(setCmdString,"PIR_UseSM")==0 && !isGroupTopic())
@@ -3680,7 +4071,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 //! save temporally ..
                 main_setScannedDeviceName(valCmdString);
             }
-
+#endif //ESP_M5
             
             //!MQTT:  set: timerdelay, val:seconds
             else if  (strcasecmp(setCmdString,"timerdelay")==0)
@@ -3721,19 +4112,72 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             //!add stepper type
             else if (strcasecmp(setCmdString,"stepper")==0)
             {
+                //!set the stepperAngle as well for a default value
+                //!as of 8l18.24, the stepperAngle isn't used by the MINI (only the Tumbler)
+                float stepperAngle = 22.5;
                 int feederType = STEPPER_IS_UNO;
+                //!NOTE: 'mini' is deprecated
                 if (strcasecmp(valCmdString,"mini")==0)
-                    feederType = STEPPER_IS_MINI;
+                {
+                    //! mini will be backdoor to set the angle to 45
+                    // is UNO
+                    stepperAngle = 45.0;
+                    //feederType = STEPPER_IS_MINI;
+                }
                 else if (strcasecmp(valCmdString,"tumbler")==0)
+                {
                     feederType = STEPPER_IS_TUMBLER;
+                    stepperAngle = 200.0;
+                    //! set autoRotoate as well..
+                    savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
+                 
+                }
+                else
+                {
+                    //! set autoRotoate as well..
+                    savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, false);
+                }
+                SerialDebug.printf("stepper = %d, stepperAngle = %f\n", feederType, stepperAngle);
                 //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
                 savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, feederType);
+                //!set stepperAngle default as well (int or float ok..)
+                //!Issue #332 8.17.2024
+                savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, stepperAngle);
+                //! default to  clockwise == 1
+                
+                //! 8.18.24 setting this will check for the factory setting..
+                setClockwiseMotorDirection_mainModule(true);
+
+            }
+            else if (strcasecmp(setCmdString,"factoryClockwiseMotor")==0)
+            {
+                SerialCall.println(" *** Setting factory clockwise motor");
+                //!note since clockwise == 0 we set the opposite of the value..
+                savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING, flag);
+                //! 8.18.24 setting this will check for the factory setting..
+                setClockwiseMotorDirection_mainModule(true);
             }
             else if (strcasecmp(setCmdString,"clockwiseMotor")==0)
             {
                 SerialCall.println(" *** Setting clockwise motor");
-                //!note since clockwise == 0 we set the opposite of the value..
-                savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING, flag);
+                //! 8.18.24 setting this will check for the factory setting..
+                setClockwiseMotorDirection_mainModule(flag);
+            }
+            //! 8.18.24 (back deck with Tyler - Maggie - stormy lightning last night and rain
+            //! toggleMotor  the 'Q'
+            //! 'set':'toggleMotor':'val':'on/off"
+            //! TODO: call the 'Q' code ..
+            else if (strcasecmp(setCmdString,"toggleMotor")==0)
+            {
+                //! 9.30.23 reverse direction
+                //else if (cmd == 'Q')
+                {
+                    //! note: reboot not needed as the next time a feed happens, it reads this value
+                    // motor direction ==  (reverse)
+                    boolean  currentDirection = getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING);
+                    currentDirection = !currentDirection;
+                    savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING,currentDirection);
+                }
             }
             //!add stepper type
             else if (strcasecmp(setCmdString,"otafile")==0)
@@ -3840,7 +4284,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 rebootDevice_mainModule();
                 
             }
-
+#ifdef ESP_M5
             else if (strcasecmp(setCmdString,"screencolor")==0)
             {
                 //!set the screen color 0..n
@@ -3870,6 +4314,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
 #endif
                 }
             }
+#endif //ESP_M5
             //! sets the BLEUseDeviceName  flag == the BLEServer will add the name, eg PTFeeder:ScoobyDoo
             else if (strcasecmp(setCmdString,"BLEUseDeviceName")==0)
             {
@@ -3887,6 +4332,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
 #endif
                 }
             }
+#ifdef ESP_M5
             else if (strcasecmp(setCmdString,"minMenu")==0)
             {
                 SerialDebug.println("PREFERENCE_IS_MINIMAL_MENU_SETTING  via BLE");
@@ -3947,6 +4393,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 savePreferenceBoolean_mainModule(PREFERENCE_USE_DOC_FOLLOW_SETTING, flag);
         
             }
+#endif //ESP)_M5
             else if (strcasecmp(setCmdString,"semanticMarker")==0)
             {
                 SerialDebug.printf("SemanticMarker: %s\n", valCmdString);
@@ -3963,6 +4410,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 else
                     SerialDebug.println("Not showing SemanticMarker ");
             }
+#ifdef ESP_M5
             //blankscreen on/off
             else if (strcasecmp(setCmdString,"blankscreen")==0)
             {
@@ -3974,6 +4422,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     //!wakes up the screen
                     wakeupScreen_displayModule();
             }
+#endif //ESP_M5
             
             //!8.17.22 SubDawgpack
             else if (strcasecmp(setCmdString,"SubDawgpack")==0)
@@ -4048,6 +4497,8 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     savePreferenceBoolean_mainModule(PREFERENCE_SENSOR_TILT_VALUE, flag);
                 }
             }
+#ifdef ESP_M5
+
             else if (strcasecmp(setCmdString,"zoomSm")==0)
             {
                 //!zoom == the NON semantic marker version.. so min menu is true
@@ -4113,7 +4564,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 //!for now just reboot which will use this perference
                 rebootDevice_mainModule();
             }
-            
+#endif //ESP_M5
             else if (strcasecmp(setCmdString,"disk")==0)
             {
                 SerialDebug.printf("Cloud DISK space = %s\n", valCmdString);
@@ -4146,18 +4597,22 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 //! request a STATUS be sent.
                 processBarkletMessage("#STATUS", topic);
             }
+
             else if (strcasecmp(sendCmdString,"capture")==0)
             {
                 SerialCall.println("sendCmd == capture");
                 //! request a CAPTURE be sent.
                 processBarkletMessage("#CAPTURE", topic);
             }
+#ifdef ESP_M5
+
             else if (strcasecmp(sendCmdString,"volume")==0)
             {
                 SerialCall.println("sendCmd == volume (not implemented)");
                 //! request a VOLUME be sent.
                 processBarkletMessage("#VOLUME", topic);
             }
+#endif //ESP_M5
             else
             {
                 SerialTemp.print("Unknown send request: ");
@@ -4241,7 +4696,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             }
             
 #endif //DECODE_BASE64
-#endif //M5
+#endif //ESP_M5
 
         }
         
@@ -4630,7 +5085,7 @@ String MQTT_urlDecode(String input) {
     s.replace("%2F", "/");
     s.replace("%2C", ",");
     s.replace("%3A", ":");
-    s.replace("%3A", ";");
+    s.replace("%3B", ";");
     s.replace("%3C", "<");
     s.replace("%3D", "=");
     s.replace("%3E", ">");

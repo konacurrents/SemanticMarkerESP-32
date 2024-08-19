@@ -1,8 +1,11 @@
-#include <iostream>
+
+#include "PIRSensorClass.h"
+#include "../../Defines.h"
+//! minimal sensors are a sugset of sensors...
+#if defined(ESP_M5) && !defined(ESP_M5_MINIMAL_SENSORS)
+//#include <iostream>
 #include <string.h>
 #include <stdio.h>
-#include "PIRSensorClass.h"
-
 PIRSensorClass::PIRSensorClass(char *config) : SensorClassType(config)
 {
 
@@ -19,3 +22,5 @@ void PIRSensorClass::setup()
 {
    printf("PIRSensorClass::setup()\n");
 }
+
+#endif

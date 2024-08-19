@@ -1,9 +1,10 @@
 
-#ifndef _ATOMSOCKET_H_
-#define _ATOMSOCKET_H_
-
+#ifndef ATOMSOCKET_H_
+#define ATOMSOCKET_H_
 //#include "M5Atom.h"
 #include "../../Defines.h"
+
+#ifdef ATOM_SOCKET_MODULE
 
 class ATOMSOCKET {
 public:
@@ -53,4 +54,5 @@ private:
     float CurrentRF = 0.001;
 };
 
+#endif //ATOM_SOCKET_MODULE
 #endif

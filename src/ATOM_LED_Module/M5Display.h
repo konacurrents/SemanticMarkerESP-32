@@ -1,5 +1,9 @@
-//#ifndef _M5DISPLAY_H_
-//#define _M5DISPLAY_H_
+#ifndef M5DISPLAY_H
+#define M5DISPLAY_H
+
+#include "../../Defines.h"
+
+#ifdef USE_FAST_LED
 
 //! CRGB is RGB
 //! https://github.com/FastLED/FastLED/wiki/Pixel-reference
@@ -32,6 +36,7 @@ void fillpix(CRGB Color);
 #define L_BLUE   (CRGB) 0x0000ff
 #define L_WHITE  (CRGB) 0xe0e0e0
 #define L_YELLOW (CRGB) 0xfff000
+#endif
 
 
-//#endif //_M5DISPLAY_H_
+#endif //_M5DISPLAY_H_

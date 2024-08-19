@@ -3,6 +3,9 @@
 #ifndef PIRSensorClass_h
 #define PIRSensorClass_h
 
+#include "../../Defines.h"
+#ifdef ESP_M5
+
 #include "SensorClassType.h"
 
 class PIRSensorClass : public SensorClassType
@@ -18,5 +21,6 @@ public:
     void setup();
     
 };
+#endif
 
 #endif

@@ -11,8 +11,11 @@
 #endif
 
 //! The SPIFF module is for storing messages that are retrievable later as it stores on a folder area of the ESP chip
-//!prints a timestamp
+//!prints a timestamp  time: <time> :
 void printTimestamp_SPIFFModule();
+
+//! 4.4.24 output a line in JSON format adding timestamp as well
+void println_SPIFFModule_JSON(char *attribute, char *value);
 
 //!print a string to spiff (a new line is added)
 void println_SPIFFModule(char *string);
@@ -40,6 +43,10 @@ void loop_SPIFFModule();
 
 //!save the screen to a file on the SPIFF
 void saveScreen_SPIFFModule();
+
+//! sends the Semantic Marker onto the SPIFF
+//! format-  {'time':time, 'SM':'<sm>'}
+void printSM_SPIFFModule(char *semanticMarker);
 
 #ifdef M5_CAPTURE_SCREEN
 /***************************************************************************************

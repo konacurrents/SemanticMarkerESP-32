@@ -1,258 +1,28 @@
-# Semantic Marker&reg; for ESP-32 IOT Framework v2.0
+# ESP_IOT Framework v2.0
 
-This repository contains the software for building the runtime capability for the ESP-32 set of boards. In particular this repository supports the Semantic Marker&reg; vision described at [https://SemanticMarker.org](https://SemanticMarker.org). This includes displays and internet messaging. 
+The goal of ESP_IOT is to have a set of modules that can be included in the loop and setup. Adding them will add and manipulate
+various IoT capabilities, while using the ESP_IOT framework to connect the various devices. The ESP-32 devices support bluetooth and 
+wifi but have a limited user interface. The M5 based ESP-32 extends with a display, speaker, temperature, axcelerometor sensers. Other devices 
+such as M5 V2 incorporate a camera with machine learning functionality.
 
-> [!NOTE]
-> To implement this vision, the Semantic Marker&reg; for ESP-32 IOT designed and implemented a generic framework for communicating with the various messaging API's [API Document](https://github.com/konacurrents/SemanticMarkerAPI).
+[API Manual](https://github.com/konacurrents/SemanticMarkerAPI)
 
-Conditionally including modules (with #ifdef statements) will add and manipulate various IoT capabilities. These will leverate the Semantic Marker&reg; cloud messaging framework to connect the various devices. The ESP-32 devices support bluetooth and WIFI but have a limited user interface. The M5 based ESP-32 extends with a display, speaker, temperature, axcelerometor sensers. Other devices such as M5 V2 incorporate a camera with machine learning functionality.
+[More Docs](https://github.com/konacurrents/SemanticMarkerESP-32)
 
-![Module Configuration Options](https://knowledgeshark.me/docs/ESP_IOT/html/dir_68267d1309a1af8e8297ef4c3efbcdba_dep.png)
+When incorporated with the network through WIFI and a pub/sub engine like MQTT, using JSON formatted messages, a powerful
+collaboration supports the IoT suite of applications.
 
-> [!IMPORTANT]
-> When incorporated with the network through WIFI and a pub/sub engine like MQTT, using JSON formatted messages, a powerful collaboration supports the IoT suite of applications.
+The ESP_IOT supports adding and sharing between can use the #ifdef to add or remove capalities. And each has a setup() and loop() for the various functional modules. 
 
-# Building the SemanticMarkerESP executable
-
-After cloning or downloading follow these steps.
-
-1. The arduino runtime must be installed. For example: [ardunio-cli](https://www.arduino.cc).
-2. The runtime for the M5stack is required in the <b>Additional Boards Manager URLs</b> of the <b>settings</b>
-For example comma seperated json files URL's
-```url
-https://dl.espressif.com/dl/package_esp32_index.json
-https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/arduino/package_m5stack_index.json
-```
-3. Set the appropriate Board (under Tools->Board). For the M5 use <b>M5Stick-C-Plus</b> and for the ESP-32 base use <b>ESP32 Dev Module</b>.
-
-4. Modify the [Defines.h](Defines.h) to reflect the build target. For example the M5 devices ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION or ESP_M5_SMART_CLICKER_CONFIGURATION
-5. Then build using the arduino compiler and install using the USB cable. Note, that the <b>Partition Scheme</b> should be default including OTA support.
-6. Alternately, the Over the Air (OTA), can be used. Currently for this software base these are located at the [http://KnowledgeShark.org](http://KnowledgeShark.org) site. Note that this is <b>http</b> not <b>https</b> as the ESP32 devices cannot currently communicate using the secure connection.
-
-## Build Targets
-
-Currently there are 3 M5 builds and 1 ESP-32 base build. These are configured with the various **ifdef** defines.
-This includes:
-1.  <b>ESP_M5_SMART_CLICKER_CONFIGURATION</b> (M5 with a display) 
-![M5 display](https://semanticmarker.org/vision/M5SM.jpeg)
-2.  <b>ESP_M5_ATOM_LITE_QR_SCANNER_CONFIGURATION</b> (M5 connected to the ATOM QR Code Scanner) See [Code sample](https://github.com/konacurrents/M5ATOM_Testing)
-<img src="images/QRAtom.jpeg" width=300>
-3.  <b>ESP_M5_CAMERA</b> (M5 with a built in camera)
-<img src="images/M5Camera.jpeg" width=300>
-4.  <b>ESP_32_FEEDER</b> (a simple ESP-32 chip with the 2 lights). If this chip is connected via the PINs then
-    additional configurations and code are required. These are outside the open-source aspects of this software.
-<img src="images/ESP.jpg" width=300>
-5. <b>ATOM Socket</b> [web page](https://docs.m5stack.com/en/atom/atom_socket)
-<img src="https://static-cdn.m5stack.com/resource/docs/products/atom/atom_socket/atom_socket_05.webp" width=300">
-
-# API Document
-
-Another GitHub repository describes the API aspects of the Semantic Marker&reg; framework leveraged by the ESP-32 IoT devices.
-
-[API Document](https://github.com/konacurrents/SemanticMarkerAPI)
-
-# Architecture Document
-
-Another aspect of the Semantic Marker&reg; Architecture document is included as follows:
 <a href="https://KnowledgeShark.me/docs/ESP_IOT/html">Documented Architecture and Code</a>
+\ref DisplayModule
+\ref MQTTModule
 
-This Architecture Document provides valuable diagrams to help users understand the flow, for example this diagram.
-![Main Loop](https://knowledgeshark.me/docs/ESP_IOT/html/_e_s_p___i_o_t_8ino_afe461d27b9c48d5921c00d521181f12f_cgraph.png)
+![PetTutor Mini](GreyGoose.jpg))
+![ESP_IOT Diagram](KSNetworking.004.jpeg)
+![ESP_IOT Modules](ESP_IOT_Modules.png)
 
-# Semantic Marker&reg; Examples
-
-Numerous examples are described that show the use of ESP-32/M5 IoT Devices to spport the Semantic Marker&reg; vision.
-
-## Semantic Marker&reg; and M5 Display
-
-The power of the small M5 display as it expands it's visual capabilities by leveraging the Semantic Marker&reg; as shown in the following diagram. Here the M5 (as built above) interacts through the MQTT messaging to perform numerous operations and acting like a display capability (by intelligent decoding of the visual Semantic Marker&reg;)
-
-![M5 Semantic Marker Vision](https://semanticmarker.org/KSNetworking/KSNetworking.018.jpeg)
-
-The small M5 display has been leveraged to create a small footprint of information, including using the buttons
-to move around like menues. As this display is so small, the Semantic Marker&reg; is used to abstract information
-into a small image - the Semantic Marker&reg; as shown here stuck to a common household microwave (the M5 has a magnet). 
-
-<img src="https://SemanticMarker.org/vision/M5onMicrowave.jpg" width="300">
-
-Here the Semantic Marker&reg; is continually changing to reflect the sensor information. For example of the sensor information
-follow this [SMART Button Sensor Status](https://semanticmarker.org/bot/status?v=v2&dev=Fibi&b=87&temp=10&c=0&t=0&W=on&M=on&A=off&T=off&S=on&bleS=PTFeeder&Z=on&G=off)
-```url
-https://semanticmarker.org/bot/status?v=v2&dev=Fibi&b=87&temp=10&c=0&t=0&W=on&M=on&A=off&T=off&S=on&bleS=PTFeeder&Z=on&G=off
-```
-
-
-## Semantic Marker&reg; in-situ and scanned by a user
-Another Semantic Marker&reg; example is to send messages to a device with the embedded ESP-32 device. (This version, called a PetTutor, is from [Smart_Animal_Training](https://smartanimaltraining.com). In this example, a Semantic Marker&reg; has been printed and attached to the device. Users can then scan the Semantic Marker&reg; which will effectively connect to this device and perform the desired operation.
-![PetTutor Mini](images/GreyGoose.jpg)
-
-A nice short clip that shows this scanning in action is at: [M5 in action video](https://semanticmarker.org/vision/AR_SM.mov)
-
-# Semantic Marker&reg; Architecture Documents
-
-The Networking architecture is shown here:
-![ESP_IOT Diagram](images/KSNetworking.004.jpeg)
-
-The complexity of the ESP-32 software architecture is shown here:
-![ESP_IOT Modules](images/ESP_IOT_Modules.png)
-
-# Networking with the Semantic Marker REST API and MQTT Messaging Capabilities
-![Networking](https://semanticmarker.org/KSNetworking/KSNetworking.014.jpeg)
-
-------------------------------------------------------------------------------------------
-# Messaging BNF Grammar 
-
-These are the Websocket and MQTT messaging formats. This includes the legacy websocket interface
-defined as the <b>Barklet Language</b>. The format is a mix of original Barklet Language used with WebSockets,
-and the newer JSON Format messages.
-
-Many of the messages described in the following BNF Grammar can be run
-through the shell commands described in the API manual: [SemanticMarkerAPI Manual](https://github.com/konacurrents/SemanticMarkerAPI).
-
-> [!NOTE]
-> To run, download the scripts and run with a valid username and password.
-
-## BNF Grammar for Barklet Language
-
-```ebnf
-  Description ::= Grammar for Barklet communication
-   NOTE ::= {} are part of language not BNF
-   NOTE ::= : <guest ID> ":"  created by chat-room, not user messages
-
-    message          ::= [<guest ID> ":"] <payload> <player_name> [<time>] 
-                    | '{' [<device>] <JSONMessage> '}'
-    payload          ::= <request> [<deviceInfo>] [<SemanticMarker>] [<OTA>]| <reply>
-    request          ::= #STATUS | #TEMP | #CAPTURE | #FEED 
-	                 | #VERSION | #DOCFOLLOW | #followMe | #CLEAN_SSID_EPROM | #OTA
-    reply            ::=  <connection>
-                        | <location>
-                    | <biometrics> <bot_name>
-                    | <ack>
-                    | <chat>
-                    | <version>
-                    | <distanceTo< <bot_name>
-    SemanticMarker   ::= AVM= <SMAddress>
-    SMAddress        ::= SemanticMarkerURL
-    OTA              ::= {v=Version} | {k=<kind>}
-    kind             ::= ESP_M5 | ESP_32
-    connection       ::= <connectionStatus> <status>
-    connectionStatus ::= <connectionPhase> <bot_name> | #REMOTE
-    connectionPhase  ::= #CONNECTED | #WAITING | #DISCONNECTED
-    status           ::= {I,F,remote}   //Inside network, Foreground  || Outside, background
-    location         ::= #GPS <loc>
-    loc              ::= {nil} | {<lat:float>,<lon:float>,<alt-feet:float>}
-    chat             ::= #CHAT_CONNECTED | #CHAT_DISCONNECTED
-    ack              ::= #ACK <ack_kind>
-    ack_kind         ::= <ack_feed> | <docfollow>
-    ack_feed         ::= "Fed" <bot_name>
-    biometrics       ::= <temp> | <acceleration>
-    temp             ::= {TempF=<float>}
-    acceleration     ::= {Acc=<floatX>,<floatY>,<floatZ>}
-    deviceInfo       ::= <identity> | {"deviceName":<name>}
-    bot_name         ::= <identity>
-    player_name      ::= <identity>
-    identity         ::= {<name> [<UUID>]}
-    UUID             ::= <32 bit name>
-    float            ::= <int> : <int>
-    time             ::= {hh:mm:ss}
-    version          ::= {ver=x.x}
-    number           ::= <int>
-    boolean          ::= "on" | "off"
- 
-    JSONMessage      ::= <set> | <setdevice> | <send> | <set64> | <SemanticMarkerApp Messages>
-    device           ::= "device" : name_of_device
-    setdevice        ::= <device> <set>
-    set              ::= "set" : setString , "val": valString
-    send             ::= "send" : sendString
-    set64            ::= "set64" : <encodedBase64String>
-    setString        ::= "semanticMarker" 
-                      | "highTemp" <number>
-                      | "feed" <boolean>
-                      | "status" <boolean>
-                      | "resetTimer" <boolean>
-                      | "devOnlySM" <boolean>
-                      | "ble+wifi" <boolean>
-                      | "factoryReset" <boolean>
-                      | "restartModels" <boolean>
-                      | "screenTimeout" <number>
-                      | "stepperAngle" <number>
-                      | "noclick"  <boolean>
-                      | "gateway"  <boolean>
-                      | "DiscoverM5PTClicker"  <boolean>
-                      | "useSPIFF"  <boolean>
-                      | "timerDelay" <number>
-                      | "startTimer"  <boolean>
-                      | "stepper"  <number>
-                      | "clockWiseMotor" <boolean>
-                      | "otaFile" <string>
-                      | "location" <string>
-                      | "device"  <string>
-                      | "pairNow"  <boolean>
-                      | "pairDev" <string>
-                      | "useGroups" <boolean>
-                      | "groups" <boolean>
-                      | "screenColor" <number>
-                      | "gen3only" <boolean>
-                      | "BLEUsePairedDeviceName" <boolean>
-                      | "BLEUseDeviceName" <boolean>
-                      | "minMenue" <boolean>
-                      | "addWIFI" <boolean>
-                      | "useDOCFOLLOW" <boolean>
-                      | "semanticMarker" 
-                      | "blankscreen" <boolean>
-                      | "SubDawgpack" <boolean>
-                      | "buzz" <boolean>
-                      | "BLEClient" <boolean>
-                      | "BLEServer" <boolean>
-                      | "tilt" <boolean>
-                      | "zoomSM" <SMNum>
-                      | "buttonA" ["longpress" | "shortpress"]
-                      | "buttonB" ["longpress" | "shortpress"]
-
-    sendString      ::= "temp" 
-                      | "status" 
-                      | "capture" 
-                      | "volume" 
-                      | "feed" 
-
-    encodedBase64String ::=
-                      |  <Semantic Marker value after decoding base64>
-
-    SemanticMarkerAppMessages ::=
-                      | DEBUG <boolean>
-                      | HUD <boolean>
-                      | MQTT_DEBUG <boolean>
-                      | SMFocusCapture <boolean>
-                      | SMSharing <boolean>
-                      | SMSharingLeader <boolean>
-                      | SM_AR_Minimal <boolean>
-                      | SM_AR_ZOOM <boolean>
-                      | SM_AR_Zoom <boolean>
-                      | SM_Flip <boolean>
-                      | SM_FlipRotate <boolean>
-                      | SM_Instance_Image <boolean>
-                      | SM_QRAvatar <boolean>
-                      | SM_ReplaceUUID <boolean>
-                      | SM_UseCropImage <boolean>
-                      | SM_VisionLinker <boolean>
-                      | animals <boolean>
-                      | images <boolean>
-                      | matrix <boolean>
-                      | noclick <boolean>
-                      | pause <boolean>
-                      | pdf <boolean>
-                      | replaceUUID <UUID string>
-```
-
-------------------------------------------------------------------------------------------
-
-# Module design
-While not going into detail on it's capabilities, the following short description shows how the build can be 
-configured through the use of conditional module compiling.
-
-To optionally include specific code, the various MODULE are included in a scheme like the following:
-
-```c
+```objc
 #ifdef USE_MQTT_NETWORKING
 #include "src/MQTTModule/MQTTNetworking.h"
 #endif
@@ -324,7 +94,6 @@ void loop()
 } //loop
 ```
 
-------------------------------------------------------------------------------------------
 ## Mixing module functionality
 
 The interesting part is when the modules are mixed since they perform different functions. 
@@ -411,7 +180,7 @@ void blinkMessageCallback(char *message)
 
 ## Setup via Bluetooth JSON Message
 
-Since the device must be configured, the **processJSONMesage()** is called when a bluetooth message arrives (or other ways the information is gathered). This returns a boolan stating which if true means the message was processed, otherwise the caller does what it wants with the bluetooth message.
+Since the device must be configured, the processJSONMesage() is called when a bluetooth message arrives (or other ways the information is gathered). This returns a boolan stating which if true means the message was processed, otherwise the caller does what it wants with the bluetooth message.
 
 ```objc
 //!process the JSON message, which can be configuration information. This is called from outside on things like a Bluetooth message..
@@ -429,23 +198,66 @@ int processJSONMessage(char *message);
   "jsonHeader" : "WIFI+MQTT",
   "mqtt_server":"theMQTTServer",
   "mqtt_port":"1883",
-  "mqtt_topic":"userP/bark/test",
+  "mqtt_topic":"usersP/bark/test",
   "mqtt_user":"test",
-  "mqtt_password":"password",
-  "mqtt_guestPassword": "password"
+  "mqtt_password":"test",
+  "mqtt_guestPassword": "test"
   "deviceName": "Name of feeder",
   "name":"iDogWatch MQTT Configuration",
   "uuid":"scott",
   "mqtt_status":"Success"
 }
 ```
+## Bootstrapping by hardcoding info
 
+In testing, or otherwise bootstrapping the device, a BOOTSTRAP ifdef is used.
+
+
+```objc
+#define BOOTSTRAP
+#ifdef BOOTSTRAP
+    //note: this could be a 'rebootstrap' message via MQTT .. in the future..
+    {
+        
+        SerialDebug.println("BOOTSTRAP device with our own WIFI and MQTT");
+        char* BOOT_mqtt_server = "idogwatch.com";
+        
+        char* BOOT_mqtt_port = "1883";
+
+		  //The SSID information:
+        char* BOOT_ssid = "ssidName";
+        char* BOOT_ssid_password = "ssidPassword";
+
+		  //MQTT Info
+        char *BOOT_mqtt_user = "test";
+        char *BOOT_mqtt_password = "test";
+        char *BOOT_mqtt_topic = "usersP/bark/test";
+
+		  //Info to name the device itself (eg. Test Feeder)
+		  char *BOOT_deviceName = "Test Feeder";
+        char *BOOT_uuidString = "unused";
+        char *BOOT_jsonHeaderString = "WIFI+MQTT";
+        char *BOOT_jsonVersionString ="BOOTSTRAP 1.1";
+        
+		  // store in the JSONVar .. (not shown)
+
+        SerialDebug.print("Writing EPROM JSON = ");
+        
+        SerialDebug.println(myObject);
+        _preferences.putString(_preferencesJSONName, myObject);
+        
+        // Close the Preferences
+        _preferences.end();
+    }
+    return;
+#endif //BOOTSTRAP
+```
 
 # BLEServerNetworking
 
 ## Header of BLEServerNetworking
 
-```c
+```objc
 #define BLEServerNetworking
 
 //!defines the operations on BLE Server Networking
@@ -476,7 +288,7 @@ void sendBLEMessageACKMessage();
 ## Example
 
 To use the MQTTNetwork module, the same setup and loop of the main application is used, but in that loop are calls to:
-```c
+```objc
   setupBLEServerNetworking("PTFeeder", getDeviceName(), PT_SERVICE_UUID, PT_CHARACTERISTIC_UUID);
 
    loopBLEServerNetworking()
@@ -484,7 +296,7 @@ To use the MQTTNetwork module, the same setup and loop of the main application i
 
 ## Callbacks
 
-```c
+```objc
 
  //*** The callback for "onWrite" of the bluetooth "onWrite'
   registerCallbackBLEServer(BLE_SERVER_CALLBACK_ONWRITE, &onWriteBLEServerCallback);
@@ -494,7 +306,7 @@ To use the MQTTNetwork module, the same setup and loop of the main application i
 
 ## Header of BLEClientNetworking
 
-```c
+```objc
 #define BLEClientNetworking
 
 #define BLE_CLIENT_CALLBACK_ONREAD 0
@@ -527,16 +339,132 @@ void sendFeedCommandBLEClient();
 ```
 ## Callbacks
 
-```c
+```objc
     registerCallbackBLEClient(BLE_CLIENT_CALLBACK_BLINK_LIGHT, &blinkBlueLight);
 ```
 
 
+## BNF Grammer for Barklet Language
+
+```objc
+/*
+ * @discussion
+ * Description = Grammer for Barklet communication
+ @code
+ * --- BNF: NOTE: {} are part of language not BNF
+ * --NOTE: <guest ID> ":"  -- created by chat-room, not user messages
+ *   message          ::= [<guest ID> ":"] <payload> <player_name> [<time>]
+ *   payload          ::= <request> [<deviceInfo>] | <reply>
+ *   request          ::= #STATUS | #TEMP | #CAPTURE | #FEED | #VERSION
+ *   reply            ::=  <connection>
+ *                       | <location>
+ *                   | <biometrics> <bot_name>
+ *                   | <ack>
+ *                   | <chat>
+ *                   | <version>
+ *                   | <distanceTo< <bot_name>
+ *   connection       ::= <connectionStatus> <status>
+ *   connectionStatus ::= <connectionPhase> <bot_name> | #REMOTE
+ *   connectionPhase  ::= #CONNECTED | #WAITING | #DISCONNECTED
+ *   status           ::= {I,F,remote}   //Inside network, Foreground  || Outside, background
+ *   location         ::= #GPS <loc>
+ *   loc              ::= {nil} | {<lat:float>,<lon:float>,<alt-feet:float>}
+ *   chat             ::= #CHAT_CONNECTED | #CHAT_DISCONNECTED
+ *   ack              ::= #ACK <ack_kind>
+ *   ack_kind         ::= <ack_feed>
+ *   ack_feed         ::= "Fed" <bot_name>
+ *   biometrics       ::= <temp> | <acceleration>
+ *   temp             ::= {TempF=<float>}
+ *   acceleration     ::= {Acc=<floatX>,<floatY>,<floatZ>}
+ *   deviceInfo       ::= <identity> | {"deviceName":<name>}
+ *   bot_name         ::= <identity>
+ *   player_name      ::= <identity>
+ *   identity         ::= {<name> [<UUID>]}
+ *   UUID             ::= <32 bit name>
+ *   float            ::= <int> : <int>
+ *   time             ::= {hh:mm:ss}
+ *   version          ::= {ver=x.x}
+ @endcode
+ */
+```
+
+## MQTT Namespace
+
+![IOT MQTT_Namespace](IOT_MQTT_Namespace.png)
+
+The MQTT topic namespace architecture.
+
+## IOT Backend
+
+![IOT_Backend](IOT_Backend.png)
+
+The nodered backend.
+
+## ESP Stability
+
+Testing as of 2.2.22 has the following observations:
+
+1. Sending a FEED command at 5 second intervals, seems to overload the WIFI of the ESP after 12 hours. It still listens on BLE but cannot connect to WIFI. 
+
+2. Sending FEED at 1 minute intervals results in the ESP running for much longer.
+
+3. The MQTT backend (mosquitto) is working nicely so far. 
+
+## MQTT Scalability
+
+According the a 2015 benchmark, MQTT can handle 60,000 publishers running Mosquitto. 
+
+http://www.scalagent.com/IMG/pdf/Benchmark_MQTT_servers-v1-1.pdf
+
+## OTA Image Sizes
+
+```
+ESP-32
+----
+With DebugDebug
+Full:                1040206 bytes (79%)
+Without WIFI_AP:      75%
+Without BLE_SERVER   836042  bytes (63%)
+Without MQTT         1000690 bytes (76%)
+Without Buttons      1039706 bytes (79%)
+
+(basically anyone includes BLE code .. it adds 15%)
+
+```
+
+```
+Without DebugDebug  
+Full: 1030010 bytes (78%) -- 10204 less bytes
+Without WIFI_AP:     979246 bytes (74%)
+Without BLE_SERVER   817038 bytes (62%)
+Without MQTT         994870 bytes (75%)
+Without either MQTT or WIFI (<WiFi.h>): 
+                     568866 bytes (43%)
+
+```
+
+```
+ESP_M5
+----
+With DebugDebug  
+Full:               1108922 bytes (84%) 
+Without DebugDebug  
+Full:               1087725 bytes (82%)
+Without WIFI_AP:    1040309 bytes (79%)
+Without BLE_SERVER  1082581 bytes (82%) 
+Without BLE_CLIENT  1068765 bytes (81%) 
+Without BLE both    843785  bytes (64%)   
+Without MQTT        1051605 bytes (80%)
+Without either MQTT or WIFI (<WiFi.h>): 
+                    645349  bytes (49%)
+
+```
+(basically anyone includes BLE code .. it adds 20%)
 ## Author
 
 konacurrents, scott@konacurrents.com
 
 ## License
 
-KSNetworking is available MIT PUBLIC LICENSE. See the LICENSE file for more info.
+KSNetworking is available GNU GENERAL PUBLIC LICENSE. See the LICENSE file for more info.
 
