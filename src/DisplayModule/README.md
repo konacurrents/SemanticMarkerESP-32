@@ -132,10 +132,4 @@ From WIFI -> JSON =
 setup_MQTTNetworking
  .. continue setup_MQTTNetworking
 MQTT.readPreferences
-Reading.1 EPROM JSON = {"ssid":"SunnyWhiteriver","ssidPassword":"sunny2021","mqtt_server":"idogwatch.com","mqtt_port":"1883","mqtt_password":"id0gwatch","mqtt_guestPassword":"doggy","mqtt_user":"scott@konacurrents.com","mqtt_topic":"usersP/bark/scott@konacurrents.com","deviceName":"M5Core3","uuid":null,"jsonHeader":null,"jsonVersion":null,"location":"Mineaplos, Minnesota"}
-JSON parsed.1 = {"ssid":"SunnyWhiteriver","ssidPassword":"sunny2021","mqtt_server":"idogwatch.com","mqtt_port":"1883","mqtt_password":"id0gwatch","mqtt_guestPassword":"doggy","mqtt_user":"scott@konacurrents.com","mqtt_topic":"usersP/bark/scott@konacurrents.com","deviceName":"M5Core3","uuid":null,"jsonHeader":null,"jsonVersion":null,"location":"Mineaplos, Minnesota"}
-SunnyWhiteriver
-sunny2021
-idogwatch.com
-id0gwatch
 

@@ -80,7 +80,6 @@ void sendSecureRESTCall(String message)
         SerialDebug.println("HTTPS Connected to server! ");
         // make the HTTPS request
        // _secureClient.println("GET https://SemanticMarker.org/bot/help HTTP/1.0");
-       // _secureClient.println("GET /bot/feed/scott@konacurrents.com/id0gwatch HTTP/1.1");
         
          char buffer[300];
         sprintf(buffer,"GET %s HTTP/1.1", message.c_str());
