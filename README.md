@@ -22,6 +22,15 @@ The ESP_IOT supports adding and sharing between can use the #ifdef to add or rem
 ![ESP_IOT Diagram](KSNetworking.004.jpeg)
 ![ESP_IOT Modules](ESP_IOT_Modules.png)
 
+## Over the Air (OTA) updates
+
+A quick update on OTA, this requires a "http" interface (vs https). This means 
+there must be a server that supports http - which are becoming rare (as https is required for everything.)
+ 
+We are using [kttp://KnowledgeShark.org](http://KnowledgeShark.org) for this.
+
+# Plug an play
+
 ```objc
 #ifdef USE_MQTT_NETWORKING
 #include "src/MQTTModule/MQTTNetworking.h"
