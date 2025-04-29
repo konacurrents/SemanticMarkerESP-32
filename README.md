@@ -22,6 +22,17 @@ The ESP_IOT supports adding and sharing between can use the #ifdef to add or rem
 ![ESP_IOT Diagram](KSNetworking.004.jpeg)
 ![ESP_IOT Modules](ESP_IOT_Modules.png)
 
+# Important Game Changing Features
+Here are a couple of the most important features:
+
+1. WIFI Interface
+2. MQTT Interface
+3. BLE (Bluetooth) interface
+4. JSON formated messages (over MQTT or BLE)
+5. OTA - Over the Air updates (in field updates)
+6. Object Oriented Software Architecture (C and C++)
+7. Extensible and Adaptable via compile flags (ifdef)
+
 ## Over the Air (OTA) updates
 
 A quick update on OTA, this requires a "http" interface (vs https). This means 
