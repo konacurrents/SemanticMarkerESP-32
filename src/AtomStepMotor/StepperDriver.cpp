@@ -1,5 +1,6 @@
 #include "Arduino.h"
 #include "StepperDriver.h"
+#ifdef ATOM_STEPPER_MOTOR_MODULE
 
 
 StepperDriver::StepperDriver(int number_of_steps, int step_division, int en_pin, int dir_pin, int step_pin)
@@ -138,3 +139,6 @@ void StepperDriver::moveInterval(unsigned long target_delay)
   }
   last_step_time = micros();
 }
+
+#endif //ATOM_STEPPER_MOTOR_MODULE
+

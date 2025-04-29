@@ -167,6 +167,11 @@ char _includeGroupsStringArray[NUMBER_GROUPS][STRING_MAX_SIZE];
 //! true = default
 #define EPROM_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING "50sf"
 
+
+//! issue #338 sensor definition (in work)
+//! This will be a string in JSON format with various PIN and BUS information
+#define EPROM_SENSOR_PLUGS_SETTING "51sp"
+
 //!the EPROM is in preferences.h
 #include <Preferences.h>
 //!name of main prefs eprom
@@ -834,7 +839,10 @@ void initPreferencesMainModule()
                 //! 1.6.23 .. PetTutor Blue app still not always discovering new syntax
                 _preferenceMainModuleLookupDefaults[i] = (char*)"1";
 #else
-                _preferenceMainModuleLookupDefaults[i] = (char*)"0";
+                //! 3.24.25 use the BLE name in the feeder too..
+                _preferenceMainModuleLookupDefaults[i] = (char*)"1";
+                //_preferenceMainModuleLookupDefaults[i] = (char*)"0";
+
 #endif
                 break;
                 //!set with message: set:bleusepaireddevicename,val:on/off
@@ -1033,6 +1041,14 @@ void initPreferencesMainModule()
                 _preferenceMainModuleLookupDefaults[i] = (char*)"";
                 break;
                 
+                //! issue #338 sensor definition (in work)
+                //! This will be a string in JSON format with various PIN and BUS information
+            case PREFERENCE_SENSOR_PLUGS_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_SENSOR_PLUGS_SETTING;
+                _preferenceMainModuleLookupDefaults[i] = (char*)"";
+                break;
+                
             default:
                 SerialError.printf(" ** NO default for preference[%d]\n", i);
         }
@@ -1101,8 +1117,9 @@ void printPreferenceValues_mainModule()
     SerialTemp.printf("PREFERENCE_SM_COMMAND_PIR_OFF_SETTING: %s\n", getPreference_mainModule(PREFERENCE_SM_COMMAND_PIR_OFF_SETTING));
     //! 1.12.24 The  Semantic Marker command is sent on PIR, and the Command to send
     SerialTemp.printf("PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING));
-
     
+    SerialTemp.printf("PREFERENCE_SENSOR_PLUGS_SETTING: %s\n", getPreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING));
+
 #ifdef M5CORE2_MODULE
     SerialTemp.printf("PREFERENCE_M5Core2_SETTING:\n");
 #endif

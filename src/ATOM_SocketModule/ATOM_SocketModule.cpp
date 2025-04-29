@@ -173,8 +173,11 @@ void setup_ATOM_SocketModule()
         _isOn_ATOM_SocketModule = false;
     
     //! TODO..
-
+#ifdef ESP_M5_ATOM_S3
+    M5.begin();
+#else
     M5.begin(true, false, true);
+#endif
     
     
 #ifdef USE_FAST_LED
@@ -262,6 +265,8 @@ void checkButtonB_ATOM_SocketModule()
     
 #ifdef ESP_M5
    
+#ifdef ESP_M5_ATOM_S3
+#else
     //!NOTE: ths issue is the timer is interruped by the scanner.. so make long-long very long..
     //was 1000  (from 500)
     if (M5.BtnB.wasReleasefor(3500))
@@ -282,7 +287,7 @@ void checkButtonB_ATOM_SocketModule()
         SerialDebug.println(" **** SHORT PRESS ***");
         _shortPress_ATOM_SocketModule = true;
     }
-    
+#endif
 #endif //ESP_M5
 }
 

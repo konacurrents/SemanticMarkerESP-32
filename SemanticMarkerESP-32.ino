@@ -48,8 +48,15 @@ void setup() {
   nvs_flash_init();
 
  #endif
+ //#define TRY_NEW_SERIAL_WAIT
+//! https://forum.arduino.cc/t/do-i-really-need-while-serial/1183292/16
+//! trying to get the debug to printout always, not just on REBOOT
   Serial.begin(115200);
-  Serial.println();
+
+ #ifdef TRY_NEW_SERIAL_WAIT
+   while (!Serial){}; 
+#endif
+  Serial.println("ESP_IOT Startup");
     
 //#ifdef ESP_32
     //! added 8.29.23 .. figure if this is right!
@@ -57,7 +64,11 @@ void setup() {
   pinMode(LED, OUTPUT);
 //#endif
     
-    
+#ifdef FEED_ON_STARTUP
+   setup_StepperModule();
+   loop_StepperModule();
+ #endif
+
     
 
   //This must be first .. as it inializes the display and Serial Ports..
@@ -96,7 +107,8 @@ void setup() {
 #ifdef USE_SPIFF_MODULE
    //!SPIFF must be after main_setup() since it reads preferences .. is first so debug can be saved
   setup_SPIFFModule();
-  println_SPIFFModule((char*)VERSION);
+  //println_SPIFFModule((char*)VERSION);
+  println_SPIFFModule_JSON((char*)"version",(char*)VERSION);
 
 #endif
 

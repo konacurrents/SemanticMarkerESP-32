@@ -36,13 +36,40 @@ KeyUnitSensorClass::~KeyUnitSensorClass()
 
 #define USE_LED
 #ifdef USE_LED
+#ifdef USE_FAST_LED
 #include <FastLED.h>
+#endif
+
+//! 8.20.24
+//! The PIN map stuff is tricky, and I don't know how to do this except via configuration messages
+//! (or Compile defines).
+//! When using the M5Atom, the PIN Port (next to the power is: G19, G21,G22,G23,G25, G33)
+//! But if using the the PORT B or the IC-2, the pins are DATA_PIN 23, KEY_PIN 33
+//! But the port out the back in DATA_PIN 26, KEY_PIN 32
+//! HOW TO KNOW THIS ???   With the QRCode scanner, it's the port out the back
+//! If the
+//! @see https://shop.m5stack.com/products/mechanical-key-button-unit
+//! 8.21.24 .. quick test, will use factoryClockwise to change these for a test
+//! if factoryClockwise then it's plugged into the M5 (DATA_PIN 26, KEY_PIN 32)
+//! if not factoryClockwise then it's the extension ..  (DATA_PIN 23, KEY_PIN 33)
 
 #ifdef ATOM_QRCODE_MODULE
 //! port b
 #define DATA_PIN 26
+int getDATA_PIN()
+{
+    int pin;
+    if (getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING))
+        pin= 26;
+    else
+        pin= 23;
+   // SerialDebug.printf("getDATA_PIN = %d\n", pin);
+    return pin;
+}
 #else
 #define DATA_PIN 32  // Define LED pin.  定义LED引脚.
+int getDATA_PIN() { return DATA_PIN; };
+
 #endif
 #endif
 
@@ -64,19 +91,37 @@ void KeyUnitSensorClass::startTaskImpl(void* _this)
 #ifdef ATOM_QRCODE_MODULE
 //! port b
 #define KEY_PIN 32
+int getKEY_PIN()
+{
+    int pin;
+    if (getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING))
+        pin = 32;
+    else
+        pin = 33;
+   // SerialDebug.printf("getKEY_PIN = %d\n", pin);
+    return pin;
+
+}
 #else
 #define KEY_PIN 33 //Define Key Pin.  定义Key引脚
-#endif
+int getKEY_PIN() { return KEY_PIN; };
+#endif //ATOM_QRCODE_MODULE
                    //!setup the KeyUnit
 void KeyUnitSensorClass::setupKeyUnit()
 {
     SerialDebug.printf(" setupKeyUnit == %p\n", this);
 
-    pinMode(KEY_PIN, INPUT_PULLUP);  // Init Key pin.  初始化Key引脚.
+    pinMode(getKEY_PIN(), INPUT_PULLUP);  // Init Key pin.  初始化Key引脚.
     
 #ifdef USE_LED
-    FastLED.addLeds<SK6812, DATA_PIN, GRB>(this->_leds,
-                                           1);  // Init FastLED.  初始化FastLED.
+    getDATA_PIN();
+    getKEY_PIN();
+    if (getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING))
+        FastLED.addLeds<SK6812, 26, GRB>(this->_leds,
+                                                    1);  // Init FastLED.  初始化FastLED.
+    else
+        FastLED.addLeds<SK6812, 23, GRB>(this->_leds,
+                                                    1);  // Init FastLED.  初始化FastLED.
 #endif
 #ifdef USE_LED_BREATH  //not working,
     //!@see https://stackoverflow.com/questions/45831114/c-freertos-task-invalid-use-of-non-static-member-function
@@ -94,7 +139,7 @@ void KeyUnitSensorClass::setupKeyUnit()
 //! loop the key unit (after other called M5.updfate)
 void KeyUnitSensorClass::loopKeyUnit()
 {
-    if (!digitalRead(KEY_PIN))
+    if (!digitalRead(getKEY_PIN()))
     {
         // If Key was pressed.  如果按键按下.
         SerialDebug.println("Key Pressed");
@@ -102,7 +147,7 @@ void KeyUnitSensorClass::loopKeyUnit()
         changeLedColor();  // Change LED color.  更换LED呼吸灯颜色.
 #endif
         //! THERE should be a time limit on the button .. say 10 or so..
-        while (!digitalRead(KEY_PIN))
+        while (!digitalRead(getKEY_PIN()))
             // Hold until the key released.  在松开按键前保持状态.
             ;
         SerialDebug.println("Key Released");

@@ -133,3 +133,8 @@ setup_MQTTNetworking
  .. continue setup_MQTTNetworking
 MQTT.readPreferences
 
+SunnyWhiteriver
+sunny2021
+idogwatch.com
+
+

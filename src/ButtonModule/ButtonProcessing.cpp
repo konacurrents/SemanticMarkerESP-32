@@ -9,7 +9,24 @@
 #include "ButtonProcessing.h"
 #ifdef USE_BUTTON_MODULE
 
-
+#define USE_TIMER_DELAY_CLASS
+//! 3.29.25 RaiiiinIeeeeR Beer movie
+#ifdef  USE_TIMER_DELAY_CLASS
+TimerDelayClass* _timerDelayClass_ButtonModule = new TimerDelayClass(1.0);
+void startDelay_ButtonProcessing(int seconds)
+{
+    _timerDelayClass_ButtonModule->startDelay((float)seconds);
+}
+boolean delayFinished_ButtonProcessing()
+{
+    return _timerDelayClass_ButtonModule->delayFinished();
+}
+void stopDelay_ButtonProcessing()
+{
+    _timerDelayClass_ButtonModule->stopDelay();
+}
+#else
+//! not USE_TIMER_DELAY_CLASS
 //**** Delay Methods*******
 #define SINGLE_DELAY
 #ifdef SINGLE_DELAY
@@ -49,6 +66,8 @@ void stopDelay_ButtonProcessing()
     
     _delayRunning_ButtonProcessing = false;
 }
+#endif //SINGLE_DELAY
+#endif //USE_TIMER_DELAY_CLASS
 
 //!get the delay values
 int getDelayNoClickPoweroffSetting()
@@ -98,8 +117,16 @@ void checkDelaySinceButtonTouched()
     }
 }
 
-#endif //SINGLE_DELAY
+//#endif //SINGLE_DELAY
 
+//!calls the resetFeed after we figure out the max
+void resetFeedCount()
+{
+    resetFeedCount_mainModule();
+}
+
+//   ******************  START ESP_M5
+#ifdef ESP_M5
 /**
  Idea for the 2 buttons: (the side button is the 'select' button, which changes the "state" of the M5. Then the
  top button is the 'select' on the state. So if the state was "feed" then the top button would be feed.
@@ -135,16 +162,9 @@ void invokeCurrentSemanticMarker()
 #endif
 }
 
-//!calls the resetFeed after we figure out the max
-void resetFeedCount()
-{
-    resetFeedCount_mainModule();
-}
-
 //!process the current command (from some button combination) This is the LONG press on the Big button A
 void performProcessCurrentMode()
 {
-#ifdef ESP_M5
     
     //! long press. This will "select" the mode we are in..
     //!  short press = always feed..
@@ -385,7 +405,6 @@ void performProcessCurrentMode()
     //now redraw the semantic marker (zoomed or not zoomed)
     redrawSemanticMarker_displayModule(KEEP_SAME);
 
-#endif  //ESP_M5
 }
 
 
@@ -453,7 +472,6 @@ void buttonA_ShortPress()
 //!the long press of the side button
 void buttonB_LongPress()
 {
-#ifdef ESP_M5
     
     SerialCall.println("B.long press.. toggleZoom or incrementColor");
 
@@ -484,7 +502,6 @@ void buttonB_LongPress()
     }
     
    
-#endif //ESP_M5
 }
 
 //!the short press of the side button
@@ -494,7 +511,6 @@ void buttonB_ShortPress()
     //printPreferenceValues_mainModule();
     SerialCall.println("buttonB shortPress");
 
-#ifdef ESP_M5
     //!side button.. cycles through choices..
     //!NOW: for 
     
@@ -521,9 +537,9 @@ void buttonB_ShortPress()
     //NOTE: starting at SM5, these are groups of 2 (on/off) and the drawing of the semantic marker
     invokeCurrentSemanticMarker();
     
-#endif //ESP_M5
 }
-
+#endif  //ESP_M5
+//   ******************  END ESP_M5
 
 //!the setup for buttonProcessing (extension of ButtonModule)
 //!  在 M5StickC Plus 启动或者复位后，即会开始执行setup()函数中的程序，该部分只会执行一次。
@@ -537,17 +553,28 @@ boolean _firstLoopProcessing = true;
 //!the loop for buttonProcessing (extension of ButtonModule)
 void loop_ButtonProcessing()
 {
+#ifdef ESP_M5
     //not sure if MQTT or other running .. but seems like a try
     if (_firstLoopProcessing)
     {
         invokeCurrentSemanticMarker();
         _firstLoopProcessing = false;
     }
-    
+#endif //ESP_M5
     //see if the time is up..
 //    checkDelaySinceButtonTouched();
 
 }
 
-
+#ifdef ESP_M5
+#else
+//!short press on buttonA (top button)
+void buttonA_ShortPress() {}
+//!long press on buttonA (top button)
+void buttonA_LongPress() {}
+//!the long press of the side button
+void buttonB_LongPress() {}
+//!the short press of the side button
+void buttonB_ShortPress() {}
+#endif //ESP_M5
 #endif //USE_BUTTON_MODULE

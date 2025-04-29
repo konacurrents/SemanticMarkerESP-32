@@ -227,6 +227,15 @@ void setupKeyUnit()
 #endif
 }
 
+//! 2.21.25 add a way to change the button color (if any)
+void changeButtonColor_M5ButtonModule()
+{
+#ifdef USE_LED
+    SerialDebug.println("changeButtonColor_M5ButtonModule");
+    changeLedColor();  // Change LED color.  更换LED呼吸灯颜色.
+#endif
+}
+
 //! loop the key unit (after other called M5.updfate)
 void loopKeyUnit()
 {

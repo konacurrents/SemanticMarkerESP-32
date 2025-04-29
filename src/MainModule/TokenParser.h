@@ -47,5 +47,25 @@ boolean stringIsQuery_mainModule(char *line);
 //! setup for the token parser (really just for testing)
 void setup_tokenParser_mainModule();
 
+//! 3.23.25 rainy weekend
+//! create a JSON string from the SemanticMarker
+//! https://semanticmarker.org/bot/setdevice/scott@konacurrents.com/PASS/M5AtomSocket/socket/on}
+//! Create a JSON knowing the "bot" syntax, eg.  setdevice/USER/PASS/device/<set>/<flag>
+//! and others like set etc.
+//! Maybe not 'dev' here.   Others  cmddevice/USER/PASS
+//! return:  {'set':<set>,"dev':
+//! Supports these for now:
+//!GET /set/{username}/{password}/{command}/{value}
+//!GET /send/{username}/{password}/{request}
+//! only support 'device' ones
+//!GET /setdevice/{username}/{password}/{devicename}/{command}/{value}
+//!GET /senddevice/{username}/{password}/{device}/{request}
+//!return "" if not valid
+char *semanticMarkerToJSON_TokenParser(char* semanticMarker);
+
+//! 3.29.25 Raiiiinier Beeer movie last night
+//! add returning a UUID.FLOWNUM if valid, or nil if nota
+char *parseSM_For_UUID_Flownum(char* semanticMarker);
+
 #endif// TokenParser_h
 

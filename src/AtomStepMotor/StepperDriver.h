@@ -1,6 +1,9 @@
 #ifndef StepperDriver_h
 #define StepperDriver_h
 
+#include "../../Defines.h"
+#ifdef ATOM_STEPPER_MOTOR_MODULE
+
 //!@see https://github.com/m5stack/M5-ProductExampleCodes/tree/master/AtomBase/Atomic_StepMotor/Atomic_StepMotor
 
 // library interface description
@@ -42,5 +45,6 @@ private:
     int step_pin;
     
 };
+#endif // ATOM_STEPPER_MOTOR_MODULE
 
 #endif

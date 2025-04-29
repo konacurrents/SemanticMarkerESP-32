@@ -264,7 +264,7 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
         {
             //! send WIFI feed to only the device decoded..
             
-            SerialDebug.printf(" *** WIFI FEEDING since inside SM (device=%s)\n", device);
+            SerialDebug.printf("1. *** WIFI FEEDING since inside SM (device=%s)\n", device);
             if (device)
             {
                 char pubString[100];
@@ -282,66 +282,72 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
                 
             }
         }
+        return true;
     }
     else if (containsSubstring(semanticMarker,"feeddevice"))
     {
         char *device = rindex(semanticMarker,'/');
         if (device) device++; // skip over the "/"
-        SerialDebug.printf(" *** WIFI FEEDING since inside SM (device=%s)\n", device);
+        SerialDebug.printf("2. *** WIFI FEEDING since inside SM (device=%s)\n", device);
         
         ///feed always  (done after the code below..)
         main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
+        return true;
     }
     else if (containsSubstring(semanticMarker,"feedguest"))
     {
-        SerialDebug.println(" *** WIFI FEEDING since inside SM");
+        SerialDebug.println("3. *** WIFI FEEDING since inside SM");
         
         ///feed always  (done after the code below..)
         main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
+        return true;
     }
     else if (containsSubstring(semanticMarker,"feed"))
     {
-        SerialDebug.println(" *** WIFI FEEDING since inside SM");
+        SerialDebug.println("4. *** WIFI FEEDING since inside SM");
         
         ///feed always  (done after the code below..)
         main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
+        return true;
+    }
+    //! 1.7.24 if non null then valid group topic eg.  /usersP/group/GROUP_NAME
+    char *groupTopic = main_getScannedGroupNameTopic();
+    
+    char getCommand[MAX_SM];
+    char *username = main_getUsername();
+    char *password = main_getPassword();
+    char *scannedDeviceName = main_getScannedDeviceName();
+    SerialDebug.println(username);
+    SerialDebug.println(password);
+    SerialDebug.println(scannedDeviceName);
+    
+    //! TODO: syntax for an /optimize?uuid=x&flow=y&cmd=feed
+    //! The MQTT is much faster.. Lets only use MQTT for the 'device' specified (to see this difference)
+    //    strcpy(_lastSemanticMarker,"https://SemanticMarker.org/bot/smart?uuid=QHmwUurxC3&flow=1674517131429");
+    boolean scannedDeviceValid = false;
+    //! this will be a cache of commands to try..
+    //! cmd:feed,  cmddevice,feed,device
+    if (scannedDeviceName && strlen(scannedDeviceName) > 0)
+    {
+        //! dev: <dev>, cmd: feed
+        //! cmd: feed
+        scannedDeviceValid = true;
     }
     
     //! 1.7.24  For now only SMART buttons will use the GROUP feature (and only if local) not the smrun
     // SMART buttons..
-    else if (containsSubstring(semanticMarker,"/smart"))
+    if (containsSubstring(semanticMarker,"/smart"))
     {
         //! try a call..
         //! call 'smrun' with URL query parameters, like username/password/device
         //! /bot/smrun?uuid=x&flownum=y&username=X&password=y&device=z
         //! HERE .. we add the Username, Password and Device name.. parameters
-#ifdef USE_REST_MESSAGING
-        //! 1.7.24 if non null then valid group topic eg.  /usersP/group/GROUP_NAME
-        char *groupTopic = main_getScannedGroupNameTopic();
-        
-        char getCommand[MAX_SM];
-        char *username = main_getUsername();
-        char *password = main_getPassword();
-        char *scannedDeviceName = main_getScannedDeviceName();
-        SerialDebug.println(username);
-        SerialDebug.println(password);
-        SerialDebug.println(scannedDeviceName);
+ 
         
 #define TRY_OPTIMIZE
 #ifdef  TRY_OPTIMIZE
-        //! TODO: syntax for an /optimize?uuid=x&flow=y&cmd=feed
-        //! The MQTT is much faster.. Lets only use MQTT for the 'device' specified (to see this difference)
-        //    strcpy(_lastSemanticMarker,"https://SemanticMarker.org/bot/smart?uuid=QHmwUurxC3&flow=1674517131429");
-        boolean scannedDeviceValid = false;
-        //! this will be a cache of commands to try..
-        //! cmd:feed,  cmddevice,feed,device
-        if (scannedDeviceName && strlen(scannedDeviceName) > 0)
-        {
-            //! dev: <dev>, cmd: feed
-            //! cmd: feed
-            scannedDeviceValid = true;
-        }
-        //! this is the cached (in code) SMART buton for feed. 
+
+        //! this is the cached (in code) SMART buton for feed.
         //! @See https://SemanticMarker.org/bot/smart?uuid=QHmwUurxC3&flow=1674517131429
         if (containsSubstring(semanticMarker, "QHmwUurxC3") && containsSubstring(semanticMarker,"1674517131429"))
         {
@@ -357,11 +363,12 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
                 else
                     sendMessageString_mainModule(getCommand);
                 return true;
-
+                
             }
             else
             {
-             //   sprintf(getCommand, "{'cmd':'feed'}");
+                //   sprintf(getCommand, "{'cmd':'feed'}");
+                return false;
             }
         }
         //! this is the cached (in code) SMART buton for toggle socket power.
@@ -388,19 +395,40 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
             else
             {
                 //   sprintf(getCommand, "{'cmd':'feed'}");
+                return false;
             }
         }
-
-#endif
+        
+#endif //optimize
+    }
+    //! only here if not optimized
+    if (containsSubstring(semanticMarker,"/smart") || containsSubstring(semanticMarker,"/smflowinfo"))
+    {
+#ifdef USE_REST_MESSAGING
         //! call the /smrun which an HTTPS call to the SemanticMarker.org/bot site, and then decoded
         //! .. etc  Slower
-        char *smartIndex = strstr(semanticMarker,"/smart");
-        //! move past /smart
-        smartIndex += strlen("/smart");
+        char *smartIndex;
+        if (containsSubstring(semanticMarker,"/smflowinfo"))
+        {
+            smartIndex = strstr(semanticMarker,"/smflowinfo");
+            //! move past /smart
+            smartIndex += strlen("/smflowinfo");
+        }
+        else
+        {
+            smartIndex = strstr(semanticMarker,"/smart");
+            //! move past /smart
+            smartIndex += strlen("/smart");
+        }
         strcpy(getCommand, "/bot/smrun");
         strcat(getCommand, smartIndex);
+#else
+        // replace the smart or smflowinfo with smrun
+        strcpy(getCommand, semanticMarker);
+#endif
         //! NOTE: this assumes smartIndex has parameters like: " /smart?uuid=x&flownum=y"
         //! WITHOUT the smart/  it's smart?uuid...
+        //TODO: don't add these if already there (in the scanned semantic marker)
         strcat(getCommand, "&username=");
         strcat(getCommand, username);
         strcat(getCommand, "&password=");
@@ -416,18 +444,53 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
             strcat(getCommand, "&group=");
             strcat(getCommand, _lastScannedGroupName);
         }
-#ifdef FIRST_TAKE
-        //!for this version .. we are just going to send username/password/device to the smart button .. it might not even use them but
-        //!it might.. It will definitely use the username and password
-        //!NOTE: Some SMART Buttons might have additional parameters ..
-        if (scannedDeviceValid)
-            sprintf(getCommand, "/bot/smrun?username=%s&password=%s&device=%s",username, password, scannedDeviceName);
-        else
-            sprintf(getCommand, "/bot/smrun?username=%s&password=%s", username?username:"NULL", password?password:"NULL");
+
+        //!REST is not working, so now sending to TOMCAT on KnowledgeShark.me:8080 (as HTTP not HTTPS)
+#ifdef USE_REST_MESSAGING
+        //! if REST worked, the message will be "/bot/smrun/..."
+        //! Otherwise, the semantic marker is not changed so it stays as "smart"...
+        //! 3.17.24 no async
+#define TRY_ASYNC
+#ifdef  TRY_ASYNC
+        //!send an async call with a string parameter. This will set store the value and then async call the command (passing the parameter)
+        //!These are the ASYNC_CALL_PARAMETERS_MAX
+        main_dispatchAsyncCommandWithString(ASYNC_REST_CALL_MESSAGE_PARAMETER, getCommand);
+        
+#else
+        sendSecureRESTCall(getCommand);
+#endif //async
+        
+#else //no REST
+        
+        //! right now it shows smart of smflowinfo .. 
+        SerialDebug.println("send as DOCFOLLOW");
+        SerialDebug.println(getCommand);
+#ifdef NOT_NEEDED
+        char buffer[MAX_SM];
+        
+        // send as doc follow..  "/bot/smrun...."
+        sprintf(buffer, "https://SemanticMarker.org%s",getCommand);
+        SerialDebug.println(buffer);
+    //    sendSemanticMarkerDocFollow_mainModule(buffer);
+    //
+        //! 3.25.24 try the http to tomcat, then it sends https to node-red
+        publishSMRunMessage(buffer);
+#else
+        //! 3.25.24 try the http to tomcat, then it sends https to node-red
+        publishSMRunMessage(getCommand);
 #endif
         
-        sendSecureRESTCall(getCommand);
-#endif
+#endif //use REST
+        return true;
+    }
+    //! already an /smrun so call is..
+    else if (containsSubstring(semanticMarker,"/smrun"))
+    {
+        SerialDebug.println(" ****** SHOULDN't have a smrun ...");
+        
+        //! 3.25.24 try the http to tomcat, then it sends https to node-red
+//        publishSMRunMessage(semanticMarker);
+        return true;
     }
     return true;
 }

@@ -21,7 +21,6 @@ void setup_ButtonProcessing();
 //! called by the feed operation to say the device is still running.. and count it as a button click.
 void refreshDelayButtonTouched_ButtonProcessing();
 
-
 //! These button presses are exposed so a MQTT message can invoke them..
 //! {'set':'buttonA','val':'longpress'}
 //! {'set':'buttonA','val':'shortpress'}
@@ -36,4 +35,5 @@ void buttonA_LongPress();
 void buttonB_LongPress();
 //!the short press of the side button
 void buttonB_ShortPress();
+
 #endif //USE_BUTTON_MODULE

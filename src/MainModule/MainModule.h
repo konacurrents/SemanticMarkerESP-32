@@ -2,7 +2,7 @@
 #ifndef MainModule_h
 #define MainModule_h
 
-//#include "../../Defines.h"
+#include "../../Defines.h"
 
 //!added 9.29.22 to support wildcards #196
 #include "TokenParser.h"
@@ -12,6 +12,9 @@
 
 //! preferences
 #include "PreferencesController.h"
+
+//! 3.29.25 add the TimerDelayClass
+#include "TimerDelayClass.h"
 
 //!THIS IS the setup() and loop() but using the "component" name, eg MQTTNetworking()
 //!This will perform preference initializtion as well
@@ -443,5 +446,17 @@ void messageSend_mainModule(char *sendValue);
 
 //! 1.1.24 send status of this device after events..
 void sendStatusMQTT_mainModule();
+
+
+//! 2.21.25 add a way to change the button color (if any)
+void changeButtonColor_MainModule();
+
+//! 3.23.25 rainy weekend
+//! create a JSON string from the SemanticMarker
+//! https://semanticmarker.org/bot/setdevice/scott@konacurrents.com/PASS/M5AtomSocket/socket/on}
+//! Create a JSON knowing the "bot" syntax, eg.  setdevice/USER/PASS/device/<set>/<flag>
+//! defined in TokenParser.h
+char *semanticMarkerToJSON_mainModule(char* semanticMarker);
+
 
 #endif /* MainModule_h */

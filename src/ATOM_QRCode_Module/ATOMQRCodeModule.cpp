@@ -15,9 +15,16 @@
  *******************************************************************************
  Press the button to scan, and the scan result will be printed out through
  Serial. More Info pls refer: [QR module serial control command
- list](https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/docs/datasheet/atombase/AtomicQR/ATOM_QRCODE_CMD_EN.pdf)
+ list]
+ (https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/docs/datasheet/atombase/AtomicQR/ATOM_QRCODE_CMD_EN.pdf)
  
  @ee https://github.com/konacurrents/ESP_IOT/issues/261
+ 
+ Remark:
+ When the scanning head is not working, it is in the sleep state. In the sleep state, it must wake up first and then send a valid command (send the wake-up
+ command 0x00, and then send the valid command after 50ms).
+ Start decoding and stop decoding serial commands need to be valid in the host mode, please switch to the host mode first (see the serial port command
+ table for details)
  */
 
 //! semantic marker processing
@@ -30,6 +37,9 @@ boolean _longLongPress_ATOMQRCodeModule = false;
 #define MAX_SM 500
 //! needs to be initialized
 char _lastSemanticMarker[MAX_SM];
+//! 3.29.25 Dead 3.29.90 great
+//! add UUID and FLOWnum
+//char _lastSM_UUID_Flownum[60];
 
 //#include <M5Atom.h>
 
@@ -40,6 +50,22 @@ char _lastSemanticMarker[MAX_SM];
 //! not working .. 2.5.24 (birthday) the https call breaks (side effect some how)
 //!         sendSecureRESTCall(getCommand);
 
+//! temporary state of invoking the semantic marker (versus just sending as DOCFOLLOW)
+boolean _ATOM_semanticMarkerInvocationState = true;
+
+//! 3.26.24
+//! set a temporary state of invoking the semantic marker (versus just sending as DOCFOLLOW)
+//! invocationState - true then "invoke"
+void ATOM_setSemanticMarkerInvocationState(boolean state)
+{
+    _ATOM_semanticMarkerInvocationState = state;
+#ifdef USE_FAST_LED
+    if (state)
+       fillpix(L_RED);
+    else
+       fillpix(L_BLUE);
+#endif
+}
 //! TODO.. have only 1 of these included in build, but change the callback
 //! That requires that ATOM be a class, OR there is a single Sensor but different callback..
 //#define KEY_UNIT_SENSOR_CLASS in defines.h
@@ -48,6 +74,9 @@ char _lastSemanticMarker[MAX_SM];
 #include "../SensorClass/SensorClassType.h"
 #include "../SensorClass/KeyUnitSensorClass.h"
 
+
+
+//! keyUnitSensorClass object for the BUTTON
 KeyUnitSensorClass *_KeyUnitSensorClass_ATOMQRCodeModule;
 
 
@@ -56,32 +85,60 @@ void M5AtomCallback(char *parameter, boolean flag)
 {
     SerialDebug.printf("M5Atom.sensorCallbackSignature(%s,%d)\n", parameter, flag);
     
-    sendMessageString_mainModule((char*)"M5Atom.KEY Pressed ");
+ //   sendMessageString_mainModule((char*)"M5Atom.KEY Pressed ");
     
 #ifdef USE_FAST_LED
     fillpix(L_YELLOW);
 #endif
-    SerialDebug.printf("Sending last SM = '%s'\n", _lastSemanticMarker);
+    SerialDebug.printf("1.Sending last SM = '%s'\n", _lastSemanticMarker);
     // send the _lastSemanticMarker again ...
     //!send this as a DOCFOLLOW message
     //  sendSemanticMarkerDocFollow_mainModule(_lastSemanticMarker);
     
     //!process the semantic marker AGAIN
     //!used _lastSemanticMarker
+    //!NOTE: this might be a TierII semantic marker (thus no UUID and FLOW)
+    //!https://iDogWatch.com/bot/cmddevice/scott@konacurrents.com/PASS/M5AtomSocket/togglesocket
     boolean saveSM = ATOM_processSemanticMarker(_lastSemanticMarker, _lastSemanticMarker);
     if (saveSM)
     {
         //!send this as a DOCFOLLOW message
         sendSemanticMarkerDocFollow_mainModule(_lastSemanticMarker);
+        
+        //!save to spiff
+        printSM_SPIFFModule(_lastSemanticMarker);
     }
-    
 }
 #endif //KEY_UNIT_SENSOR_CLASS
 
+//! 4.10.24 GPS sensor
+//! 4.14.24 finally creating instance
+#ifdef USE_GPS_SENSOR_CLASS
+#include "../SensorClass/GPSSensorClass.h"
+//! GPSSensorClass for reading GPS
+GPSSensorClass *_GPSSensorClass_ATOMQRCodeModule;
+
+//a pointer to a callback function that takes (char*) and returns void
+void M5AtomCallback_GPSData(char *parameter, boolean flag)
+{
+    SerialDebug.printf("M5Atom_GPSData.sensorCallbackSignature(%s,%d)\n", parameter, flag);
+    
+    //   sendMessageString_mainModule((char*)"M5Atom.KEY Pressed ");
+    
+#ifdef USE_FAST_LED
+    fillpix(L_YELLOW);
+#endif
+
+}
+
+#endif
 
 //! turn on/off the scanning .. actually go to Host mode ..
 void setHostMode_ATOMQRCodeModule(boolean flag);
 
+//!4.28.24 LA (after Greg Browning walk-of-fame introduction)
+//!support toggling the scanning
+boolean _scanningQRonMode = true;
 //! ability to turn on/off the ATOMQRCodeModule's scanning
 boolean _isOn_ATOMQRCodeModule = true;
 
@@ -101,6 +158,23 @@ void messageSetVal_ATOMQRCodeModule(char *setName, char* valValue, boolean devic
 
         _isOn_ATOMQRCodeModule = isTrue;
         //LATER..  scared.. to touch the QR scanner again..
+    }
+    
+    //! 3.22.25 - Nice day. Stormy week.
+    //! add the ScannedSemanticMarker that will set the _lastSemanticMarker
+    if (strcmp(setName, "ScannedSemanticMarker")==0)
+    {
+        if (deviceNameSpecified)
+        {
+            SerialTemp.printf("ScannedSemanticMarker.ATOMQRCodeModule(%s)\n", valValue);
+            strcpy(_lastSemanticMarker,valValue);
+            //! 3.29.25 add UUID/FLOW if set
+            
+         }
+        else
+        {
+            SerialTemp.printf("ScannedSemanticMarker.ATOMQRCodeModule(%s) - but NOT our deviceName\n", valValue);
+        }
     }
 }
 
@@ -154,7 +228,8 @@ void checkButtonB_ATOMQRCodeModule()
     //    }
     
     
-    
+#ifdef ESP_M5_ATOM_S3
+#else
     //!NOTE: ths issue is the timer is interruped by the scanner.. so make long-long very long..
     //was 1000  (from 500)
     if (M5.BtnB.wasReleasefor(3500))
@@ -176,7 +251,7 @@ void checkButtonB_ATOMQRCodeModule()
         _shortPress_ATOMQRCodeModule = true;
         
     }
-    
+#endif
     
 #endif //ESP_M5
 }
@@ -200,22 +275,45 @@ uint8_t continuous_mode_cmd[]  = {0x07, 0xC6, 0x04, 0x08, 0x00, 0x8A, 0x04, 0xFE
 uint8_t enable_scanning_config_mode_cmd[]    = {0x07, 0xC6, 0x04, 0x08, 0x00, 0xEC, 0x01, 0xFE, 0x3A};
 uint8_t prohibit_scanning_config_mode_cmd[]  = {0x07, 0xC6, 0x04, 0x08, 0x00, 0xEC, 0x00, 0xFE, 0x3B};
 
+//!sound settting
+//!prompt sound when decoding is successful
+uint8_t prohibit_prompt_sound_decode_mode_cmd[]  = {0x07, 0xC6, 0x04, 0x08, 0x38, 0x00, 0xFE, 0xEF};
+uint8_t enable_prompt_sound_decode_mode_cmd[]    = {0x07, 0xC6, 0x04, 0x08, 0x38, 0x01, 0xFE, 0xEF};
+
+
 //! init any globals
 //! 1.5.24
 void initGlobals_ATOMQRCodeModule()
 {
-    strcpy(_lastSemanticMarker,"");
+    SerialDebug.println("init _lastSemanticMarker");
+    //! 8.20.24 for version with just the button, do a feed, if a QR Scanner.. this lastSemanticMarker will be sed..
+#define  DEFAULT_TO_FEED
+#ifdef DEFAULT_TO_FEED
+    strcpy(_lastSemanticMarker,"https://SemanticMarker.org/bot/feed");
+#else
+    strcpy(_lastSemanticMarker,"https://SemanticMarker.org/bot/smart?uuid=QHmwUurxC3&flow=1681406810235&flowname=SemanticMarker");
+#endif
+    //! 3.29.25 init with empty
+    //strcpy(_lastSM_UUID_Flownum,"");
+
+    SerialDebug.println(_lastSemanticMarker);
 }
 
 //!  the setup() for this ATOM
 void setup_ATOMQRCodeModule()
 {
+ 
+#ifdef ESP_M5_ATOM_S3
+    M5.begin();
+#else
+    //M5.begin(true, false, true);
+    M5.begin(false, false, true);
+#endif
+    
     SerialDebug.println("setup_ATOMQRCodeModule");
     initGlobals_ATOMQRCodeModule();
     
     
-    //M5.begin(true, false, true);
-    M5.begin(false, false, true);
 //#define UART_VERSION
     /**
      Getting error:
@@ -248,7 +346,7 @@ void setup_ATOMQRCodeModule()
 #ifdef USE_FAST_LED
     //!NOTE: this could probably be done by ESP_IOT.ino .. but for now keep here (and in the other ATOM code..)
     setup_M5Display();
-    fillpix(L_GREEN);
+    fillpix(L_BLUE);
 #endif
     
         
@@ -258,7 +356,19 @@ void setup_ATOMQRCodeModule()
     _KeyUnitSensorClass_ATOMQRCodeModule->registerCallback(&M5AtomCallback);
         //! call the setup
     _KeyUnitSensorClass_ATOMQRCodeModule->setup();
-    //SerialDebug.printf("_Key = %d\n", _KeyUnitSensorClass_ATOMQRCodeModule);
+    SerialDebug.printf("_Key = %d\n", _KeyUnitSensorClass_ATOMQRCodeModule);
+#endif
+    
+    //! 4.10.24 GPS sensor
+    //! 4.14.24 finally creating instance
+#ifdef USE_GPS_SENSOR_CLASS
+
+    //! GPSSensorClass for reading GPS
+    _GPSSensorClass_ATOMQRCodeModule = new GPSSensorClass((char*)"GPSSensorCXlassM5AtomQRCode");
+    _GPSSensorClass_ATOMQRCodeModule->registerCallback(&M5AtomCallback_GPSData);
+    //! call the setup
+    _GPSSensorClass_ATOMQRCodeModule->setup();
+    
 #endif
     //! NOTE: it seems that a startup of a new ATOM with QRReader, requires the HOST most first, then
     //! the continuous will work ... 12.25.23
@@ -271,8 +381,22 @@ void setup_ATOMQRCodeModule()
 #endif
     delay(50);
     
-    //        Serial2.write(buzzerVolumeLow, sizeof(buzzerVolumeLow));
+ //   Serial2.write(buzzerVolumeLow, sizeof(buzzerVolumeLow));
     
+    //! then send the command (host .. or maybe continuous)
+    Serial2.write(host_mode_cmd, sizeof(host_mode_cmd));
+    SerialDebug.println("Setting: host_mode_cmd");
+    delay(50);
+
+    //!4.25.24 in LA (ready for Star Wars/SDI at Regan Library)
+    Serial2.write(prohibit_prompt_sound_decode_mode_cmd, sizeof(prohibit_prompt_sound_decode_mode_cmd));
+    SerialDebug.println("Setting: prohibit_prompt_sound_decode_mode_cmd");
+    delay(50);
+
+    Serial2.write(bootSoundProhibit, sizeof(bootSoundProhibit));
+    SerialDebug.println("Setting: bootSoundProhibit");
+
+
     //NOT WORKING.. it was 12.9.23 (but then no beep on detection either)
     //    Serial2.write(bootSoundProhibit, sizeof(bootSoundProhibit));
     //    delay(50);
@@ -282,7 +406,10 @@ void setup_ATOMQRCodeModule()
 #else
     //!@see https://m5stack.oss-cn-shenzhen.aliyuncs.com/resource/docs/datasheet/atombase/AtomicQR/ATOM_QRCODE_CMD_EN.pdf
     //   Serial2.write(prohibit_scanning_config_mode_cmd, sizeof(prohibit_scanning_config_mode_cmd));
+    delay(50);
     Serial2.write(enable_scanning_config_mode_cmd, sizeof(enable_scanning_config_mode_cmd));
+    SerialDebug.println("Setting: enable_scanning_config_mode_cmd");
+
 #endif
     delay(50);
     //#define TRY_HOST
@@ -305,14 +432,25 @@ void setup_ATOMQRCodeModule()
 #ifdef UART_VERSION
 #else
     Serial2.write(continuous_mode_cmd, sizeof(continuous_mode_cmd));
+    SerialDebug.println("Setting: continuous_mode_cmd");
 #endif
     
 #endif
     
     // strcpy(_lastSemanticMarker,"https://iDogWatch.com/bot/feed/test/test");
     //  strcpy(_lastSemanticMarker,"https://iDogWatch.com/bot/smart/test/test");
-    strcpy(_lastSemanticMarker,"https://SemanticMarker.org/bot/smart?uuid=QHmwUurxC3&flow=1674517131429");
     
+  //  strcpy(_lastSemanticMarker,"https://SemanticMarker.org/bot/smart?uuid=QHmwUurxC3&flow=1674517131429");
+    
+    //! 8.20.24 for version with just the button, do a feed, if a QR Scanner.. this lastSemanticMarker will be sed..
+#define  DEFAULT_TO_FEED
+#ifdef DEFAULT_TO_FEED
+    strcpy(_lastSemanticMarker,"https://SemanticMarker.org/bot/feed");
+#else
+    strcpy(_lastSemanticMarker,"https://SemanticMarker.org/bot/smart?uuid=QHmwUurxC3&flow=1681406810235&flowname=SemanticMarker");
+#endif
+    SerialDebug.println("_lastSemanticMarker 2025");
+    SerialDebug.println(_lastSemanticMarker);
 }
 
 //! turn on/off the scanning .. actually go to Host mode ..
@@ -339,6 +477,14 @@ void loop_ATOMQRCodeModule()
     //SerialDebug.printf("_Key = %d\n", _KeyUnitSensorClass_ATOMQRCodeModule);
 
     _KeyUnitSensorClass_ATOMQRCodeModule->loop();
+#endif
+    
+    //! 4.10.24 GPS sensor
+    //! 4.14.24 finally creating instance
+#ifdef USE_GPS_SENSOR_CLASS
+    
+    //! GPSSensorClass for reading GPS
+    _GPSSensorClass_ATOMQRCodeModule->loop();
 #endif
 }
 
@@ -406,7 +552,7 @@ void loopCode_ATOMQRCodeModule()
             if (ch != ',')
             {
                 validScannedSM = true;
-                //                SerialDebug.printf("0x%x ",ch);
+                SerialTemp.printf("0x%x ",ch);
                 //                SerialDebug.print(ch);
                 sprintf(buf,"%c",ch);
                 strcat(semanticMarker,buf); //adds NULL
@@ -420,39 +566,70 @@ void loopCode_ATOMQRCodeModule()
             }
         }
     }
+    
+    //!sometimes it's not valid scan..
+    if (validScannedSM && strlen(semanticMarker) < 5)
+        validScannedSM = false;
+    
     //! if a valid scanned Semantic Marker .. process it
     if (validScannedSM)
     {
 #ifdef USE_FAST_LED
-        fillpix(L_WHITE);
+        fillpix(L_GREEN);
+        delay(150);
 #endif
         //        SerialDebug.println();
 //        sprintf(buf,"%c",'\0');
 //        
 //        strcat(semanticMarker,buf);
-        SerialDebug.printf("SM = '%s'\n", semanticMarker);
-        
-        
+        SerialDebug.printf("\n***validScannedSM = '%s'\n", semanticMarker);
         
         //!process the semantic marker.  It will save to _lastSemanticMarker unless scannedDevice
         boolean saveSM = ATOM_processSemanticMarker(semanticMarker, _lastSemanticMarker);
         if (saveSM)
         {
+            SerialDebug.println(" **** setting semanticMarker *** ");
             //!save globally..
             strcpy(_lastSemanticMarker, semanticMarker);
             
             //!send this as a DOCFOLLOW message
             sendSemanticMarkerDocFollow_mainModule(semanticMarker);
+            
+            //!save to SPIFF
+            printSM_SPIFFModule(_lastSemanticMarker);
         }
         
     }
-    
+#define LONG_PRESS_TOGGLE_SCANNING
+#ifdef LONG_PRESS_TOGGLE_SCANNING
+    //!todo: change long press to be TURN off scanning .. TOGGLE turning on/off scanning
+    else if (_longPress_ATOMQRCodeModule)
+    {
+        //!toggle scan mode..
+        _scanningQRonMode = !_scanningQRonMode;
+
+        SerialDebug.printf("2._longPress_ATOMQRCodeModule");
+        
+        if (_scanningQRonMode)
+        {
+            Serial2.write(enable_scanning_config_mode_cmd, sizeof(enable_scanning_config_mode_cmd));
+            SerialDebug.println("Setting: enable_scanning_config_mode_cmd");
+        }
+        else
+        {
+            Serial2.write(prohibit_scanning_config_mode_cmd, sizeof(prohibit_scanning_config_mode_cmd));
+            SerialDebug.println("Setting: prohibit_scanning_config_mode_cmd");
+        }
+
+    }
+#else
+    //!todo: change long press to be TURN off scanning .. TOGGLE turning on/off scanning
     else if (_longPress_ATOMQRCodeModule)
     {
 #ifdef USE_FAST_LED
         fillpix(L_YELLOW);
 #endif
-        SerialDebug.printf("Sending last SM = '%s'\n", _lastSemanticMarker);
+        SerialDebug.printf("2.Sending last SM = '%s'\n", _lastSemanticMarker);
         // send the _lastSemanticMarker again ...
         //!send this as a DOCFOLLOW message
         //  sendSemanticMarkerDocFollow_mainModule(_lastSemanticMarker);
@@ -466,6 +643,8 @@ void loopCode_ATOMQRCodeModule()
             sendSemanticMarkerDocFollow_mainModule(_lastSemanticMarker);
         }
     }
+#endif// LONG_PRESS_TOGGLE_SCANNING
+
     else if (_longLongPress_ATOMQRCodeModule)
     {
 #ifdef USE_FAST_LED
@@ -501,20 +680,51 @@ void loopCode_ATOMQRCodeModule()
         main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
     }
 #endif
+    else
+    {
+#ifdef USE_FAST_LED
+    //    fillpix(L_WHITE);
+#endif
+    }
 }
 
+//! 3.31.25 add buffer to store
+char _statusBuffer_ATOMQRCodeModule[100];
 
+char *parsedSM_fromSemanticMarker(char *semanticMarker)
+{
+    //! 3.29.25 Raiiiinier Beeer movie last night
+    //! add returning a UUID.FLOWNUM if valid, or nil if nota
+    char *parsedSM = parseSM_For_UUID_Flownum(semanticMarker);
+    if (strlen(parsedSM) == 0)
+    {
+        if (strstr(_lastSemanticMarker,"togglesocket")>0)
+            parsedSM = (char*)"togglesocket";
+        else if (strstr(_lastSemanticMarker,"feed")>0)
+            parsedSM = (char*)"feed";
+        else
+            //! check for togleSocket (just for now)
+            parsedSM = (char*)"default";
+    }
+    return parsedSM;
+}
 //!returns a string in in URL so:  status&battery=84'&buzzon='off'  } .. etc
 char * currentStatusURL_ATOMQRCodeModule()
 {
-    return (char*)"&smscanner=on";
+    char *parsedSM = parsedSM_fromSemanticMarker(_lastSemanticMarker);
+    sprintf(_statusBuffer_ATOMQRCodeModule,"&smscanner=on&sm=%s", parsedSM);
+    return _statusBuffer_ATOMQRCodeModule;
 }
 
 //!returns a string in in JSON so:  status&battery=84'&buzzon='off'  } .. etc
 //!starts with "&"*
 char * currentStatusJSON_ATOMQRCodeModule()
 {
-    return (char*)"'smscanner':'on'";
+    //! 3.29.25 Raiiiinier Beeer movie last night
+    //! add returning a UUID.FLOWNUM if valid, or nil if nota
+    char *parsedSM = parsedSM_fromSemanticMarker(_lastSemanticMarker);
+    sprintf(_statusBuffer_ATOMQRCodeModule,"'smscanner':'on','sm':'%s'", parsedSM);
+    return _statusBuffer_ATOMQRCodeModule;
 }
 
 /*

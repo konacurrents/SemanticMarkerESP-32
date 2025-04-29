@@ -40,6 +40,9 @@ void buttonB_LongPress_M5ButtonModule();
 //!the short press of the side button
 void buttonB_ShortPress_M5ButtonModule();
 
+//! 2.21.25 add a way to change the button color (if any)
+void changeButtonColor_M5ButtonModule();
+
 #endif
 
 #endif //ButtonModule_h

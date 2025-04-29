@@ -698,5 +698,232 @@ void setup_tokenParser_mainModule()
 {
     //noop
 }
-
 #endif
+
+//! storage for the current identifier
+char _JSON_String_mainModule[300];
+
+//! 3.23.25 rainy weekend
+//! create a JSON string from the SemanticMarker
+//! https://semanticmarker.org/bot/setdevice/scott@konacurrents.com/PASS/M5AtomSocket/socket/on}
+//! Create a JSON knowing the "bot" syntax, eg.  setdevice/USER/PASS/device/<set>/<flag>
+//! and others like set etc.
+//! Maybe not 'dev' here.   Others  cmddevice/USER/PASS
+//! return:  {'set':<set>,"dev':
+//! set- sends the message (command/value) to all device
+//! Supports these for now:
+//!GET /set/{username}/{password}/{command}/{value}
+//!GET /send/{username}/{password}/{request}
+//! only support 'device' ones
+//!GET /setdevice/{username}/{password}/{devicename}/{command}/{value}
+//!GET /senddevice/{username}/{password}/{device}/{request}
+//!return "" if not valid
+char *semanticMarkerToJSON_TokenParser(char* semanticMarker)
+{
+    /*
+     Token = https:
+     Token = semanticmarker.org
+     Token = bot
+     Token = setdevice
+     Token = scott@konacurrents.com
+     Token = PASS
+     Token = M5AtomSocket
+     Token = socket
+     Token = on
+     */
+    char *rest = NULL;
+    char *token;
+    int arrayIndex = 0;
+    SerialLots.printf("\nTokens for: %s\n",semanticMarker);
+    
+#define setIndex  3
+#define userIndex 4
+#define passIndex 5
+#define deviceIndex 6
+#define cmdIndex 7
+#define flagIndex 8
+    
+    strcpy(_JSON_String_mainModule,"{\n");
+    
+    int setDeviceFlag = -1;
+    // if 0 .. then sendDevice
+    arrayIndex = 0;
+    char buffer[50];
+    //
+    for (char *token= strtok(semanticMarker,"/"); token!= NULL; token= strtok(NULL, "/"))
+    {
+        //printf("Token[%d] = %s\n", arrayIndex, token);
+        switch (arrayIndex)
+        {
+            case setIndex:
+            {
+                if (strcmp(token,"setdevice")==0)
+                    setDeviceFlag = 1;
+                else if (strcmp(token,"cmddevice")==0)
+                    setDeviceFlag = 0;
+                else
+                {
+                    setDeviceFlag = -1;
+                    //! not supported
+                    token = NULL;
+                    strcpy(_JSON_String_mainModule,"");
+                }
+            }
+                break;
+            case deviceIndex:
+                sprintf(buffer,"'dev':'%s',\n", token);
+                //printf("%s,\n",buffer);
+                strcat(_JSON_String_mainModule, buffer);
+                break;
+            case cmdIndex:
+                //! if set then there will be more .. so add ','
+                //! if send then this is the end (no ',')
+                if (setDeviceFlag)
+                    sprintf(buffer,"'%s':'%s',\n","set",token);
+                else if (setDeviceFlag == 0)
+                    sprintf(buffer,"'%s':'%s'\n", "cmd",token);
+                
+                //printf("%s,\n",buffer);
+                strcat(_JSON_String_mainModule, buffer);
+                break;
+            case flagIndex:
+                sprintf(buffer,"'val':'%s'\n", token);
+                //printf("%s\n",buffer);
+                strcat(_JSON_String_mainModule, buffer);
+                break;
+        }
+        arrayIndex++;
+    }
+    int indexLen = arrayIndex - 1;
+    SerialLots.printf("#IndexLen= %d\n", indexLen);
+    switch (setDeviceFlag)
+    {
+        case 1: // setDevice
+            if (indexLen != 8)
+            {
+                SerialDebug.printf(" *** Wrong syntax setDevice *** \n");
+            }
+            break;
+        case 0: // sendDevice
+            if (indexLen != 7)
+            {
+                SerialDebug.printf(" *** Wrong syntax sendDevice *** \n");
+            }
+            break;
+            
+        case -1: // unknown
+            break;
+            
+    }
+    if (setDeviceFlag >= 0)
+        strcat(_JSON_String_mainModule, "}");
+    
+    //! replace ' with "
+    for (char* p = _JSON_String_mainModule; *p; p++)
+    {
+        if (p[0] == '\'')
+            p[0]= '\"';
+    }
+    SerialDebug.printf("_JSON_String_mainModule= \n%s\n", _JSON_String_mainModule);
+    
+    return _JSON_String_mainModule;
+}
+
+//! global for returning..
+char _sm_for_UUID_Flownum[100];
+//! 3.29.25 Raiiiinier Beeer movie last night
+//! add returning a UUID.FLOWNUM if valid, or nil if nota
+//! note "flow"  .. not flownum
+//! uuid=x&flow=y&   .. flownum could be the last .. so end-of-line
+char *parseSM_For_UUID_Flownum(char* semanticMarker)
+{
+    //! syntax:  uuid=X&flownum=Y
+    /*
+     
+     Token[0] = https:
+     Token[1] = semanticmarker.org
+     Token[2] = bot
+     Token[3] = smart?uuid=UUID_343434&flow=239293&morestuff=33
+     // first break on "smart?" .. or advance..
+     // need: next step break on "&"
+     tokens: uuid=askdasjfk
+     flow=ksjdfkasjdfk
+     next step (break on "="
+     uuid,adkfjaskdf
+     flow,kdjfkasdf
+     */
+    char *rest = NULL;
+    char *token;
+    int arrayIndex = 0;
+    
+    
+    char _uuidString[40];
+    char _flowString[40];
+    strcpy(_uuidString,"");
+    strcpy(_flowString,"");
+    arrayIndex = 0;
+    //! needed to copy semanticMarker .. as the code below broke the callers' value to "https:" .. SIDE EFFECT
+    char str[500];
+    strcpy(str,semanticMarker);
+    strcpy(_sm_for_UUID_Flownum,"");
+    
+    //! look for tokens
+    for (char *token= strtok(str,"/"); token!= NULL; token= strtok(NULL, "/"))
+    {
+        SerialLots.printf("Token[%d] = %s\n", arrayIndex, token);
+        switch (arrayIndex)
+        {
+#define smartSwitch 3
+            case smartSwitch:
+            {
+                /*
+                 Token[3] = smart?uuid=UUID_343434&flow=239293&morestuff=33
+                 // first break on "smart?" .. or advance..
+                 // need: next step break on "&"
+                 tokens: uuid=askdasjfk
+                 flow=ksjdfkasjdfk
+                 next step (break on "="
+                 uuid,adkfjaskdf
+                 flow,kdjfkasdf
+                 */
+                char *smartIndex = strstr(token,"smart?");
+                if (smartIndex)
+                    smartIndex += strlen("smart?");
+                
+                //! break by '&'
+                for (char*amper = strtok(smartIndex,"&"); amper!=NULL; amper=strtok(NULL,"&"))
+                {
+                    char *equalIndex = strchr(amper,'=');
+                    
+                    char queryString[100];
+                    int len = equalIndex - amper;
+                    strncpy(queryString, amper, len);
+                    queryString[len] = '\0';
+                    SerialLots.printf("%s - %d\n", queryString, len);
+                    
+                    //! advance quealIndex past the equal
+                    equalIndex++;
+                    if (strcmp(queryString,"uuid")==0)
+                    {
+                        strcpy(_uuidString, equalIndex);
+                    }
+                    else if (strcmp(queryString,"flow")==0)
+                    {
+                        strcpy(_flowString, equalIndex);
+                    }
+                    SerialLots.printf("query ={%s,%s}\n", queryString, equalIndex);
+                }
+            }
+                break;
+                arrayIndex++;
+        }
+        if (strlen(_uuidString) > 0 && strlen(_flowString) > 0)
+        {
+            sprintf(_sm_for_UUID_Flownum,"%s.%s",_uuidString, _flowString);
+            SerialDebug.printf("SemanticMarker: %s\n", _sm_for_UUID_Flownum);
+        }
+        return _sm_for_UUID_Flownum;
+        
+    }
+    return _sm_for_UUID_Flownum;
+}

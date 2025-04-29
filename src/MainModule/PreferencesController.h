@@ -144,8 +144,12 @@
 //! 8.18.24 this one changes ...
 #define PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING 50
 
+//! issue #338 sensor definition (in work)
+//! This will be a string in JSON format with various PIN and BUS information
+#define PREFERENCE_SENSOR_PLUGS_SETTING 51
+
 //! *******  1 greater than last value **** IMPORTANT *** and no gaps..
-#define MAX_MAIN_PREFERENCES 51
+#define MAX_MAIN_PREFERENCES 52
 
 //! 8.2.24 retrieve the includeGroup
 //! really ask a topic if it's in the include group

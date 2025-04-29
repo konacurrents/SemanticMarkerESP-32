@@ -37,10 +37,7 @@ SerialDebug.println("         X == clean EPROM");
 //!processes a single character command from BLE (or from MQTT converted to a single character)
 void stepperModule_ProcessClientCmdFinal(char cmd);
 
-#ifdef ESP_M5
-#define LED 2
 
-#else
 
 /*volume info, B = buzzOn, b = buzzOff*/
 //#define BUZZON 1
@@ -61,7 +58,10 @@ extern int getFeederType();
 //! retrieves the buzzer status
 boolean getBuzzStatus_StepperModule();
 
-#endif  //ESP_M5
+//! 4.1.25 April Fools day. Mt Peak hike (162 bmp strange spike)
+//! get the identity of the SenasorPlug
+//! nil if non
+char *stepperIdentity_StepperModule();
 
 #endif // Dispense_h
 

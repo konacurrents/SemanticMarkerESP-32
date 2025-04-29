@@ -2,27 +2,58 @@
 //  Defines.h
 //
 //  Created by Scott Moody on 3/8/22.
-//
-
+/*
+  //emoteMe {M5QRScanner} {#connectedMe} {I,F}  {'T':'1739574713','dev':'M5QRScanner','user':'scott@konacurrents.com','location':'buckley,wa','ble':'PTClicker:M5QRScanner','v':'Version-(3.11)-4.6.24-ES','chipid':'8593020','ssid':'SunnyWhiteriver', 'smscanner':'on'}
+  Publish message(usersP/groups/atlasDogs): #remoteMe {M5QRScanner} {#connectedMe} {I,F}  {'T':'1739574713','dev':'M5QRScanner','user':'scott@konacurrents.com','location':'buckley,wa','ble':'PTClicker:M5QRScanner','v':'Version-(3.11)-4.6.24-ES','chipid':'8593020','ssid':'SunnyWhiteriver', 'smscanner':'on'}
+  ASYNC_SEND_MQTT_STATUS_URL: status?usev=v6&dev=M5QRScanner&b=100&temp=00&c=0&t=0&smscanner=on&W=on&M=on&B=off&C=off&A=off&T=off&S=on&bleS=PTClicker:M5QRScanner&Z=on&G=off
+  Publish message(usersP/bark/scott@konacurrents.com): #remoteMe {M5QRScan
+*/
+//! 11.18.24
+//! 2.14.25 Valentines day  (M5Atom was:
+//! 3.22.25 adding ScannedSemanticMarker message - to replay on button click
 
 #ifndef Defines_h
 #define Defines_h
 
-//! *** 6 main builds numbered below ****
-//! 1. M5 Smart Clicker,
-//! 2. ESP32 Feeder(orig),
-//! 3. ESP32Feeder Board,
-//! 4. M5 Atom,
-//! 5. M5 Camera,
+//! *******************************
+//! *** 7 main builds numbered below ****
+//! 1. M5 Smart Clicker (Board:
+//#define ESP_M5_SMART_CLICKER_CONFIGURATION
+//
+//! 2. ESP32 Feeder(orig old),
+//#define ESP_32_FEEDER
+//
+//! 3. ESP32Feeder Board (Board: ESP-32 dev module, partition: default 4mb withspiffs(1.2MB app/1.5MB SPIFFS)
+//! NOTE: we should change this to Minimal spiffs (1.9MB App with OTA.190KB SPIFFS) -- but all deployed feeders couldn't OTA
+//#define ESP_32_FEEDER_WITH_BOARD
+//#define ESP_32_FEEDER_BLE_GEN3
+//
+//! 4. M5 Atom  This includes QR and Socket
+#define ESP_M5_ATOM_LITE
+
+//
+//! 5. M5 Camera
+//#define ESP_M5_CAMERA
+//
 //! 6. M5Core2
-//! ******** 1.22.24 ***********************
-//! *** CURRENTLY:  1
+//#define M5CORE2_MODULE
+//!
+//! 7 ESP_M5_ATOM_S3  (for the M5AtomS3 with a display)
+//!       Board: M5AtomS3 library Minimal spiffs (1.9MB App with OTA.190KB SPIFFS)
+//#define ESP_M5_ATOM_S3
+#ifdef ESP_M5_ATOM_S3
+#define ESP_M5_ATOM_LITE
+//#define ESP_M5_MINIMAL_SENSORS
+#endif
+//
+//! *******************************
+//! *** CURRENTLY: 4
 //! ****************************************
 
 //turn on or off which configuration is desired..
 //BOARD = M5Stick-C-Plus,  type : make uploadFlashM5TEST
 // *** 1
-#define ESP_M5_SMART_CLICKER_CONFIGURATION
+//#define ESP_M5_SMART_CLICKER_CONFIGURATION
 //! comment out the following to use the SENSORS (like KeyUnitSensor)
 //#define ESP_M5_MINIMAL_SENSORS
 
@@ -67,13 +98,13 @@
 
 
 //!global to all releases (for now) used in Status for M5 (only 2 characters)
-#define VERSION_SHORT "v7"
+#define VERSION_SHORT "v8"
 
 //!used to force using the BLE Device name in SERVER( eg. PTFEEDER:ScoobyDoo)
 //NOT NOW 9.14.22 (no)
 //NOW: make default for v12.a on...  9.20.22
 //OFF again on 1.6.23 - managed by preference:
-//#define FORCE_USE_BLE_SERVER_DEVICE_NAME
+//#define FORCE_USE_BLE_SERVER_DEVICE_NAMEa
 
 //! 9.29.22 support wildcard naming via TokenParser.h
 #define WILDCARD_DEVICE_NAME_SUPPORT
@@ -96,13 +127,15 @@
 //! 4.20.24  using library M5GFX 0.1.15 (was 0.0.20) for the M5StickCPlus2
 
 /* *************************** CONFIGURATIONS **********************************/
+//  ******************************* M5 ****************************************** 
+
 //! ****** MAIN:  M5 ****
 //M5stack 2.0.5-1.0 (Nov 2022)hula2127
 //This is an easy way to turn on the smart clicker configuration...
 #ifdef ESP_M5_SMART_CLICKER_CONFIGURATION
-//#define VERSION "Version-(2.17b)-11.29.2023-ESP_M5_SMART_CLICKER_BLE_GROUPS_SM_RAND"
+//#define VERSION "V(2.17b)-11.29.2023-ESP_M5_SMART_CLICKER_BLE_GROUPS_SM_RAND"
 //! 2.5.24 (scotty birthday)
-#define VERSION "Version-(3.7)-4.2.24-ESP_M5_SMART_CLICKER_KEY_SONIC_CLASS_30K_CHIPID_AUDIO"
+#define VERSION "V(3.7)-4.2.24-ESP_M5_SMART_CLICKER_KEY_SONIC_CLASS_30K_CHIPID_AUDIO"
 //#define VERSION "Version-(3.6a)-2.22.24-BOOTSTRAP"
 
 #define ESP_M5
@@ -116,7 +149,7 @@
 
 //! 4.20.24 Beau Birthday, 4.20, etc
 //! trying the M5StickCPlus2 (which uses M5.unified) YELLOW version (not red)
-//#define M5STICKCPLUS2
+#define M5STICKCPLUS2
 #ifdef  M5STICKCPLUS2
 #define ESP_M5_MINIMAL_SENSORS
 #else
@@ -153,7 +186,7 @@
 //! Select  M5Stack-Timer-CAM, Minimal SPIFFS (1.9mB APP with OTA/190KB Spiffs) 240MH WiFi/BT
 #ifdef ESP_M5_CAMERA
 //#define VERSION "Version-(2.13)-11.21.2022-ESP_M5_CAMERA_WEBPAGE_Timer"
-#define VERSION "Version-(2.2e)-1.20.2024-ESP_M5_CAMERA_WEBPAGE_Timer_Groups_HTTPS_RTSP"
+#define VERSION "V(2.2e)-1.20.2024-ESP_M5_CAMERA_WEBPAGE_Timer_Groups_HTTPS_RTSP"
 //! still getting xQueueGenericSend error on "status" and "feed" message
 #define ESP_M5
 #define USE_MQTT_NETWORKING
@@ -167,7 +200,7 @@
 
 //This is an easy way to turn on the smart clicker configuration...
 #ifdef ESP_M5_SMART_CLICKER_CONFIGURATION_MINIMAL
-#define VERSION "Version-(v1.3)-5.9.2022-ESP_M5_SMART_CLICKER-minimal"
+#define VERSION "V(v1.3)-5.9.2022-ESP_M5_SMART_CLICKER-minimal"
 #define ESP_M5
 #define USE_BUTTON_MODULE // for generic button processing (with a display)
 //! 1.22.24 added M5ButtonModule by itself..
@@ -195,23 +228,31 @@
 //! SEEMS this is only compiler flag for now.. Default OFF anyway
 #define FEED_ON_STARTUP
 #endif
+//  ******************************* ESP32 ****************************************** 
 
 // *************************** case 3 ESP32 with BOARD *********************************
 #if defined(BOARD)
 #ifdef  ESP_32_FEEDER_BLE_GEN3
-#define VERSION "Version-(2.15b)-7.16.2023-ESP_32_FEEDER_GROUPS2"
+#define VERSION "V(2.15b)-7.16.2023-ESP_32_FEEDER_GROUPS2"
 #else
 //!normal BOARD - or the main feeders !! MODIFY THIS ONE...  **********************
-#define VERSION "Version-(2.17g)-8.18.2024-ESP_32_FEEDER_TUMBLER_REVERSE_H_GROUPS_FACTORY_CW_CCW"
+#define VERSION "2025_v3.27_V(2.19)-ESP_32_groups_StepperMotorClass"
+
+//!  3.16.25 new CLASS for the two types so far..
+//#define USE_DCMOTOR_STEPPER_CLASS
+//#define USE_PT_STEPPER_CLASS
+// use sensor mode: PTStepperClass or DCMotorStepperClass
+// defaults to PTStepperCLass
+
 #endif
 
 #else // orig
 #ifdef  ESP_32_FEEDER_BLE_GEN3
-#define VERSION "Version-(v2.12g)-10.23.2022-ESP_32_FEEDER-BLE_GEN3"
+#define VERSION "V(v2.12g)-10.23.2022-ESP_32_FEEDER-BLE_GEN3"
 #else
 //THIS IS WHERE VERSION FOR ORIGINAL ESP feeder (without board)  12.31.22
 //#define VERSION "Version-(2.16a)-6.14.2024-ESP_32_FEEDER_GROUPS3_WIFI_AP_STARTUP_FEED"
-#define VERSION "Version-(2.16g)-8.9.2024-ESP_32_FEEDER_GROUPS3_WIFI_AP_STARTUP_FEED_JerryGarcia"
+#define VERSION "V(2.16g)-8.9.2024-ESP_32_FEEDER_GROUPS3_WIFI_AP_STARTUP_FEED_JerryGarcia"
 
 
 #endif
@@ -236,7 +277,7 @@
 //This is an easy way to turn on the smart clicker configuration...
 //This is a version that is a smart clicker, and the right button of ESP32 is the "button"
 #ifdef ESP_32_SMART_CLICKER_CONFIGURATION
-#define VERSION "Version-2.6-4.23.2022-ESP_32_SMART_CLICKER"
+#define VERSION "V2.6-4.23.2022-ESP_32_SMART_CLICKER"
 #define ESP_32
 #define USE_MQTT_NETWORKING
 #define USE_BUTTON_MODULE
@@ -255,6 +296,8 @@
 #define USE_WIFI_AP_MODULE
 #endif //ESP_M5_SERVER
 
+//  ******************************* M5ATOM ****************************************** 
+
 //!NOTE: M5_ATOM is define for the subset of ESP_M5 that is an ATOM
 //! This turns on features like the LED display
 
@@ -264,13 +307,20 @@
 //! 1.5.24 NOW the M5AtomLite is all the ATOM's but configured to 1 at a time
 //This is an easy way to turn on the smart clicker configuration...
 //! https://docs.m5stack.com/en/atom/atomic_qr
-//! library:  not using M5Stack-ATOM (actually using M5Stack-C-Plus)
+//! library:  not using M5Stack-ATOM (actually using M5Stick-C-Plus)
 //! 12.26.23 day after xmas
 //! https://docs.m5stack.com/en/atom/atom_socket
-//! ALSO: use the Minimal SPIFF
+//! ALSO: use the Minimal SPIFF, 1.9m app, OTA and 190KB spiff
 //! 2.25.23 Sketch uses 1497093 bytes (76%) of program storage space. Maximum is 1966080 bytes.
+//! 8.22.24 (seems to generate m5stack_stickc_plus.bin)   .. and size now 65%
 #ifdef ESP_M5_ATOM_LITE
-#define VERSION "Version-(3.11)-4.6.24-ESP_M5_ATOM_QR_SCAN_SOCKET_SMART_GROUP_CHIPID_SSID_TOMCAT_SPIFF2"
+#ifdef ESP_M5_ATOM_S3
+#define VERSION "2025d_4.4V(1.0a)-8.30.24-M5_ATOM_S3"
+#else
+//! ***** THIS IS MAIN "ATOM" ***** 3.29.25
+#define VERSION "2025d_4.14-25(4.6c)-ATOM_MOTOR_SERVo_QR_SCAN_DOCFOLLOW_SOCKET_SCANNED_SM_BUTTON"
+#endif //ESP_M5_ATOM_S3
+
 #define ESP_M5
 #define M5_ATOM
 #define USE_MQTT_NETWORKING
@@ -280,37 +330,45 @@
 #define USE_BLE_CLIENT_NETWORKING //try to be a smart clicker too..
 //#define USE_DISPLAY_MODULE  .. no display
 
+#define USE_STEPPER_MODULE
+#define USE_UI_MODULE
+
 //! which ATOM plugs MODULEs are included in build:
 #define ATOM_QRCODE_MODULE
 //! including ATOM_SOCKET_MODULE now ...
 #define ATOM_SOCKET_MODULE
+//#else
 
-//! the ATOM uses FAST_LED
+//! the ATOM uses FAST_LED (the light on top button, but not M5AtomS3)
 #define USE_FAST_LED
 
 //! Sensors:  2.8.24 (30K above pacific)
 #define KEY_UNIT_SENSOR_CLASS
 #define USE_LED_BREATH
-
 //! 11.14.23 try "https" secure web call (to SemanticMarker.org/bot/...)
 //!  See https://GitHub.com/konacurrents/SemanticMarkerAPI for more info
 //crashing .. 3.22.24 (just send DOCFOLLOW for now)
 //#define USE_REST_MESSAGING
 //! 3.25.24 try again ... (not working)
 
-//! 4.4.24 (after glacier skiing at Crystal ice, but snowing)
+
+//! 4.4.24 (after glacier skiing at Crystal ice, but snowing) -- year ago now 4.4.25 (yesterday good. Today would have been amazing views)
 #define USE_SPIFF_MODULE
 #define USE_SPIFF_MQTT_SETTING
 #define USE_SPIFF_QRATOM_SETTING
 
+
 //! 4.10.24 GPS sensor
 //#define USE_GPS_SENSOR_CLASS
 
+//#endif // not M5AtomS3
+
 #endif //ESP_M5_ATOM_LITE
 
+//  ******************************* M5CORE2 ****************************************** 
 //! 1.22.24 M5CORE2 uses M5Core2 Library (not M5StackC-Plus)
 #ifdef M5CORE2_MODULE
-#define VERSION "Version-(3.8)-4.5.24-ESP_M5CORE2_OurM5Dsp_Touch_30KPacific_KeyUnit_ClickAudio_SPIFF"
+#define VERSION "2025v4.1.25-V(3.8a)-4.5.24-ESP_M5CORE2_OurM5Dsp_Touch_30KPacific_KeyUnit_ClickAudio_SPIFF"
 //#define VERSION "Version-(3.6)-3.17.24-ESP_M5CORE2_OurM5Dsp_Touch_30KPacific_KeyUnit_ChipID"
 #define ESP_M5
 #define USE_MQTT_NETWORKING
@@ -325,14 +383,14 @@
 #define USE_REST_MESSAGING
 
 //! from the ATOM code .. look at getting this working.
-//#define USE_FAST_LED
+#define USE_FAST_LED
 
 //! Sensors:  2.8.24 (30K above pacific)
 #define KEY_UNIT_SENSOR_CLASS
 #define USE_LED_BREATH
 
 //! 4.2.24 try the audio .. but for the double click
-#define USE_AUDIO_MODULE
+//#define USE_AUDIO_MODULE
 
 //! 4.4.24 (after glacier skiing at Crystal ice, but snowing)
 #define USE_SPIFF_MODULE
@@ -401,7 +459,12 @@ Error only one of ESP_M5 or ESP_32 or M5_ATOM or M5CORE2_MODULE must be defined
 #ifdef  M5STICKCPLUS2
 #include <M5StickCPlus2.h>
 #else
+//! 8.30.24 add M5AtomS3
+#ifdef ESP_M5_ATOM_S3
+#include <M5AtomS3.h>
+#else
 #include <M5StickCPlus.h>
+#endif
 #endif
 
 //! see https://github.com/m5stack/M5Stack/issues/97

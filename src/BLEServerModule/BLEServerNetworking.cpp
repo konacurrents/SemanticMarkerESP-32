@@ -159,6 +159,7 @@ class BLEServerNetworkingCharacteristicCallbacks : public NimBLECharacteristicCa
                 if (i >= value.length())
                     break;
             }
+            SerialDebug.printf("_asciiMessage = '%s'\n", _asciiMessage);
             //reply right away .. see what happens..
             //sendBLEMessageACKMessage();
             //pCharacteristic->setValue(0x01);  //??  This is the acknowlege(ACK) back to client.  Later this should be contigent on a feed completed
@@ -416,9 +417,8 @@ void setup_BLEServerNetworking(char *serviceName, char * deviceName, char *servi
     NimBLEDevice::setPower(ESP_PWR_LVL_P9); /** +9db */
     
     /** Set the IO capabilities of the device, each option will trigger a different pairing method.
-     BLE_HS_IO_DISPLAY_ONLY    - Passkey pairing
-     BLE_HS_IO_DISPLAY_YESNO   - Numeric comparison pairing
-     BLE_HS_IO_NO_INPUT_OUTPUT - DEFAULT setting - just works pairing
+     BLE_HS_IO_DISPLAY_ONLY    - Pass
+     \ng
      */
     //NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY); // use passkey
     //NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_YESNO); //use numeric comparison

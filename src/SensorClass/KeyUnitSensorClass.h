@@ -3,7 +3,9 @@
 #include "../../Defines.h"
 #if defined(ESP_M5) && !defined(ESP_M5_MINIMAL_SENSORS)
 #include "SensorClassType.h"
+#ifdef USE_FAST_LED
 #include <FastLED.h>
+#endif
 
 //!@see https://forum.arduino.cc/t/undefined-reference-to-vtable-for-abstract-classname-even-after-derived-class-definition/1084221/6
 
@@ -22,10 +24,13 @@ public:
     //! Pure Virtual Function
     void setup();
     
+    //! 2.21.24 change color made public
+    //! hope to call on FEED message received..
+    void changeLedColor();
     
 private:
     void keyUnitLED();
-    void changeLedColor();
+    
     
     //!setup the KeyUnit
     void setupKeyUnit();

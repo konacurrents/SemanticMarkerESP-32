@@ -738,7 +738,10 @@ void poweroff_mainModule()
 
 #ifndef ESP_M5_CAMERA
 #ifndef M5STICKCPLUS2
+
+#ifndef ESP_M5_ATOM_S3
     M5.Axp.PowerOff();
+#endif
 #endif
 #endif
 
@@ -971,7 +974,7 @@ void main_dispatchAsyncCommand(int asyncCallCommand)
     else
 #endif
     {
-        SerialTemp.printf("main_dispatchAsyncCommand: %d\n", asyncCallCommand);
+        SerialTemp.printf("1.main_dispatchAsyncCommand: %d\n", asyncCallCommand);
         _asyncCallFlags[asyncCallCommand] = true;
     }
 }
@@ -991,7 +994,7 @@ void main_dispatchAsyncCommandWithString(int asyncCallCommand, char *parameter)
     else
 #endif
     {
-        SerialTemp.print("main_dispatchAsyncCommandWithString:");
+        SerialTemp.print("2.main_dispatchAsyncCommandWithString:");
         SerialTemp.print(asyncCallCommand);
         SerialTemp.print(": ");
         SerialTemp.println(_asyncParameter);
@@ -1141,20 +1144,19 @@ void invokeAsyncCommands()
 #endif //USE_MQTT_NETWORKING
                     break;
                     
-#define TRY_WIFI_FIRST
-#ifdef  TRY_WIFI_FIRST
+
                     //!this is a sending of the message
                 case ASYNC_SEND_MQTT_FEED_MESSAGE:
                     SerialTemp.println("ASYNC_SEND_MQTT_FEED_MESSAGE");
                     //incrementFeedCount_mainModule();
-                    SerialCall.println("async_send_feed.0");
+                    SerialCall.println("async_send_feed.1");
                     
 
 #ifdef USE_MQTT_NETWORKING
-                    
+#ifdef USE_BLE_CLIENT_NETWORKING
                     //!9.30.22  IF SET .. send a feed but to all devices except ours and our pair (if any)
                     //! uses new wildcard syntax either  ! OUR NAME  [ & ! OUR_CONNECTED_NAME
-                    if (getPreferenceBoolean_mainModule(PREFERENCE_SENDWIFI_WITH_BLE))
+                    if (getPreferenceBoolean_mainModule(PREFERENCE_SENDWIFI_WITH_BLE) && isConnectedBLEClient())
                     {
                         char pubString[100];
                         char *paired = getPreference_mainModule(PREFERENCE_PAIRED_DEVICE_SETTING);
@@ -1171,9 +1173,10 @@ void invokeAsyncCommands()
                             sprintf(pubString,"{'dev':'!%s'",deviceName_mainModule());
                         strcat(pubString,",'cmd':'feed'}");
                         publishMQTTMessageDefaultTopic(pubString);
+                        //! if not paired, then feed everyone except out device...
                     }
-                    
-                    
+                    //! if not BLE connected .. send wifi fee to all below...
+#endif //BLE
                     //SerialTemp.println("async_send_feed.3");
                     //TODO: 7.26.22 .. decide if this logic makes sense:
                     //NO BLECLient, and a message arrives for this device to #FEED. So previously it would sned that onto the network .. but I don't think that's right. (And we weren't in that mode yet).
@@ -1184,10 +1187,15 @@ void invokeAsyncCommands()
                     if (!isConnectedBLEClient())
                     {
                         //! If not connected over BLE -- then send the MQTT feed message.. ??? WHY??
-#ifdef USE_MQTT_NETWORKING_NOT_NOW
-                        SerialCall.println("async_send_feed.1");
+                        //#ifdef USE_MQTT_NETWORKING_NOT_NOW
+#ifdef USE_MQTT_NETWORKING
+                        
+                        //!only if not WIFI with BLE
+                        //! 8.20.24 put back to MQTT feed to all .. for now..
+                        //! SerialCall.println("async_send_feed.1");
                         sendMessageMQTT((char *)"#FEED");
                         SerialTemp.println(" *** NO BLE connected so send wifi ASYNC_SEND_MQTT_FEED_MESSAGE");
+                        
 #endif //use_MQTT_not_now
                     }
                     else
@@ -1214,78 +1222,6 @@ void invokeAsyncCommands()
 #endif //not_now
 #endif  //using BLE_CLIENT
                     break;
-#else //BLE_FIRST
-                    //!this is a sending of the message
-                case ASYNC_SEND_MQTT_FEED_MESSAGE:
-                    SerialTemp.println("ASYNC_SEND_MQTT_FEED_MESSAGE");
-                    //incrementFeedCount_mainModule();
-                    SerialCall.println("async_send_feed.0");
-
-#ifdef USE_BLE_CLIENT_NETWORKING
-                    //! returns whether connected over BLE as a client to a server(like a ESP feeder)
-                    if (!isConnectedBLEClient())
-                    {
-                        //! If not connected over BLE -- then send the MQTT feed message.. ??? WHY??
-#ifdef USE_MQTT_NETWORKING_NOT_NOW
-                        SerialCall.println("async_send_feed.1");
-                        sendMessageMQTT((char *)"#FEED");
-                        SerialTemp.println(" *** NO BLE connected so send wifi ASYNC_SEND_MQTT_FEED_MESSAGE");
-#endif //use_MQTT_not_now
-                    }
-                    else
-                    {
-                        SerialCall.println("async_send_feed.2");
-                        incrementFeedCount_mainModule();
-
-                        //!send a BLE feed command as we are connected
-                        sendFeedCommandBLEClient();
-                        
-                        //!perform ACK too
-#ifdef USE_MQTT_NETWORKING
-                        //ack is sent by the caller of this message..?? 
-                        sendMessageMQTT((char *)"#ackMe");
-
-#endif  //useMQTT
-                    }
-#ifdef NOT_NOW
-                    //! 8.24.22 (This will redraw the screen - and turn off the blank screen (but not let anyone know)
-                    //! SO: now only the buttons will unlock the blank screen..
-            
-                    //!redraws the Semantic Marker image..
-                    redrawSemanticMarker_displayModule(KEEP_SAME);
-#endif //not_now
-#endif  //using BLE_CLIENT
-#ifdef USE_MQTT_NETWORKING
-                    
-                    //!9.30.22  IF SET .. send a feed but to all devices except ours and our pair (if any)
-                    //! uses new wildcard syntax either  ! OUR NAME  [ & ! OUR_CONNECTED_NAME
-                    if (getPreferenceBoolean_mainModule(PREFERENCE_SENDWIFI_WITH_BLE))
-                    {
-                        char pubString[100];
-                        char *paired = getPreference_mainModule(PREFERENCE_PAIRED_DEVICE_SETTING);
-                        boolean isPaired = paired && strlen(paired)>0;
-                        // cannot save it.. so refresh below.. (Preferences are reused)
-                        SerialTemp.printf("Paired = %s\n", paired?paired:(char*)"none");
-                        SerialTemp.printf("Connected = %s\n", connectedBLEDeviceName_mainModule()?connectedBLEDeviceName_mainModule():(char*)"none");
-                        
-                        if (connectedBLEDeviceName_mainModule() && strlen(connectedBLEDeviceName_mainModule()) > 0)
-                            sprintf(pubString,"{'dev':'!%s & !%s'",deviceName_mainModule(),connectedBLEDeviceName_mainModule());
-                        else if (isPaired)
-                            sprintf(pubString,"{'dev':'!%s & !%s'",deviceName_mainModule(),getPreference_mainModule(PREFERENCE_PAIRED_DEVICE_SETTING));
-                        else
-                            sprintf(pubString,"{'dev':'!%s'",deviceName_mainModule());
-                        strcat(pubString,",'cmd':'feed'}");
-                        publishMQTTMessageDefaultTopic(pubString);
-                    }
-                    
-                    
-                    //SerialTemp.println("async_send_feed.3");
-//TODO: 7.26.22 .. decide if this logic makes sense:
-                    //NO BLECLient, and a message arrives for this device to #FEED. So previously it would sned that onto the network .. but I don't think that's right. (And we weren't in that mode yet).
-                    //sendMessageMQTT((char *)"#FEED");
-#endif // USE_MQTT_NETWORKING
-                    break;
-#endif
 
                 case ASYNC_CALL_BUZZ_ON:
                 case ASYNC_CALL_BUZZ_OFF:
@@ -1365,13 +1301,13 @@ void invokeAsyncCommands()
                     break;
                     
                 case ASYNC_REBOOT:
-                    SerialLots.println("ASYNC_REBOOT");
+                    SerialDebug.println("ASYNC_REBOOT");
                     rebootDevice_mainModule();
                     
                     break;
                     
                 case ASYNC_POWEROFF:
-                    SerialLots.println("ASYNC_POWEROFF");
+                    SerialDebug.println("ASYNC_POWEROFF");
                     poweroff_mainModule();
                     
                     break;
@@ -1430,7 +1366,14 @@ void invokeAsyncCommands()
         }
     }
 }
-
+//! 2.21.25 add a way to change the button color (if any)
+void changeButtonColor_MainModule()
+{
+#ifdef M5BUTTON_MODULE
+    SerialDebug.println("changeButtonColor_MainModule");
+  //  changeButtonColor_M5ButtonModule()
+#endif
+}
 
 //!3.17.24  the unqiue chip id
 uint32_t _chipID_MainModule = 0;
@@ -2391,6 +2334,20 @@ void processClientCommandChar_mainModule(char cmd)
         //!Restarts (or attempts) a restart of the WIFI using the existing credentials -- vs the 'n' command
         printFile_SPIFFModule();
     }
+    //! 8.16.24 per #332
+    else if (cmd == 'H')
+    {
+        // autoMotorDirection ON
+        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
+        
+    }
+    //! 8.16.24 per #332
+    
+    else if (cmd == 'h')
+    {
+        // autoMotorDirection off
+        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, false);
+    }
     else if (cmd == 'D')
     {
         //!NOTE: no current mode to specify CCW or CW dynamically (non factory reset)
@@ -2429,35 +2386,32 @@ void processClientCommandChar_mainModule(char cmd)
     else if (cmd == 'r')
     {
         // reboot
+        SerialDebug.println("REBOOT ...");
         rebootDevice_mainModule();
     }
-    //! 8.16.24 per #332
-    else if (cmd == 'H')
-    {
-        // autoMotorDirection ON
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
 
-    }
-    //! 8.16.24 per #332
-
-    else if (cmd == 'h')
+    else if (cmd == 'p')
     {
-        // autoMotorDirection off
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, false);
+        //! poweroff
+        SerialDebug.printf("(%c) POWEROFF ...", cmd);
+        poweroff_mainModule();
     }
     else if (cmd == '.')
     {
         
         SerialLots.println("Valid Commands: ");
         SerialLots.println("         . = help, this message");
+        SerialLots.println("         p = poweroff if can");
         SerialLots.println(" 0x0, s, c == Single Feed ");
         SerialLots.println("         a == AutoFeed On");
         SerialLots.println("         A == AutoFeed Off");
         SerialLots.println("         u == UNO ");
         SerialLots.println("         m == MINI ");
         SerialLots.println("         L == tumbler");
-        SerialLots.println("         D == counterclockwise motor direction");
-        SerialLots.println("         d == clockwise motor direction");
+        SerialLots.println("         H == autoMotorDirection on");
+        SerialLots.println("         h == autoMotorDirection off");
+        SerialLots.println("         D == FACTORY counter clockwise motor direction");
+        SerialLots.println("         d == FACTORY clockwise motor direction");
         SerialLots.println("         Q == change motor direction opposite of current");
 
         SerialLots.println("         B == Buzzer On");
@@ -2479,8 +2433,7 @@ void processClientCommandChar_mainModule(char cmd)
         SerialLots.println("         e == use naming PTFeeder:name");
         SerialLots.println("         Z == Setting SM Zoom = zoomed");
         SerialLots.println("         z == Setting SM Zoom = full SM");
-        SerialLots.println("         H == autoMotorDirection on");
-        SerialLots.println("         h == autoMotorDirection off");
+    
 
         //!print out stuff
         main_printModuleConfiguration();
@@ -2835,6 +2788,9 @@ void setup_Sensors_mainModule()
     setup_ButtonProcessing();
 #endif
     //! these are the plugin modules .. and only 1 active at a time except for ATOM
+#ifdef M5_ATOM
+    SerialDebug.println(" ***** M5_ATOM define ****");
+#endif
 #ifdef M5CORE2_MODULE
     setup_M5Core2Module();
 #elif defined(M5_ATOM)
@@ -2975,4 +2931,15 @@ void sendStatusMQTT_mainModule()
     //this queues the sending of the StatusURL over MQTT.
     // This is async (next loop) since sending 2 MQTT messages can be hard to do in a row ..
     main_dispatchAsyncCommand(ASYNC_SEND_MQTT_STATUS_URL_MESSAGE);
+}
+
+
+//! 3.23.25 rainy weekend
+//! create a JSON string from the SemanticMarker
+//! https://semanticmarker.org/bot/setdevice/scott@konacurrents.com/PASS/M5AtomSocket/socket/on}
+//! Create a JSON knowing the "bot" syntax, eg.  setdevice/USER/PASS/device/<set>/<flag>
+//! defined in TokenParser.h
+char *semanticMarkerToJSON_mainModule(char* semanticMarker)
+{
+    return semanticMarkerToJSON_TokenParser(semanticMarker);
 }

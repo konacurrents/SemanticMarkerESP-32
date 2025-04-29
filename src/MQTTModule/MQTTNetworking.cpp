@@ -163,6 +163,7 @@ WiFiClient _espClient;
 //!The PubSub MQTT Client
 PubSubClient _mqttClient(_espClient);
 
+//! CONNECTION counters
 int _counterLoop;
 int _maxCounterLoop;
 
@@ -836,6 +837,26 @@ float _WIFI_MQTTStateDelays[] =
 
 };
 
+#define USE_TIMER_DELAY_CLASS
+//! 3.29.25 RaiiiinIeeeeR Beer movie
+#ifdef  USE_TIMER_DELAY_CLASS
+TimerDelayClass* _timerDelayClass_WIFI_MQTTState = new TimerDelayClass(1.0);
+void startDelay_WIFI_MQTTState()
+{
+    //! get delay in seconds
+    float seconds = _WIFI_MQTTStateDelays[_WIFI_MQTTState];
+
+    _timerDelayClass_WIFI_MQTTState->startDelay((float)seconds);
+}
+boolean delayFinished_WIFI_MQTTState()
+{
+    return _timerDelayClass_WIFI_MQTTState->delayFinished();
+}
+void stopDelay_WIFI_MQTTState()
+{
+    _timerDelayClass_WIFI_MQTTState->stopDelay();
+}
+#else
 
 //https://www.forward.com.au/pfod/ArduinoProgramming/TimingDelaysInArduino.html
 //! the time the delay started
@@ -870,6 +891,7 @@ void stopDelay_WIFI_MQTTState()
 {
     _delayRunning_WIFI_MQTTState = false;
 }
+#endif //USE_TIMER_DELAY_CLASS
 
 #endif  //MQTT STATES
 
@@ -2271,7 +2293,11 @@ void processBarkletMessage(String message, String topic)
         //sprintf(_fullMessageOut, "%s {%s} {%s} {I,F} {T=now}", REMOTEME, _deviceNameString, bluetoothOnline() ? CONNECTED : NOT_CONNECTED);
         // Once connected, publish an announcement...
         // sprintf(message, "#STATUS {%s} {%s}", _deviceNameString, chipName);
-        sprintf(_fullMessageOut, "%s {%s} {%s} {I,F}  {'T':'%d','dev':'%s','user':'%s','location':'%s','ble':'%s','v':'%s','k':'%s','chipid':'%s','ssid':'%s', %s}",
+#ifdef ESP_M5
+        sprintf(_fullMessageOut, "%s {%s} {%s} {I,F} {'T':'%d','dev':'%s','user':'%s','location':'%s','ble':'%s','v':'%s','k':'%s','chipid':'%s','ssid':'%s', 'sp':'%s', %s}",
+#else
+        sprintf(_fullMessageOut, "%s {%s} {%s} {I,F} {'T':'%d','dev':'%s','user':'%s','location':'%s','ble':'%s','v':'%s','k':'%s','chipid':'%s','ssid':'%s'}",
+#endif
                 REMOTEME,
                 _deviceNameString?_deviceNameString:"NULL",
                 bluetoothOnline() ? CONNECTED : NOT_CONNECTED,
@@ -2292,8 +2318,14 @@ void processBarkletMessage(String message, String topic)
                 
                 ,getChipIdString()
                 ,get_WIFI_SSID().c_str()
+              
+#ifdef ESP_M5
+                //! add the sensorPlugs
+                ,getPreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING)
                 //! last is the dynamic main_currentStatusJSON()
                 , main_currentStatusJSON()
+#endif
+
                 );
         
         messageValidToSendBack = true;
@@ -2369,6 +2401,7 @@ void processBarkletMessage(String message, String topic)
             
             //!message already sent ...
             messageValidToSendBack = false;
+           
         }
     }
 #ifdef ESP_M5
@@ -2399,6 +2432,18 @@ void processBarkletMessage(String message, String topic)
             
             //!parse the #followMe {AVM=<url>}
             sprintf(_fullMessageOut,"#ACK {%s} {doc_follow=%s}", _deviceNameString, _lastDocFollowSemanticMarker);
+#ifdef ESP_M5
+
+            //! 3.23.25 parse into JSON
+            //! Then internall process this message (only for this device)
+            char *JSON_String = semanticMarkerToJSON_mainModule(_lastDocFollowSemanticMarker);
+            if (strlen(JSON_String) > 0)
+            {
+                //! now process this as JSON,
+                char * my_argument = const_cast<char*> (topic.c_str());
+                processJSONMessageMQTT(JSON_String, my_argument);
+            }
+#endif
         }
         else
         {
@@ -2608,6 +2653,9 @@ void performFeedMethod(char *topic)
     // (*_callbackFunction)(rxValue);
     callCallbackMain(CALLBACKS_MQTT, MQTT_CALLBACK_FEED, (char*)"feed");
     
+    //! 2.21.25 add a way to change the button color (if any)
+    changeButtonColor_MainModule();
+            
     //ASYNC_SEND_MQTT_FEED_MESSAGE
     //On demand #STATUS send the statusURL as well (if an M5)
     //this queues the sending of the StatusURL over MQTT.
@@ -3925,7 +3973,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 
                 else
                 {
-                    SerialTemp.printf("Unknown cmd: %s\n", valCmdString);
+                    SerialTemp.printf("1.Unknown cmd: %s\n", valCmdString);
                 }
             }
             //! 9.28.23 #272 devOnlySM only show a SM if sent to this device
@@ -4108,7 +4156,21 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     SerialDebug.printf("startTimer: %d\n", flag);
                 }
             }
-            
+            //! issue #338 sensor definition (in work)
+            //! This will be a string in JSON format with various PIN and BUS information
+            else if  (strcasecmp(setCmdString,"sensorPlugs")==0)
+            {
+                if (deviceNameSpecified)
+                {
+                    savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, valCmdString);
+
+                    SerialDebug.printf("sensorPlugs: %s\n", valCmdString);
+                    
+                    //! reboot the device to set subscribe or not for groups
+                    rebootDevice_mainModule();
+                }
+                
+            }
             //!add stepper type
             else if (strcasecmp(setCmdString,"stepper")==0)
             {
@@ -4575,7 +4637,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             }
             else
             {
-                SerialMin.printf("Unknown cmd: %s  (isGroupTopic=%d)\n", setCmdString, isGroupTopic());
+                SerialMin.printf("2.Unknown cmd: %s  (isGroupTopic=%d)\n", setCmdString, isGroupTopic());
             }
 
         }
@@ -4693,6 +4755,20 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     //!let others know ??
                     // sendMessageString_mainModule(decoded.c_str());
                 }
+                
+                //! 3.22.25 Returned stranded from space station
+                //! if ScannedSemanticMarker .. call the set
+                else if (strcasecmp(setCmdString,"ScannedSemanticMarker")==0)
+                {
+                    //! 12.27.23 pass this onto those registered (which mainModule is handling..)
+                    //! 8.28.23  Tell Main about the set,val and if others are registered .. then get informed
+                    //! 1.10.24 if deviceNameSpecified then this matches this device, otherwise for all.
+                    //! It's up to the receiver to decide if it has to be specified
+                    //! 1.14.24 for now, setVal in the ATOM will support GROUP commands if turned on (and if off it doesn't get here)
+                    char * my_argument = const_cast<char*> (decoded.c_str());
+                    messageSetVal_mainModule(setCmdString, my_argument, deviceNameSpecified);
+                }
+
             }
             
 #endif //DECODE_BASE64

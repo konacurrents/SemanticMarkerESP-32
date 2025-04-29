@@ -28,10 +28,13 @@ void callCallback(int volume)
 
 //! the loud threshhold (after some testing)
 int _loudThreshhold = 4000; //8000;
+int _lastTimeMillis;
 
 //!check signal
 void showSignal_AudioModule()
 {
+  
+    
     int y;
     int max = 0;
     for (int n = 0; n < 160; n++) {
@@ -39,12 +42,19 @@ void showSignal_AudioModule()
         if (y > max)
             max = y;
     }
+    
+    int currentTimeMillis = millis();
+    int timeDiff = currentTimeMillis - _lastTimeMillis;
+    
     if (max > _loudThreshhold)
     {
-        SerialDebug.printf("** HIGH = %d\n", max);
+ 
+        _lastTimeMillis = currentTimeMillis;
+
+        SerialDebug.printf("** HIGH = %d - diffTime=%d\n", max, timeDiff);
     }
-    else
-        SerialDebug.printf("low  = %d\n", max);
+//    else
+//        SerialDebug.printf("low  = %d\n", max);
 
 }
 
@@ -106,6 +116,8 @@ void startTimer_AudioModule()
 //!see if the times up
 boolean timesUp_AudioModule()
 {
+    return true;
+    
     boolean timesUp = false;
     int currentTimeMillis = millis();
     //!substract the seconds from the set delay
@@ -140,6 +152,11 @@ void loop_AudioModule()
     if (timesUp_AudioModule())
     {
         checkMicSound_AudioModule();
+        
+        //try checking mic again..
+//        delay(100 / portTICK_RATE_MS);
+//        checkMicSound_AudioModule();
+
     }
 }
 

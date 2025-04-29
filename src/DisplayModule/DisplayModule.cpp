@@ -577,6 +577,23 @@ String createSemanticAddress()
 }
 
 
+#define USE_TIMER_DELAY_CLASS
+//! 3.29.25 RaiiiinIeeeeR Beer movie
+#ifdef  USE_TIMER_DELAY_CLASS
+TimerDelayClass* _timerDelayClass_DisplayModule = new TimerDelayClass(1.0);
+void startDelay(int seconds)
+{
+    _timerDelayClass_DisplayModule->startDelay((float)seconds);
+}
+boolean delayFinished()
+{
+    return _timerDelayClass_DisplayModule->delayFinished();
+}
+void stopDelay()
+{
+    _timerDelayClass_DisplayModule->stopDelay();
+}
+#else
 //**** Delay Methods*******
 #define SINGLE_DELAY
 #ifdef SINGLE_DELAY
@@ -617,7 +634,7 @@ void stopDelay()
     _delayRunning = false;
 }
 #endif //SINGLE_DELAY
-
+#endif // USE_TIMER_DELAY_CLASS
 
 //****** SCREEN DISPLAY ************
 //!new 12.29.22
@@ -752,11 +769,16 @@ void clearScreen_displayModule()
 boolean isBlankScreen_displayModule()
 {
     SerialLots.print("isBlankScreen_displayModule:");
-    SerialLots.println(!_delayRunning?"BLANK":"NOT BLANK");
+#ifdef  USE_TIMER_DELAY_CLASS
+    boolean delayRunning = !_timerDelayClass_DisplayModule->delayFinished();
+
+#else
+    boolean delayRunning = _delayRunning;
+#endif
+    SerialLots.println(!delayRunning?"BLANK":"NOT BLANK");
 
     //! if the delay is running, then not blanked
-    return !_delayRunning;
-
+    return !delayRunning;
 }
 
 //! whether to display on a blank screen

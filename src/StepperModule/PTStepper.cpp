@@ -7,7 +7,7 @@
 
 #include "PTStepper.h"
 
-// from Dispense it calls getFeederType()
+// from Dispense it calls getFeederType_mainModule
 #include "StepperModule.h"
 
 #ifdef ESP_M5
@@ -83,13 +83,13 @@ void whoAreWe() {
     // Calculate how many micro-steps to complete one feed sb 130 for Uno or 512 for Mini
 
     // Uno makes 16 steps per revolution
-    if (getFeederType() == UNO)
+    if (getFeederType_mainModule() == UNO)
         _targetSteps = 128;
     // Mini makes 4 steps per revolution but reverses
-    else if (getFeederType() == MINI)
+    else if (getFeederType_mainModule() == MINI)
         _targetSteps = 512;
     // Tumbler accepts a variable number of degrees
-    else if (getFeederType() == TUMBLER)
+    else if (getFeederType_mainModule() == TUMBLER)
         //converts degrees to motor cycles
         _targetSteps = (ceil) ( getPreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING) / 0.17665361523586);
     
@@ -118,7 +118,7 @@ void whoAreWe() {
             break;
     }
 
-    _lastType = getFeederType();          // let's not do this again until needed
+    _lastType = getFeederType_mainModule();          // let's not do this again until needed
 
     //!see if the motor direction is clockwise == true
     _clockwise = getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING);
@@ -184,11 +184,11 @@ void cycle_PTStepper() {
 
 //This will advance the stepper clockwise once by the angle specified in SetupStepper. Example 16 pockets in UNO is 22.5 degrees
 void start_PTStepper() {
-    if (_ourSteps == 0 || getFeederType() != _lastType) 
+    if (_ourSteps == 0 || getFeederType_mainModule() != _lastType)
     {             // Not assigned yet, is zero or is different type
         whoAreWe();                                           // go figure who we are, Mini or Uno and calculate steps needed
         SerialDebug.print("Feeder type currently is ");
-        SerialDebug.println(getFeederType());
+        SerialDebug.println(getFeederType_mainModule());
     }
     SerialDebug.println("**************** Starting Stepper *******************");
     
@@ -202,7 +202,7 @@ void start_PTStepper() {
     clearPins();
     
     
-    if (getFeederType() == MINI) {
+    if (getFeederType_mainModule() == MINI) {
         SerialDebug.println("**************** Starting Return *******************");
         _clockwise = !_clockwise;     // Time to go backwards
         while (_cycleCounter < _targetSteps - 5) {        //Don't quite go all the way back
