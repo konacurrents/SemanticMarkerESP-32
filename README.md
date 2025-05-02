@@ -23,15 +23,18 @@ The ESP_IOT supports adding and sharing between can use the #ifdef to add or rem
 ![ESP_IOT Modules](ESP_IOT_Modules.png)
 
 # Important Game Changing Features
-Here are a couple of the most important features:
+Here are a some of the most important features:
 
 1. WIFI Interface
-2. MQTT Interface
+2. MQTT Messaging
 3. BLE (Bluetooth) interface
 4. JSON formated messages (over MQTT or BLE)
-5. OTA - Over the Air updates (in field updates)
+5. OTA - Over the Air updates (insitufield updates)
 6. Object Oriented Software Architecture (C and C++)
 7. Extensible and Adaptable via compile flags (ifdef)
+8. Group messaging - permission based shared threads
+9. QR Codes (Semantic Marker) in displays for dynamic feedback
+10. Node-Red cloud processing (http REST interface)
 
 ## Over the Air (OTA) updates
 
