@@ -57,7 +57,7 @@ void toggle_ATOM_SocketModule();
 #include "../SensorClass/SensorClassType.h"
 #include "../SensorClass/KeyUnitSensorClass.h"
 
-KeyUnitSensorClass *_KeyUnitSensorClass_ATOMSocketModule;
+KeyUnitSensorClass *_KeyUnitSensorClass_ATOMSocketModule = NULL;
 
 
 //a pointer to a callback function that takes (char*) and returns void
@@ -142,7 +142,7 @@ void messageSetVal_ATOM_SocketModule(char *setName, char* valValue, boolean devi
 void messageSend_ATOM_SocketModule(char *sendValue)
 {
     SerialDebug.printf("messageSend_ATOM_SocketModule(%s)\n", sendValue);
-    if (strcmp(sendValue, "togglesocket")==0)
+    if (strcasecmp(sendValue, "togglesocket")==0)
     {
         toggle_ATOM_SocketModule();
     }
@@ -163,6 +163,10 @@ void initGlobals_ATOM_SocketModule()
 void setup_ATOM_SocketModule()
 {
     initGlobals_ATOM_SocketModule();
+    
+    //! 5.3.25 register our PIN use
+    registerPinUse_mainModule(RXD, "RXD", "ATOM_SocketModule", false);
+    registerPinUse_mainModule(RELAY, "RELAY", "ATOM_SocketModule", false);
     
     //! 1.1.24 syntax:   socket=on  or socket=off (somewhere in the string..)
     char *preference = getPreference_mainModule(PREFERENCE_ATOMS_SETTING);
@@ -193,11 +197,25 @@ void setup_ATOM_SocketModule()
     set_ATOM_SocketModule(_isOn_ATOM_SocketModule);
 
 #ifdef KEY_UNIT_SENSOR_CLASS
-    _KeyUnitSensorClass_ATOMSocketModule = new KeyUnitSensorClass((char*)"KeyUnitInstanceM5AtomSocket");
-    //! specify the callback
-    _KeyUnitSensorClass_ATOMSocketModule->registerCallback(&M5AtomSocketCallback);
-    //! call the setup
-    _KeyUnitSensorClass_ATOMSocketModule->setup();
+    //SensorStruct* sensor = getSensor_mainModule("KeyUnitInstanceM5AtomSocket");
+    //!NOTE: error without (char*) -- *warning: ISO C++ forbids converting a string constant to 'char*' [-Wwrite-strings]
+    SensorStruct* sensor = getSensor_mainModule((char*)"BuzzerSensorClass");
+
+    //! if the Buzzer isn't on .. then we are good to go
+    //! try this 5.14.25  .. But this is probablly wrong .. is should be just the KeyUnitSensorClass .. and maybe more generic..
+    if (!sensor)
+    {
+        //! create instance..
+        _KeyUnitSensorClass_ATOMSocketModule = new KeyUnitSensorClass((char*)"KeyUnitInstanceM5AtomSocket");
+        //! specify the callback
+        _KeyUnitSensorClass_ATOMSocketModule->registerCallback(&M5AtomSocketCallback);
+        //! call the setup
+        _KeyUnitSensorClass_ATOMSocketModule->setup();
+    }
+    else
+    {
+        SerialDebug.println("BuzzerSensorClass specified in sensors");
+    }
 #endif
 }
 
@@ -228,7 +246,8 @@ void loop_ATOM_SocketModule()
     loopCode_ATOM_SocketModule();
     
 #ifdef KEY_UNIT_SENSOR_CLASS
-    _KeyUnitSensorClass_ATOMSocketModule->loop();
+    if (_KeyUnitSensorClass_ATOMSocketModule)
+        _KeyUnitSensorClass_ATOMSocketModule->loop();
 #endif
 }
 
@@ -272,19 +291,19 @@ void checkButtonB_ATOM_SocketModule()
     if (M5.BtnB.wasReleasefor(3500))
     {
         //        buttonA_longPress_ATOM_SocketModule();
-        SerialDebug.println(" **** LONG LONG PRESS ***");
+        SerialDebug.println("ATOM_SocketModule **** LONG LONG PRESS ***");
         _longLongPress_ATOM_SocketModule = true;
     }
     else if (M5.BtnB.wasReleasefor(1000))
     {
         //        buttonA_longPress_ATOM_SocketModule();
-        SerialDebug.println(" **** LONG PRESS ***");
+        SerialDebug.println("ATOM_SocketModule **** LONG PRESS ***");
         _longPress_ATOM_SocketModule = true;
     }
     else if (M5.BtnB.wasReleased())
     {
         //        buttonA_shortPress_ATOM_SocketModule();
-        SerialDebug.println(" **** SHORT PRESS ***");
+        SerialDebug.println("ATOM_SocketModule **** SHORT PRESS ***");
         _shortPress_ATOM_SocketModule = true;
     }
 #endif

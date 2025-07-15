@@ -110,6 +110,42 @@ void GPSSensorClass::setup()
                      "-------------------------------------"));
 }
 
+
+
+#ifdef NOT_USED
+//! 5.15.25 try a special command local to this class
+void GPSSensorClass::messageLocal_SensorClassType(char *message)
+{
+    
+}
+
+//! adding the messages as well
+//! 5.14.25 (Laura/Paul flying). 5.14.74 great Dead
+//! 8.28.23  Adding a way for others to get informed on messages that arrive
+//! for the set,val
+//! 12.27.23 support setName == "socket"
+//! 1.10.24 if deviceNameSpecified then this matches this device, otherwise for all.
+//! It's up to the receiver to decide if it has to be specified
+void GPSSensorClass::messageSetVal_SensorClassType(char *setName, char* valValue, boolean deviceNameSpecified)
+{
+    
+}
+
+//! 12.28.23, 8.28.23  Adding a way for others to get informed on messages that arrive
+//! for the  send -
+void GPSSensorClass::messageSend_SensorClassType(char *sendValue)
+{
+    
+}
+
+//! 12.28.23, 8.28.23  Adding a way for others to get informed on messages that arrive
+//! for the cmd
+void GPSSensorClass::messageCmd_SensorClassType(char *cmdValue)
+{
+    
+}
+#endif
+
 #else
 #ifdef NOT_NOW
 //!@see https://www.w3schools.com/cpp/cpp_class_methods.asp
@@ -123,5 +159,5 @@ void GPSSensorClass::setup()
     printf("GPSSensorClass::setup()\n");
 }
 #endif //NOT_NOW
-#endif
 
+#endif //gps defined

@@ -172,6 +172,11 @@ char _includeGroupsStringArray[NUMBER_GROUPS][STRING_MAX_SIZE];
 //! This will be a string in JSON format with various PIN and BUS information
 #define EPROM_SENSOR_PLUGS_SETTING "51sp"
 
+//!5.14.25 Dead 5.14.74 Montana
+//! issue #365 Object Oriented Sensors as well
+//! define the sensors (not sensorPlugs). MQTT:  set:sensor,  set:sensors
+#define EPROM_SENSORS_SETTING "52sensors"
+
 //!the EPROM is in preferences.h
 #include <Preferences.h>
 //!name of main prefs eprom
@@ -524,6 +529,8 @@ void setOnBootPreferences_mainModule()
 }
 
 //! reads the preferences. Save is everytime the savePreference is called
+//! 5.14.25 (Dead 5.14.74 3rd Wall of Sound)
+//! add the Sensors as well..
 void readPreferences_mainModule()
 {
     SerialDebug.printf("readPreferences_mainModule(%s)\n",PREFERENCES_EPROM_MAIN_NAME);
@@ -623,6 +630,10 @@ void readPreferences_mainModule()
     
     //! set onbootPreferences
     setOnBootPreferences_mainModule();
+    
+    //! 5.14.25 (Dead 5.14.74 3rd Wall of Sound)
+    //! add the Sensors as well..
+    initSensorStringsFromEPROM_mainModule();
     
 }
 
@@ -741,7 +752,12 @@ void initPreferencesMainModule()
                  */
                 _preferenceMainModuleLookupEPROMNames[i] =
                 (char*) EPROM_STEPPER_ANGLE_FLOAT_SETTING;
+#ifdef ESP_M5
+                //! 5.2.25 default 0.5 SECONDS (not angle for the HDriver
+                _preferenceMainModuleLookupDefaults[i] = (char*)"0.5";
+#else
                 _preferenceMainModuleLookupDefaults[i] = (char*)"22.5";
+#endif
                 break;
             case PREFERENCE_TIMER_INT_SETTING:
                 _preferenceMainModuleLookupEPROMNames[i] = (char*) EPROM_PREFERENCE_TIMER_INT_SETTING;
@@ -1049,12 +1065,28 @@ void initPreferencesMainModule()
                 _preferenceMainModuleLookupDefaults[i] = (char*)"";
                 break;
                 
+                //!5.14.25 Dead 5.14.74 Montana
+                //! issue #365 Object Oriented Sensors as well
+                //! define the sensors (not sensorPlugs). MQTT:  set:sensor,  set:sensors
+                //! 7.9.25 default to BuzzerSensorClass and L9110S_DCStepperClass
+            case PREFERENCE_SENSORS_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_SENSORS_SETTING;
+                _preferenceMainModuleLookupDefaults[i] = (char*)"BuzzerSensorClass,23,33,L9110S_DCStepperClass,21,25";
+                break;
+                
             default:
                 SerialError.printf(" ** NO default for preference[%d]\n", i);
         }
     }
 }
 
+//! 7.9.25 reset SENSORS to default
+//! "BuzzerSensorClass,23,33,L9110S_DCStepperClass,21,25"
+void resetSensorToDefault_mainModule()
+{
+    setSensorsString_mainModule((char*)"BuzzerSensorClass,23,33,L9110S_DCStepperClass,21,25");
+}
 
 //!print the preferences to SerialDebug
 void printPreferenceValues_mainModule()
@@ -1119,7 +1151,11 @@ void printPreferenceValues_mainModule()
     SerialTemp.printf("PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING));
     
     SerialTemp.printf("PREFERENCE_SENSOR_PLUGS_SETTING: %s\n", getPreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING));
+    
+    //! 5.14.25
+    SerialTemp.printf("PREFERENCE_SENSORS_SETTING: %s\n", getPreference_mainModule(PREFERENCE_SENSORS_SETTING));
 
+    
 #ifdef M5CORE2_MODULE
     SerialTemp.printf("PREFERENCE_M5Core2_SETTING:\n");
 #endif
@@ -1131,6 +1167,10 @@ void printPreferenceValues_mainModule()
     
     SerialTemp.printf("WIFI_CREDENTIAL: %s\n", main_JSONStringForWIFICredentials());
     //!retrieve a JSON string for the ssid and ssid_password: {'ssid':<ssid>,'ssidPassword':<pass>"}
+    
+    //! 5.14.25 also print out the sensors
+    //! print sensors
+    printSensors_mainModule(getSensors_mainModule());
     
 #endif
 }
@@ -1220,3 +1260,241 @@ int getM5ATOMKind_MainModule()
     }
     return _ATOM_KIND;
 }
+
+#define NEW_SENSORS_PREFERENCE
+//! 5.14.25 Hanging with Tyler,
+//! Dead Montana 5.14.74 great stuff
+//! add the Sensors Preference .. first the parsing
+
+
+#define PRINT SerialDebug.printf
+
+char _sensorsEPROM[500];
+
+//! array of sensorStruct
+SensorsStruct *_sensorsStructs_mainModule = NULL;
+
+//! array
+SensorsStruct* parseSensorString_mainModule(char *str);
+
+//! print sensor
+void printSensor_mainModule(SensorStruct* sensor)
+{
+    if (sensor)
+        PRINT("SENSOR: %s,%d,%d\n", sensor->sensorName, sensor->pin1, sensor->pin2);
+    else
+        PRINT("SENSOR: **** Null sensor ***\n");
+}
+
+
+//! print sensors, passing in a struct
+void printSensors_mainModule(SensorsStruct* sensors)
+{
+    PRINT("SENSORS ******** \n");
+    int count = sensors->count;
+    for (int i=0; i< count; i++)
+    {
+        printSensor_mainModule(&sensors->sensors[i]);
+    }
+    PRINT(" ******** \n");
+}
+
+//! return the sensors defined
+SensorsStruct* getSensors_mainModule()
+{
+    return _sensorsStructs_mainModule;
+}
+
+//! return the sensor specified or null
+SensorStruct* getSensor_mainModule(char *sensorName)
+{
+    SensorStruct *sensor = NULL;
+    if (!_sensorsStructs_mainModule)
+    {
+        SerialDebug.println(" **** sensorsStructs_mainModule NULL ****");
+        return NULL;
+    }
+    
+    int count = _sensorsStructs_mainModule->count;
+    for (int i=0; i< count; i++)
+    {
+        if (strcmp(_sensorsStructs_mainModule->sensors[i].sensorName, sensorName) == 0)
+        {
+            sensor = &_sensorsStructs_mainModule->sensors[i];
+            break;
+        }
+    }
+    if (!sensor)
+        PRINT("*** No sensor: %s\n", sensorName);
+    return sensor;
+}
+
+//! Only 1 setSensorsString now .. will always append
+//! unless a null or blank "" string
+//! set a sensor val (array of  sensor,pin,pin,sensor,pin,pin...)
+void setSensorsString_mainModule(char *sensorsString)
+{
+    //! for now .. resetting
+    //! 5.17.25
+    strcpy(_sensorsEPROM, "");
+
+    PRINT("setSensorsString_mainModule(%s)\n", sensorsString);
+    //! init EPROM
+    if (!sensorsString || strlen(sensorsString)==0)
+        strcpy(_sensorsEPROM, "");
+    else if (strlen(_sensorsEPROM) > 0)
+    {
+        // add a ','
+        strcat(_sensorsEPROM, ",");
+    }
+    strcat(_sensorsEPROM, sensorsString);
+    
+    //! store in EPROM
+    savePreference_mainModule(PREFERENCE_SENSORS_SETTING, _sensorsEPROM);
+
+    //! Parse to the global..
+    _sensorsStructs_mainModule = parseSensorString_mainModule(_sensorsEPROM);
+}
+
+//!  init the sensorString from EPROM
+//!PREFERENCE_SENSOR_PLUGS_SETTING
+void initSensorStringsFromEPROM_mainModule()
+{
+    SerialDebug.println("**** initSensorStringsFromEPROM_mainModule ****");
+    strcpy(_sensorsEPROM, getPreference_mainModule(PREFERENCE_SENSORS_SETTING));
+    //! Parse to the global..
+    _sensorsStructs_mainModule = parseSensorString_mainModule(_sensorsEPROM);
+}
+//!  **********************************
+
+
+//! copy string
+char *copyString_mainModule(char *str)
+{
+    char *copy = strdup(str);
+    return copy;
+}
+
+//! 3.29.25 Raiiiinier Beeer movie last night
+//! 5.13.25 Home with Tyler, Mom in LA
+//! Foundation triligy..
+//! parseSensorString_mainModule the string
+SensorsStruct *parseSensorString_mainModule(char* sensorsString)
+{
+    //! result
+    SensorsStruct *sensors;
+    //! default
+    sensors = (SensorsStruct*) calloc(1,sizeof(SensorsStruct));
+    sensors->count = 0;
+    sensors->sensors = NULL;
+    
+    //! syntax:  sensor,pin1,pin2
+    PRINT("*** parseSensorString_mainModule: %s\n", sensorsString);
+    
+    if (!sensorsString || strlen(sensorsString)==0)
+    {
+        return sensors;
+    }
+    
+    char *rest = NULL;
+    char *token;
+    int arrayIndex = 0;
+    
+    //! needed to copy sensorsString.. as the code below broke the callers' value to "https:" .. SIDE EFFECT
+    char str[300];
+    char strCopy[300];
+    strcpy(str,sensorsString);
+    strcpy(strCopy,sensorsString);
+    
+    //! resulting array
+    SensorStruct *sensorItems;
+    
+    //! number of sensors
+    int numSensors;
+    
+    //! 2 pass
+    for (int whichPass = 0; whichPass<2; whichPass++)
+    {
+#define secondPass (whichPass == 1)
+        int max = 3;
+        
+        if (secondPass)
+        {
+            numSensors = arrayIndex / max;
+            strcpy(str,strCopy);
+            PRINT(" ** Create sensors %d\n", numSensors);
+            sensorItems= (SensorStruct*) calloc(numSensors,sizeof(SensorStruct));
+        }
+        
+        //! reset arrayIndex (which will be increments of 3)
+        arrayIndex = 0;
+        
+        //! 2 pass, first count, 2nd parseSensorString_mainModule
+        
+        //! look for tokens, comma seperated
+        for (char *token= strtok(str,","); token!= NULL; token= strtok(NULL, ","))
+        {
+            int indexInSensor = arrayIndex / max;
+            int indexInArray = arrayIndex % max;
+            //PRINT("%d Token[%d] = %s\n",indexInArray, indexInSensor,  token);
+            
+            //! which of the max is this..
+            switch (indexInArray)
+            {
+                case 0:
+                {
+                    if (secondPass)
+                    {
+                        //PRINT("Sensor = %s\n", token);
+                        sensorItems[indexInSensor].sensorName = copyString_mainModule(token);
+                        
+                        //! empty the class
+                        sensorItems[indexInSensor].sensorClassType = NULL;
+
+                    }
+                    break;
+                }
+                case 1:
+                {
+                    if (secondPass)
+                    {
+                        int pin = atoi(token);
+                        if (pin == 16 || pin == 17)
+                        {
+                            //!@see https://www.reddit.com/r/arduino/comments/1g89dlo/esp32_crashing_due_to_pinmode_and_fastled/
+                            SerialDebug.printf("*** BAD PIN: %d, setting to 22 ***\n", pin);
+                            pin = 22;
+                        }
+                        //PRINT("Pin1= %d\n", pin);
+                        sensorItems[indexInSensor].pin1= pin;
+                    }
+                    break;
+                }
+                case 2:
+                {
+                    if (secondPass)
+                    {
+                        int pin = atoi(token);
+                        if (pin == 16 || pin == 17)
+                        {
+                            SerialDebug.printf("*** BAD PIN: %d, setting to 22 ***\n", pin);
+                            pin = 22;
+                        }
+                        //PRINT("Pin2= %d\n", pin);
+                        sensorItems[indexInSensor].pin2= pin;
+                    }
+                    break;
+                }
+            }
+            //! only incremnet arrayIndex when
+            arrayIndex++;
+        }
+    }
+    
+    //! update the result (storage already created)
+    sensors->count = numSensors;
+    sensors->sensors = sensorItems;
+    
+    return sensors;
+}
+

@@ -86,6 +86,13 @@ boolean _isSetup_HDriverStepper = false;
 void HDriverStepperClass::setup_MotorStepper()
 {
     SerialDebug.println("HDriverStepperClass::setup_MotorStepper");
+    
+    //! 5.3.25 trying to figure out the PIN use
+    registerPinUse_mainModule(IN1_PIN, "IN1_PIN", "HDriverStepperClass", false);
+    registerPinUse_mainModule(IN2_PIN, "IN2_PIN", "HDriverStepperClass", false);
+    registerPinUse_mainModule(VIN_PIN, "VIN_PIN", "HDriverStepperClass", false);
+    registerPinUse_mainModule(FAULT_PIN, "FAULT_PIN", "HDriverStepperClass", false);
+    
 #define NOT_TRY_ON_FIRST_FEED
 #ifdef  NOT_TRY_ON_FIRST_FEED
     ledcSetup(_ledChannel1_HDriverStepper, _freq_HDriverStepper, _resolution_HDriverStepper);
@@ -131,6 +138,9 @@ void HDriverStepperClass::start_MotorStepper()
     _clockwise_HDriverStepperClass = this->isClockwiseDirection();
     
     SerialDebug.println("**************** HDriverStepperStepper::Starting HDriverStepper *******************");
+    //! 5.15.25 try the async CLICK
+    //! click call  5.26.25 SYNC version
+    main_dispatchSyncCommand(SYNC_CLICK_SOUND);
     
 #define NEW_CODE_HERE
     //Set the four pins to their proper state for the current step in the sequence,

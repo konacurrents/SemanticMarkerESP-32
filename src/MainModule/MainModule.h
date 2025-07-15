@@ -16,6 +16,20 @@
 //! 3.29.25 add the TimerDelayClass
 #include "TimerDelayClass.h"
 
+//! 6.6.25 include to get the current one..
+#include "../M5AtomClassModule/M5AtomClassType.h"
+
+#ifdef TODO_CANT_GET_TO_COMPILE
+//! 6.6.25 get the current M5AtomClassType
+M5AtomClassType* whichM5AtomClassType();
+#else
+//! 6.7.25 hot air balloons over house..
+//! stops the motor
+void stopMotor_mainModule();
+//! gets if PTFeeder a surrogate for the M5Atom class
+boolean isPTFeeder_mainModule();
+#endif
+
 //!THIS IS the setup() and loop() but using the "component" name, eg MQTTNetworking()
 //!This will perform preference initializtion as well
 //! called from the setup()
@@ -209,8 +223,10 @@ char *main_getScannedGroupNameTopic();
 #define ASYNC_NEXT_WIFI 14
 //! restarts the WIFI (after BLE interrupt over)
 #define ASYNC_RESTART_WIFI_MQTT 15
+//! 5.15.25 add a BUZZ command (or CLICK)
+#define ASYNC_CLICK_SOUND 16
 //! the max one greater than last one
-#define ASYNC_CALL_MAX 16  //don't forget to update this MAX (last one + 1)
+#define ASYNC_CALL_MAX 17  //don't forget to update this MAX (last one + 1)
 
 //!these are the async with a string parameter. This sends a BLE command unless MQTT
 #define ASYNC_CALL_BLE_CLIENT_PARAMETER 0
@@ -237,6 +253,13 @@ void initAsyncCallFlags();
 
 //!checks if any async commands are in 'dispatch' mode, and if so, invokes them, and sets their flag to false
 void invokeAsyncCommands();
+
+//! 5.16.25 Fountainhead, Raining cold weekend
+//! start SYNC calls starting with the SYNC_CLICK_SOUND
+#define SYNC_CLICK_SOUND 0
+#define SYNC_CALL_MAX 1
+//! the main sync command (no parameters yet)
+void main_dispatchSyncCommand(int syncCallCommand);
 
 //! 3.17.24 get the chip id 
 uint32_t getChipId();
@@ -441,8 +464,10 @@ boolean isTrueString_mainModule(String valCmdString);
 void messageSetVal_mainModule(char *setName, char* valValue, boolean deviceNameSpecified);
 //! 12.28.23, 8.28.23  Adding a way for others to get informed on messages that arrive
 //! for the set,val
-void messageSend_mainModule(char *sendValue);
+//! 5.21.25 SEND and CMD will be treated the same and put to "send"
+void messageSend_mainModule(char *sendValue, boolean deviceNameSpecified);
 //!TODO: have a callback regist approach
+
 
 //! 1.1.24 send status of this device after events..
 void sendStatusMQTT_mainModule();
@@ -458,5 +483,11 @@ void changeButtonColor_MainModule();
 //! defined in TokenParser.h
 char *semanticMarkerToJSON_mainModule(char* semanticMarker);
 
+//! 5.3.25 add a central clearing house for defining PIN use
+//! central clearing house for all pins used to we can analyze if there are overlaps
+//! pin is the actual number, pinName is the local name (eg. IN1_PIN or VIN_PIN).
+//! moduleName is the module in the code,
+//! isI2C is whether this is a I2C bus (which we aren't using much yet)
+void registerPinUse_mainModule(long pin, String pinName, String moduleName, boolean isI2C);
 
 #endif /* MainModule_h */

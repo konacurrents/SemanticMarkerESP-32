@@ -162,6 +162,7 @@ void blinkLED_UIModule() {
 
     if (buzzStatus)
     {
+        SerialDebug.println("UIModule.UI.buzz");
         digitalWrite(BUZZ, HIGH);         // Buzz the Piezo
     }
     delay(150);                           // Was 300

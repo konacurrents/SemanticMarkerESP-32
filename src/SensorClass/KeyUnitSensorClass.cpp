@@ -59,10 +59,16 @@ KeyUnitSensorClass::~KeyUnitSensorClass()
 int getDATA_PIN()
 {
     int pin;
+
+    //! 7.12.25
+#ifdef DONT_DO_THIS
     if (getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING))
         pin= 26;
     else
         pin= 23;
+#else
+    pin = DATA_PIN;
+#endif
    // SerialDebug.printf("getDATA_PIN = %d\n", pin);
     return pin;
 }
@@ -94,12 +100,19 @@ void KeyUnitSensorClass::startTaskImpl(void* _this)
 int getKEY_PIN()
 {
     int pin;
+    //! 7.12.25
+#ifdef DONT_DO_THIS
+    int pin;
     if (getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING))
         pin = 32;
     else
         pin = 33;
+#else
+    pin = KEY_PIN;
+#endif
    // SerialDebug.printf("getKEY_PIN = %d\n", pin);
     return pin;
+
 
 }
 #else
@@ -110,18 +123,29 @@ int getKEY_PIN() { return KEY_PIN; };
 void KeyUnitSensorClass::setupKeyUnit()
 {
     SerialDebug.printf(" setupKeyUnit == %p\n", this);
-
+    
     pinMode(getKEY_PIN(), INPUT_PULLUP);  // Init Key pin.  初始化Key引脚.
     
+    //! 5.3.25 register our PIN use
+    registerPinUse_mainModule(getKEY_PIN(), "KEY_PIN", "KeyUnitSensorClass", false);
+    registerPinUse_mainModule(getDATA_PIN(), "DATA_PIN", "KeyUnitSensorClass", false);
+
 #ifdef USE_LED
     getDATA_PIN();
     getKEY_PIN();
     if (getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING))
-        FastLED.addLeds<SK6812, 26, GRB>(this->_leds,
-                                                    1);  // Init FastLED.  初始化FastLED.
+    {
+        FastLED.addLeds<SK6812, 26, GRB>(this->_leds, 1);  // Init FastLED.  初始化FastLED.
+        //! 5.3.25 register our PIN use
+        registerPinUse_mainModule(26, "FastLED", "KeyUnitSensorClass", false);
+
+    }
     else
-        FastLED.addLeds<SK6812, 23, GRB>(this->_leds,
-                                                    1);  // Init FastLED.  初始化FastLED.
+    {
+        FastLED.addLeds<SK6812, 23, GRB>(this->_leds, 1);  // Init FastLED.  初始化FastLED.
+        //! 5.3.25 register our PIN use
+        registerPinUse_mainModule(23, "FastLED", "KeyUnitSensorClass", false);
+    }
 #endif
 #ifdef USE_LED_BREATH  //not working,
     //!@see https://stackoverflow.com/questions/45831114/c-freertos-task-invalid-use-of-non-static-member-function
@@ -142,7 +166,7 @@ void KeyUnitSensorClass::loopKeyUnit()
     if (!digitalRead(getKEY_PIN()))
     {
         // If Key was pressed.  如果按键按下.
-        SerialDebug.println("Key Pressed");
+        SerialDebug.println("KeyUnitSensorClass.Key Pressed");
 #ifdef USE_LED
         changeLedColor();  // Change LED color.  更换LED呼吸灯颜色.
 #endif
@@ -150,13 +174,16 @@ void KeyUnitSensorClass::loopKeyUnit()
         while (!digitalRead(getKEY_PIN()))
             // Hold until the key released.  在松开按键前保持状态.
             ;
-        SerialDebug.println("Key Released");
+        SerialDebug.println("KU.Key Released");
         
         //!call the callback
         callCallback((char*)"keyPressed",true);
         
     }
 }
+
+
+
 #ifdef USE_LED_BREATH
 void KeyUnitSensorClass::keyUnitLED() {
 
@@ -221,4 +248,39 @@ void KeyUnitSensorClass::setup()
     setupKeyUnit();
 }
 
+#ifdef NOT_DEFINED
+
+//! adding the messages as well
+//! 5.14.25 (Laura/Paul flying). 5.14.74 great Dead
+//! 8.28.23  Adding a way for others to get informed on messages that arrive
+//! for the set,val
+//! 12.27.23 support setName == "socket"
+//! 1.10.24 if deviceNameSpecified then this matches this device, otherwise for all.
+//! It's up to the receiver to decide if it has to be specified
+void KeyUnitSensorClass::messageSetVal_SensorClassType(char *setName, char* valValue, boolean deviceNameSpecified)
+{
+    
+}
+
+//! 12.28.23, 8.28.23  Adding a way for others to get informed on messages that arrive
+//! for the  send -
+void KeyUnitSensorClass::messageSend_SensorClassType(char *sendValue)
+{
+    
+}
+
+//! 12.28.23, 8.28.23  Adding a way for others to get informed on messages that arrive
+//! for the cmd
+void KeyUnitSensorClass::messageCmd_SensorClassType(char *cmdValue)
+{
+    
+}
+
+
+//! 5.15.25 try a special command local to this class
+void KeyUnitSensorClass::messageLocal_SensorClassType(char *message)
+{
+    
+}
+#endif
 #endif //ESP_M5

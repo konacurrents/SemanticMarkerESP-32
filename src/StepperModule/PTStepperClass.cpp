@@ -204,6 +204,11 @@ void PTStepperClass::start_MotorStepper() {
     }
     SerialDebug.println("**************** PTStepperClass::Starting Stepper *******************");
     
+    //! 5.15.25 try the async CLICK
+    //! click call
+    //! click call  5.26.25 SYNC version
+    main_dispatchSyncCommand(SYNC_CLICK_SOUND);
+    
     while (_cycleCounter_PTStepperClass < _targetSteps_PTStepperClass) {
         // Step one unit in forward
         _cycleCounter_PTStepperClass++;

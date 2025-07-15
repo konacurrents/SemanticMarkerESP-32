@@ -3,6 +3,122 @@
 //#include "MainModule.h"
 
 
+#define USE_NEW_M5ATOMCLASS
+//! 5.6.25 use the M5Atom ClassType
+#ifdef USE_NEW_M5ATOMCLASS
+//! @see https://www.cs.fsu.edu/~myers/cop3330/notes/dma.html
+#include "../M5AtomClassModule/M5AtomClassType.h"
+
+#include "../M5AtomClassModule/M5Atom_SocketModuleClass.h"
+#include "../M5AtomClassModule/M5Atom_QRCodeModuleClass.h"
+#include "../M5AtomClassModule/M5Atom_HDriverModuleClass.h"
+//! 5.9.25 -- Dead 77
+#include "../M5AtomClassModule/M5Atom_Core2ModuleClass.h"
+
+#define NUM_M5ATOM_CLASS 3
+
+//! instances of the M5AtomClassType
+
+M5Atom_SocketModuleClass* _M5Atom_SocketModuleClass;
+M5Atom_QRCodeModuleClass* _M5Atom_QRCodeModuleClass;
+M5Atom_HDriverModuleClass* _M5Atom_HDriverModuleClass;
+M5Atom_Core2ModuleClass* _M5Atom_Core2ModuleClass;
+
+//! use this one...
+M5AtomClassType *_whichM5AtomClassType;
+
+//! 3.31.25 create array of plugs
+M5AtomClassType* _M5AtomClassTypes[NUM_M5ATOM_CLASS];
+
+#endif
+
+#define USE_SENSOR_CLASS
+#ifdef  USE_SENSOR_CLASS
+//! 5.14.25 
+#include "../SensorClass/SensorClassType.h"
+#include "../SensorClass/BuzzerSensorClass.h"
+#include "../SensorClass/KeyUnitSensorClass.h"
+
+#define NUM_SENSOR_CLASS 2
+BuzzerSensorClass* _BuzzerSensorClass;
+KeyUnitSensorClass* _KeyUnitSensorClass;
+
+//! init will look at those SensorClass known above, and look
+//! to see which ones are defined by the user in the SensorsStruct
+//! A report will show which ones were not found
+void initSensorClassTypeArray()
+{
+    SerialDebug.println(" *** initSensorClassTypeArray ***");
+    //! return the sensor specified or null
+    SensorsStruct* sensorsStruct = getSensors_mainModule();
+    if (sensorsStruct)
+    {
+        //! all the sensors defined
+        //! sensors is an array of sensor
+        SensorStruct *sensors = sensorsStruct->sensors;
+        int count = sensorsStruct->count;
+
+        //! go through the defined sensorName and instantiate those classes
+        for (int i=0; i< count; i++)
+        {
+            SensorStruct* sensor = &sensors[i];
+            if (strcmp(sensor->sensorName, "BuzzerSensorClass")==0)
+            {
+                //! init this class
+                _BuzzerSensorClass = new BuzzerSensorClass((char*)"BuzzerSensorClass");
+                //! store the class type instance
+                sensor->sensorClassType = _BuzzerSensorClass;
+                //! setup and then setPins..
+                _BuzzerSensorClass->setPinValues(sensor->pin1, sensor->pin2);
+                
+                //! call setup
+                _BuzzerSensorClass->setup();
+            }
+        }
+        //! find missing sensors
+        //! go throug the defined sensorName and instantiate those classes
+        for (int i=0; i< count; i++)
+        {
+            SensorStruct* sensor = &sensors[i];
+            if (!sensor->sensorClassType)
+            {
+                //! missing instance
+                SerialDebug.printf("Missing class definition: %s\n", sensor->sensorName);
+            }
+        }
+    }
+    SerialDebug.println("Finish initSensorClassTypeArray");
+}
+
+
+#endif
+
+//! 6.7.25 hot air balloons over house..
+//! stops the motor
+void stopMotor_mainModule()
+{
+    if (_whichM5AtomClassType)
+        _whichM5AtomClassType->stop_M5AtomClassType();
+}
+//! gets if PTFeeder a surrogate for the M5Atom class
+boolean isPTFeeder_mainModule()
+{
+    if (_whichM5AtomClassType)
+        return _whichM5AtomClassType->isPTFeeder_M5AtomClassType();
+    else
+        //!Defines the name of the service of the server, which for M5 will be PTClicker
+    {
+        return containsSubstring(MAIN_BLE_SERVER_SERVICE_NAME, "PTFeeder");
+    }
+    /*
+#ifdef ESP_M5
+#define MAIN_BLE_SERVER_SERVICE_NAME (char*)"PTClicker"
+#else
+#define MAIN_BLE_SERVER_SERVICE_NAME (char*)"PTFeeder"
+#endif
+     */
+}
+
 //! reads the preferences. Save is everytime the savePreference is called
 void readPreferences_mainModule();
 //!testing..
@@ -35,7 +151,7 @@ char _JSONStringForWIFICredentials[200];
 #define MESSAGE_STORAGE_MAX 500
 char _messageStorage[MESSAGE_STORAGE_MAX];
 //!status string (URL query format)
-char _fullStatusString[300];
+char _fullStatusString[500];
 //! current smMode
 char _smMode_MainModule[10];
 //! saved deviceName storage..
@@ -107,6 +223,11 @@ void setup_mainModule()
 #ifdef ESP_M5
         
 #ifdef M5_ATOM
+#ifdef USE_NEW_M5ATOMCLASS
+        //! 5.6.25 use object version
+        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE,  true); //false);
+
+#else
         //! 1.4.24 use the _atomKind (which CAN change)
         switch (getM5ATOMKind_MainModule())
         {
@@ -124,6 +245,9 @@ void setup_mainModule()
 #endif
                 break;
         }
+        
+#endif //USE_NEW_M5ATOMCLASS
+        
 #else  // not M5_ATOM
 
         // 8.28.23 .. not doing this anymore..
@@ -139,12 +263,22 @@ void setup_mainModule()
 
     }
     
+#define NEW_SENSORS
+    //! 5.14.25 use the Sensor types
+    //! first we have N sensors
+    //! then we get which ones the user wants (the SENSORS_SETTING)
+    //! then we instantiate, and provide ping, etc.
+    initSensorClassTypeArray();
 }
 
 #if defined(ESP_M5_CAMERA) || defined(ESP_32)
 //!a couinter to slow down the loop doing things..
 int _mainLoopCounter = 0;
 #endif
+
+//! storage for reading from the serial buffer
+//! 6.20.25 (Sam Sprague grad Western party)
+char _serialBuffer[300];
 
 //! called for the loop() of this plugin
 void loop_mainModule()
@@ -164,6 +298,42 @@ void loop_mainModule()
     
 #endif
 
+#pragma mark Serial Input Processor
+    //! 6.20.25 works with full code (JSON, or single commands - with '.' as help)
+    //! 6.19.25 Mt Peak finally (kept to 124 bpm)
+    //! Per ##373 let the serial monitor get some input, and let us set a few features
+    //! see if data on the serial input
+    //! Re-indexed and now command completion works!!!!!! 3 years later.
+    //!@see  https://developer.apple.com/documentation/corespotlight/regenerating-your-app-s-indexes-on-demand?language=objc
+    if (Serial.available())
+    {
+        // read string until meet newline character
+        String command = Serial.readStringUntil('\n');
+        
+        SerialDebug.println(command);
+        //! save globally for the callback below..
+        strcpy(_serialBuffer, command.c_str());
+        
+        if (command == "help")
+        {
+            SerialDebug.println("Enter any Single Char or JSON msg, type '.' for commands");
+            SerialDebug.println("r -- reboot");
+            SerialDebug.println(". -- shows single char commands");
+            SerialDebug.println("Example JSON to change WIFI (copy and modify with your values)");
+            SerialDebug.println("   supports single quotes for values");
+            SerialDebug.println("{'ssid':'Bob', 'ssidPassword':'scott'}");
+            
+        }
+        else if (command == "r")
+        {
+            rebootDevice_mainModule();
+        }
+        else
+        {
+            //!call the callback specified from the caller (eg. NimBLE_PetTutor_Server .. or others)
+            callCallbackMain(CALLBACKS_BLE_SERVER, BLE_SERVER_CALLBACK_ONWRITE, _serialBuffer);
+        }
+    }
 }
 
 
@@ -401,6 +571,14 @@ void messageSetVal_mainModule(char *setName, char* valValue, boolean deviceNameS
     // THE IDEA WOULD be a callback is avaialble..
     //FOR now.. just ifdef
 #ifdef M5_ATOM
+#ifdef USE_NEW_M5ATOMCLASS
+
+    //! 5.6.25 use object version
+    if (_whichM5AtomClassType)
+        _whichM5AtomClassType->messageSetVal_M5AtomClassType(setName, valValue, deviceNameSpecified);
+
+#else
+    
     //! 1.4.24 use the _atomKind (which CAN change)
     switch (getM5ATOMKind_MainModule())
     {
@@ -418,6 +596,8 @@ void messageSetVal_mainModule(char *setName, char* valValue, boolean deviceNameS
 #endif
             break;
     }
+#endif //USE_NEW_M5ATOMCLASS
+    
 #endif //M5_ATOM
     
 #ifdef M5CORE2_MODULE
@@ -428,10 +608,18 @@ void messageSetVal_mainModule(char *setName, char* valValue, boolean deviceNameS
 
 //! 12.28.23, 8.28.23  Adding a way for others to get informed on messages that arrive
 //! for the set,val
-void messageSend_mainModule(char *sendValue)
+//!  5.21.25 SEND and CMD will be treated the same and put to "send"
+void messageSend_mainModule(char *sendValue, boolean deviceNameSpecified)
 {
-
+//! 5.21.25 this will overlap with the "cmd" .. so send == cmd
 #ifdef M5_ATOM
+#ifdef USE_NEW_M5ATOMCLASS
+
+    //! 5.6.25 use object version
+    if (_whichM5AtomClassType)
+        _whichM5AtomClassType->messageSend_M5AtomClassType(sendValue, deviceNameSpecified);
+
+#else
     //! 1.4.24 use the _atomKind (which CAN change)
     switch (getM5ATOMKind_MainModule())
     {
@@ -448,6 +636,8 @@ void messageSend_mainModule(char *sendValue)
 #endif
             break;
     }
+#endif //USE_NEW_M5ATOMCLASS
+    
 #endif //M5_ATOM
     
 #ifdef M5CORE2_MODULE
@@ -930,6 +1120,36 @@ void main_updateMQTTInfo(char *ssid, char *ssid_password, char *username, char *
 #endif
 }
 
+//! 5.16.25 Fountainhead, Raining cold weekend
+//! start SYNC calls starting with the SYNC_CLICK_SOUND
+//#define SYNC_CLICK_SOUND 0
+//#define SYNC_CALL_MAX 1
+//! the main sync command (no parameters yet)
+void main_dispatchSyncCommand(int syncCallCommand)
+{
+    switch (syncCallCommand)
+    {
+        case SYNC_CLICK_SOUND:
+        {
+            if (getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE))
+            {
+                //! 5.15.25 see if the Buzzer class is defined .. if so, then call local message
+                SensorStruct* buzzerSensor = getSensor_mainModule((char*)"BuzzerSensorClass");
+                
+                //!perform the click sound..
+                //!this will be the sensors...
+                if (buzzerSensor)
+                {
+                    buzzerSensor->sensorClassType->messageLocal_SensorClassType((char*)"click");
+                }
+                else
+                    SerialDebug.println("NO BuzzerSensorClass defined");
+            }
+        }
+            break;
+    }
+}
+
 //! 3.21.22 these are to setup for the next time the main loop() runs to call these commands..
 //! The implementation is hard coded in the ESP_IO.ino
 //! TODO: make this a registeration approach
@@ -999,17 +1219,30 @@ void main_dispatchAsyncCommandWithString(int asyncCallCommand, char *parameter)
         SerialTemp.print(": ");
         SerialTemp.println(_asyncParameter);
         _asyncCallFlagsParameters[asyncCallCommand] = true;
+        
+        //! 6.15.25 Fathers Day
+        //! seems issue when a GROVE or other sensor plugged in the main loop isn't working.
+        //! SO for now, if the command is "r" then do an actual reboot..
+        if (strlen(_asyncParameter)>1 && _asyncParameter[0] == 'r')
+        {
+            SerialDebug.println("SYNC_REBOOT");
+            rebootDevice_mainModule();
+        }
+        
     }
 }
 
 //!checks if any async commands are in 'dispatch' mode, and if so, invokes them, and sets their flag to false
 void invokeAsyncCommands()
 {
+    SerialCall.printf("invokeAsyncCommands(%d)\n", ASYNC_CALL_PARAMETERS_MAX);
+
     for (int i = 0; i < ASYNC_CALL_PARAMETERS_MAX; i++)
     {
         boolean asyncCallFlag = _asyncCallFlagsParameters[i];
         if (asyncCallFlag)
         {
+            SerialCall.printf("invokeAsyncCommands(%d)\n", i);
             _asyncCallFlagsParameters[i] = false;
             switch (i)
             {
@@ -1223,6 +1456,16 @@ void invokeAsyncCommands()
 #endif  //using BLE_CLIENT
                     break;
 
+                    
+                    //!this is a sending of the message
+                    //!5.15.25 Sodbuster Rod plowing/disking in minutes with Mark and Bud
+                case ASYNC_CLICK_SOUND:
+                {
+                    SerialTemp.println("ASYNC_CLICK_SOUND");
+                    main_dispatchSyncCommand(SYNC_CLICK_SOUND);
+                }
+                    break;
+                    
                 case ASYNC_CALL_BUZZ_ON:
                 case ASYNC_CALL_BUZZ_OFF:
                 {
@@ -1915,7 +2158,13 @@ char* main_currentStatusJSON()
    // return (char*)"";
     
     //! 1.4.24 work on ATOM kinds without IFDEF (except to bring in the code)
-    
+#ifdef USE_NEW_M5ATOMCLASS
+
+    //! 5.6.25 use object version
+    if (_whichM5AtomClassType)
+        return _whichM5AtomClassType->currentStatusJSON_M5AtomClassType();
+
+#else
     //! 1.4.24 use the _atomKind (which CAN change)
     switch (getM5ATOMKind_MainModule())
     {
@@ -1933,7 +2182,7 @@ char* main_currentStatusJSON()
 #endif
             break;
     }
-  
+#endif //USE_NEW_M5ATOMCLASS
 
     
 #ifdef M5CORE2_MODULE
@@ -2052,7 +2301,11 @@ char* main_currentStatusURL(boolean fullStatus)
         sprintf(_fullStatusString,"status?v=%s",VERSION_SHORT);
 #endif
     }
-        
+#ifdef USE_NEW_M5ATOMCLASS
+    //! 5.6.25 use object version
+    if (_whichM5AtomClassType)
+        strcat(_fullStatusString, _whichM5AtomClassType->currentStatusURL_M5AtomClassType());
+#else
     //! 1.4.24 use the _atomKind (which CAN change)
     switch (getM5ATOMKind_MainModule())
     {
@@ -2070,7 +2323,7 @@ char* main_currentStatusURL(boolean fullStatus)
 #endif
             break;
     }
-
+#endif //USE_NEW_M5ATOMCLASS
     //add to _fullStatusString
     addMoreStatusQueryString();
     
@@ -2261,15 +2514,18 @@ void processClientCommandChar_mainModule(char cmd)
         //! dispatches a call to the command specified. This is run on the next loop()
         main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_CREDENTIALS);
     }
+    //!6.20.25
+#ifdef NOT_SUPPORTED_RIGHT_NOW
     else if (cmd == 'O')
     {
         SerialLots.println("OTA Update.. ");
         //! dispatches a call to the command specified. This is run on the next loop()
         main_dispatchAsyncCommand(ASYNC_CALL_OTA_UPDATE);
     }
+#endif
     else if (cmd == 'X')
     {
-        SerialLots.println("Clean EPROM.. ");
+        SerialDebug.println("Clean EPROM.. ");
         //! dispatches a call to the command specified. This is run on the next loop()
         main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_EPROM);
     }
@@ -2277,12 +2533,12 @@ void processClientCommandChar_mainModule(char cmd)
     //!NOTE: the gateway is auto selected for now. A future version might manually set it in other situations (eg. my iPhone app should have a flag to not be a gateway at time)
     else if (cmd == 'G')
     {
-        SerialLots.println("Setting Gateway = ON");
+        SerialDebug.println("Setting Gateway = ON");
         main_dispatchAsyncCommand(ASYNC_SET_GATEWAY_ON);
     }
     else if (cmd == 'g')
     {
-        SerialLots.println("Setting Gateway = OFF");
+        SerialDebug.println("Setting Gateway = OFF");
         main_dispatchAsyncCommand(ASYNC_SET_GATEWAY_OFF);
     }
     else if (cmd == '_')
@@ -2294,14 +2550,14 @@ void processClientCommandChar_mainModule(char cmd)
     {
         sendToStepperModule = false;
         
-        SerialLots.println("Setting SM Zoom = zoomed");
+        SerialDebug.println("Setting SM Zoom = zoomed");
         savePreferenceBoolean_mainModule(PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE, true);
     }
     else if (cmd == 'z')
     {
         sendToStepperModule = false;
         
-        SerialLots.println("Setting SM Zoom = full SM");
+        SerialDebug.println("Setting SM Zoom = full SM");
         savePreferenceBoolean_mainModule(PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE, false);
     }
     else if (cmd == 'N')
@@ -2324,7 +2580,7 @@ void processClientCommandChar_mainModule(char cmd)
     }
     else if (cmd == 'w')
     {
-        SerialTemp.println("w for swapWifi");
+        SerialDebug.println("w for swapWifi");
 
         main_dispatchAsyncCommand(ASYNC_SWAP_WIFI);
     }
@@ -2337,6 +2593,8 @@ void processClientCommandChar_mainModule(char cmd)
     //! 8.16.24 per #332
     else if (cmd == 'H')
     {
+        SerialDebug.printf("PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING true");
+
         // autoMotorDirection ON
         savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
         
@@ -2345,23 +2603,31 @@ void processClientCommandChar_mainModule(char cmd)
     
     else if (cmd == 'h')
     {
+        SerialDebug.printf("PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING false");
+
         // autoMotorDirection off
         savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, false);
     }
     else if (cmd == 'D')
     {
+        SerialDebug.printf("PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING counter clockwise");
+
         //!NOTE: no current mode to specify CCW or CW dynamically (non factory reset)
         // motor direction = counterclockwise
         savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING,false);
     }
     else if (cmd == 'd')
     {
+        SerialDebug.printf("PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING clockwise");
+
         // motor direction ==  (clockwise)
         savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING,true);
     }
     //! 9.30.23 reverse direction
     else if (cmd == 'Q')
     {
+        SerialDebug.printf("PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING reverse direction");
+
         //! note: reboot not needed as the next time a feed happens, it reads this value
         // motor direction ==  (reverse)
         boolean  currentDirection = getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING);
@@ -2371,6 +2637,8 @@ void processClientCommandChar_mainModule(char cmd)
     }
     else if (cmd == 'E')
     {
+        SerialDebug.printf("PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING false");
+
         //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
         savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,false);
         // reboot
@@ -2378,6 +2646,8 @@ void processClientCommandChar_mainModule(char cmd)
     }
     else if (cmd == 'e')
     {
+        SerialDebug.printf("PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING true");
+
         //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
         savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
         // reboot
@@ -2396,44 +2666,107 @@ void processClientCommandChar_mainModule(char cmd)
         SerialDebug.printf("(%c) POWEROFF ...", cmd);
         poweroff_mainModule();
     }
+    //! 7.12.25
+    //!  0 == Clear SENSOR definitions
+    else if (cmd == '0')
+    {
+        //! poweroff
+        SerialDebug.println("Clearing Sensors");
+        setSensorsString_mainModule((char*)"");
+
+        //! reboot .. so the sensors are set..
+        rebootDevice_mainModule();
+    }
+    //! 7.9.25
+    //!  1 == Init SENSOR definitions
+    else if (cmd == '1')
+    {
+        //! poweroff
+        SerialDebug.println("Default Sensors");
+        //resetSensorToDefault_mainModule();
+        setSensorsString_mainModule((char*)"BuzzerSensorClass,23,33,L9110S_DCStepperClass,21,25");
+
+        //! reboot .. so the sensors are set..
+        rebootDevice_mainModule();
+    }
+    //! 7.12.25
+    //!  2 == default for SMART Button
+    else if (cmd == '2')
+    {
+        //! poweroff
+        SerialDebug.println("Default for SMART Button");
+        setSensorsString_mainModule((char*)"");
+        
+        //! reboot .. so the sensors are set..
+        rebootDevice_mainModule();
+    }
+    //! 7.9.25 grabbed from BOOTSTRAP let someone update the atom to the recent OTA
+    else if (cmd == '5')
+    {
+        SerialDebug.println(" *** performing m5atom OTA Update");
+        
+        //!retrieves from constant location
+        performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5Atom/ESP_IOT.ino.m5stick_c_plus.bin");
+    }
+    //! 7.9.25 grabbed from BOOTSTRAP let someone update the atom to the recent OTA
+    else if (cmd == '6')
+    {
+        SerialDebug.println(" *** performing m5atom OTA Update - DAILY");
+        
+        //!retrieves from constant location
+        performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5Atom/daily/ESP_IOT.ino.m5stick_c_plus.bin");
+    }
     else if (cmd == '.')
     {
         
-        SerialLots.println("Valid Commands: ");
-        SerialLots.println("         . = help, this message");
-        SerialLots.println("         p = poweroff if can");
-        SerialLots.println(" 0x0, s, c == Single Feed ");
-        SerialLots.println("         a == AutoFeed On");
-        SerialLots.println("         A == AutoFeed Off");
-        SerialLots.println("         u == UNO ");
-        SerialLots.println("         m == MINI ");
-        SerialLots.println("         L == tumbler");
-        SerialLots.println("         H == autoMotorDirection on");
-        SerialLots.println("         h == autoMotorDirection off");
-        SerialLots.println("         D == FACTORY counter clockwise motor direction");
-        SerialLots.println("         d == FACTORY clockwise motor direction");
-        SerialLots.println("         Q == change motor direction opposite of current");
+        SerialMin.println("Valid Commands: ");
+        SerialMin.println("         . = help, this message");
+        SerialMin.println("         p = poweroff if can");
+        SerialMin.println(" 0x0, s, c == Single Feed ");
+        SerialMin.println("         a == AutoFeed On");
+        SerialMin.println("         A == AutoFeed Off");
+        SerialMin.println("         u == UNO ");
+        SerialMin.println("         m == MINI ");
+        SerialMin.println("         L == tumbler");
+        SerialMin.println("         H == autoMotorDirection on");
+        SerialMin.println("         h == autoMotorDirection off");
+        SerialMin.println("         D == FACTORY counter clockwise motor direction");
+        SerialMin.println("         d == FACTORY clockwise motor direction");
+        SerialMin.println("         Q == change motor direction opposite of current");
 
-        SerialLots.println("         B == Buzzer On");
-        SerialLots.println("         b == Buzzer Off");
-        SerialLots.println("         G == Gateway On");
-        SerialLots.println("         g == Gateway Off");
-        SerialLots.println("         R == clean credentials");
-        SerialLots.println("         X == clean EPROM");
-        SerialLots.println("         r == reboot ");
-        SerialLots.println("         O == OTA update");
-        SerialLots.println("         T == tiltOn");
-        SerialLots.println("         t == tiltOff");
-        SerialLots.println("         N == send WIFI Credential to BLEServer");
-        SerialLots.println("         n == next WIFI Credential");
-        SerialLots.println("         W == retry WIFI");
-        SerialLots.println("         w == swap WIFI");
-        SerialLots.println("         P == print SPIFF");
-        SerialLots.println("         E == use only PTFeeder naming");
-        SerialLots.println("         e == use naming PTFeeder:name");
-        SerialLots.println("         Z == Setting SM Zoom = zoomed");
-        SerialLots.println("         z == Setting SM Zoom = full SM");
-    
+        SerialMin.println("         B == Buzzer On");
+        SerialMin.println("         b == Buzzer Off");
+        SerialMin.println("         G == Gateway On");
+        SerialMin.println("         g == Gateway Off");
+        SerialMin.println("         R == clean credentials");
+        SerialMin.println("         X == clean EPROM");
+        SerialMin.println("         r == reboot ");
+        //!6.20.25
+#ifdef NOT_SUPPORTED_RIGHT_NOW
+        SerialMin.println("         O == OTA update");
+#else
+        SerialMin.println("         5 == m5atom DEV OTA update");
+        SerialMin.println("         6 == m5atom DAILY TEST DEV OTA update");
+
+#endif
+        SerialMin.println("         T == tiltOn");
+        SerialMin.println("         t == tiltOff");
+        SerialMin.println("         N == send WIFI Credential to BLEServer");
+        SerialMin.println("         n == next WIFI Credential");
+        SerialMin.println("         W == retry WIFI");
+        SerialMin.println("         w == swap WIFI");
+        SerialMin.println("         P == print SPIFF");
+        SerialMin.println("         E == use only PTFeeder naming");
+        SerialMin.println("         e == use naming PTFeeder:name");
+        SerialMin.println("         Z == Setting SM Zoom = zoomed");
+        SerialMin.println("         z == Setting SM Zoom = full SM");
+        SerialMin.println("         0 == no sensors");
+        SerialMin.println("         1 == Default SENSOR for new feeder");
+        SerialMin.println("         2 == Default SENSOR for SMART Button");
+
+        SerialMin.println();
+        SerialMin.println("Full API at: https://github.com/konacurrents/SemanticMarkerAPI");
+        SerialMin.println();
 
         //!print out stuff
         main_printModuleConfiguration();
@@ -2441,7 +2774,7 @@ void processClientCommandChar_mainModule(char cmd)
     }
     else
     {
-        SerialLots.printf("*****invalid command '%c' from client*****\n", cmd);
+        SerialMin.printf("*****invalid command '%c' from client (use '.' for help)  *****\n", cmd);
     }
     
 #ifdef USE_STEPPER_MODULE
@@ -2462,7 +2795,7 @@ int getTimeStamp_mainModule()
     time_t now;
     struct tm timeinfo;
     time(&now);
-    SerialLots.printf("Unix Time: %d\n", now);
+    SerialMin.printf("Unix Time: %d\n", now);
     return now;
 }
 
@@ -2739,6 +3072,11 @@ char *connectedBLEDeviceNameAddress_mainModule()
     }
 }
 
+//! 6.6.25 get the current M5AtomClassType
+M5AtomClassType* whichM5AtomClassType()
+{
+    return _whichM5AtomClassType;
+}
 
 //! 1.22.24 add setup and loop at main so it can call appropriate plugs
 void loop_Sensors_mainModule()
@@ -2752,6 +3090,20 @@ void loop_Sensors_mainModule()
 #ifdef M5CORE2_MODULE
     loop_M5Core2Module();
 #elif defined(M5_ATOM)
+    
+#ifdef USE_NEW_M5ATOMCLASS
+    //! 5.6.25 use object version
+    if (_whichM5AtomClassType)
+    {
+        SerialCall.printf("*** _whichM5AtomClassType %s\n",_whichM5AtomClassType->classIdentity() );
+        _whichM5AtomClassType->loop_M5AtomClassType();
+    }
+    else
+    {
+        SerialDebug.println("*** _whichM5AtomClassType NULL ***");
+
+    }
+#else
     // start atom
     //! multiple ATOM's alive at same time
     //! 1.4.24 use the _atomKind (which CAN change)
@@ -2771,7 +3123,9 @@ void loop_Sensors_mainModule()
 #endif
             break;
     }
+#endif //USE_NEW_M5ATOMCLASS
     // end atom
+    
 #elif defined(USE_CAMERA_MODULE)
     loop_CameraModule();
 #elif defined(M5BUTTON_MODULE)
@@ -2794,7 +3148,58 @@ void setup_Sensors_mainModule()
 #ifdef M5CORE2_MODULE
     setup_M5Core2Module();
 #elif defined(M5_ATOM)
+  
+    
+    //! 5.6.25 use the M5Atom ClassType
+#ifdef USE_NEW_M5ATOMCLASS
+    //! @see https://www.cs.fsu.edu/~myers/cop3330/notes/dma.html
+    _M5Atom_SocketModuleClass = new M5Atom_SocketModuleClass((char*)"M5AtomSocket");
+    _M5Atom_QRCodeModuleClass = new M5Atom_QRCodeModuleClass((char*)"M5AtomScanner");
+    _M5Atom_HDriverModuleClass = new M5Atom_HDriverModuleClass((char*)"M5HDriver");
+
+    int whichM5AtomIndex = 0;
+    SerialDebug.println("setup_M5Atoms");
+    
+    //! 3.31.25 create array of plugs
+    _M5AtomClassTypes[whichM5AtomIndex++] = _M5Atom_SocketModuleClass;
+    _M5AtomClassTypes[whichM5AtomIndex++] = _M5Atom_QRCodeModuleClass;
+    _M5AtomClassTypes[whichM5AtomIndex++] = _M5Atom_HDriverModuleClass;
+    
+    //! use this one...
+    _whichM5AtomClassType = NULL;
+    //! find the current atomKind. which is a string
+    char *atomKind = getPreferenceATOMKind_MainModule();
+    
+    //! find which one..
+    for (int i=0; i<NUM_M5ATOM_CLASS; i++)
+    {
+        //! check against the identity.. (or make this part of that method?)
+        if (strcmp(_M5AtomClassTypes[i]->classIdentity(), atomKind) == 0)
+        {
+            //! Matched..
+            _whichM5AtomClassType = _M5AtomClassTypes[i];
+            break;
+        }
+    }
+    if (_whichM5AtomClassType)
+    {
+        SerialDebug.printf("Found M5AtomClass = %s\n", atomKind);
+    }
+    else
+    {
+        SerialDebug.printf("Cannot find M5AtomClass = %s\n", atomKind);
+
+    }
+#else
     SerialDebug.printf("M5AtomKind = %d\n", getM5ATOMKind_MainModule());
+#endif
+    
+    //! now the setup() call
+#ifdef USE_NEW_M5ATOMCLASS
+    //! 5.6.25 use object version
+    if (_whichM5AtomClassType)
+        _whichM5AtomClassType->setup_M5AtomClassType();
+#else
     // start atom
     //! multiple ATOM's alive at same time
     //! 1.4.24 use the _atomKind (which CAN change)
@@ -2814,6 +3219,9 @@ void setup_Sensors_mainModule()
 #endif
             break;
     }
+    
+#endif //USE_NEW_M5ATOMCLASS
+    
     // end atom
 #elif defined(USE_CAMERA_MODULE)
     //! let ESP_IOT.ino call this .. since it needs the WIFI running..
@@ -2832,6 +3240,12 @@ void buttonA_ShortPress_mainModule()
 #ifdef M5CORE2_MODULE
     buttonA_ShortPress_M5Core2Module();
 #elif defined(M5_ATOM)
+#ifdef USE_NEW_M5ATOMCLASS
+    //! 5.6.25 use object version
+    if (_whichM5AtomClassType)
+        _whichM5AtomClassType->buttonA_ShortPress_M5AtomClassType();
+#else
+    
     //! 1.4.24 use the _atomKind (which CAN change)
     switch (getM5ATOMKind_MainModule())
     {
@@ -2849,6 +3263,7 @@ void buttonA_ShortPress_mainModule()
 #endif
             break;
     }
+#endif //USE_NEW_M5ATOMCLASS
 // end atom
 #elif defined(USE_CAMERA_MODULE)
     buttonA_ShortPress_CameraModule();
@@ -2867,6 +3282,12 @@ void buttonA_LongPress_mainModule()
 #ifdef M5CORE2_MODULE
     buttonA_ShortPress_M5Core2Module();
 #elif defined(M5_ATOM)
+    
+#ifdef USE_NEW_M5ATOMCLASS
+    //! 5.6.25 use object version
+    if (_whichM5AtomClassType)
+        _whichM5AtomClassType->buttonA_LongPress_M5AtomClassType();
+#else
     //! 1.4.24 use the _atomKind (which CAN change)
     switch (getM5ATOMKind_MainModule())
     {
@@ -2885,6 +3306,8 @@ void buttonA_LongPress_mainModule()
             break;
     }
     // end atom
+#endif //USE_NEW_M5ATOMCLASS
+    
 #elif defined(USE_CAMERA_MODULE)
     buttonA_LongPress_CameraModule();
 #elif defined(M5BUTTON_MODULE)
@@ -2942,4 +3365,16 @@ void sendStatusMQTT_mainModule()
 char *semanticMarkerToJSON_mainModule(char* semanticMarker)
 {
     return semanticMarkerToJSON_TokenParser(semanticMarker);
+}
+
+
+//! 5.3.25 add a central clearing house for defining PIN use
+//! @see issue #365
+//! central clearing house for all pins used to we can analyze if there are overlaps
+//! pin is the actual number, pinName is the local name (eg. IN1_PIN or VIN_PIN).
+//! moduleName is the module in the code,
+//! isI2C is whether this is a I2C bus (which we aren't using much yet)
+void registerPinUse_mainModule(long pin, String pinName, String moduleName, boolean isI2C)
+{
+    SerialDebug.printf("** PIN_USE: %s = %d, module=%s %s\n", pinName.c_str(), pin, moduleName.c_str(), isI2C?"(I2C)":"");
 }

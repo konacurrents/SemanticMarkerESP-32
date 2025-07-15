@@ -20,6 +20,7 @@ public:
     //! BUT: it could be extended in the future
     //! to include the PIN numbers, etc.
     //! This might be JSON:  {'id':'DCMotorStepperClass,'pin1':'33'}
+    //! class wide method to set identity and check if pins were specified
     MotorStepperClassType(char *config);
     
     //! destructor
@@ -43,10 +44,27 @@ public:
     //! returns if clockwise
     boolean isClockwiseDirection();
     
+    /* Other members class-wide, Not Abstract, so in SensorClassType.cpp*/
+    //! set PIN 1 and PIN 2 .
+    //! the class instance has to decide what to do with the pin definitions
+    void setPinValues(int pin1, int pin2);
+    
     //! returns the identity .. actaully the config
     //! This can be used to see if this class instance matches
     //! a known name (like DCMotorStepper, etc)
     char *classIdentity();
+    
+    //! pin definitions
+    //! pin1
+    int _pin1 = 0;
+    //! pin2
+    int _pin2 = 0;
+private:
+    //! 5.3.25 create storage here. This will create dynamic memory
+    //! and answer to the classIIdentity() method
+    char *_identityString;
+    
+   
 };
 
 #endif /* MotorStepperClass_hpp */

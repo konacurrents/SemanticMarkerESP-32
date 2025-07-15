@@ -1,7 +1,7 @@
 
 
 #ifndef PreferencesController_h
-#define PreferensesController_h
+#define PreferencesController_h
 
 /*STEPPER feederType*/
 #define STEPPER_IS_UNO 1
@@ -148,8 +148,13 @@
 //! This will be a string in JSON format with various PIN and BUS information
 #define PREFERENCE_SENSOR_PLUGS_SETTING 51
 
+//!5.14.25 Dead 5.14.74 Montana
+//! issue #365 Object Oriented Sensors as well
+//! define the sensors (not sensorPlugs). MQTT:  set:sensor,  set:sensors
+#define PREFERENCE_SENSORS_SETTING 52
+
 //! *******  1 greater than last value **** IMPORTANT *** and no gaps..
-#define MAX_MAIN_PREFERENCES 52
+#define MAX_MAIN_PREFERENCES 53
 
 //! 8.2.24 retrieve the includeGroup
 //! really ask a topic if it's in the include group
@@ -253,5 +258,61 @@ char *getPreferenceATOMKind_MainModule();
 #define ATOM_KIND_M5_SOCKET 1
 //! new 1.4.24 setting ATOM kind (eg. ATOM_KIND_M5_SCANNER, ATOM_KIND_M5_SOCKET)
 int getM5ATOMKind_MainModule();
+
+
+
+#define NEW_SENSORS_PREFERENCE
+//! store the SensorClassType instance as well
+#include "../SensorClass/SensorClassType.h"
+//!issue #365 sensor plugs and more
+//! 5.14.25 Hanging with Tyler,
+//! Dead Montana 5.14.74 great stuff
+//! add the Sensors Preference .. first the parsing
+
+//!forward definition
+class SensorClassType;
+
+//! sensor struct
+//! defines the structure
+typedef struct sensorStruct
+{
+    char *sensorName;
+    int pin1;
+    int pin2;
+    //! and the pointer to matching SensorClassType
+    SensorClassType* sensorClassType;
+} SensorStruct;
+
+//! wrap sensors
+typedef struct sensorsStruct
+{
+    int count;
+    //! array of sensorStruct
+    SensorStruct *sensors;
+} SensorsStruct;
+
+//! return the sensor specified or null
+SensorsStruct* getSensors_mainModule();
+
+//! return the sensor specified or null
+SensorStruct* getSensor_mainModule(char *sensorName);
+
+//! Only 1 setSensorsString now .. will always append
+//! message:  set:sensors, val:<val> or empty to clean it out
+//! unless a null or blank "" string
+//! set a sensor val (array of  sensor,pin,pin,sensor,pin,pin...)
+//! After each set, the SensorsStruct will be updated
+void setSensorsString_mainModule(char *sensorsString);
+
+//!  init the sensorString from EPROM
+//!PREFERENCE_SENSOR_PLUGS_SETTING
+void initSensorStringsFromEPROM_mainModule();
+
+//! print sensors, passing in a struct
+void printSensors_mainModule(SensorsStruct* sensors);
+
+//! 7.9.25 reset SENSORS to default
+//! "BuzzerSensorClass,23,33,L9110S_DCStepperClass,21,25"
+void resetSensorToDefault_mainModule();
 
 #endif // PreferensesController_h

@@ -36,7 +36,6 @@ Sonic_I2CSensorClass::~Sonic_I2CSensorClass()
 
 
 
-
 //#define USE_LED_BREATH  //not working, (working for M5button and Core2)
 //! for ATOM (maybe change the priority and see what happens)
 
@@ -92,4 +91,43 @@ void Sonic_I2CSensorClass::setup()
     
     setupSonic_I2C();
 }
+
+
+#ifdef NOT_DEFINED
+
+
+//! adding the messages as well
+//! 5.14.25 (Laura/Paul flying). 5.14.74 great Dead
+//! 8.28.23  Adding a way for others to get informed on messages that arrive
+//! for the set,val
+//! 12.27.23 support setName == "socket"
+//! 1.10.24 if deviceNameSpecified then this matches this device, otherwise for all.
+//! It's up to the receiver to decide if it has to be specified
+void Sonic_I2CSensorClass::messageSetVal_SensorClassType(char *setName, char* valValue, boolean deviceNameSpecified)
+{
+    
+}
+
+//! 12.28.23, 8.28.23  Adding a way for others to get informed on messages that arrive
+//! for the  send -
+void Sonic_I2CSensorClass::messageSend_SensorClassType(char *sendValue)
+{
+    
+}
+
+//! 12.28.23, 8.28.23  Adding a way for others to get informed on messages that arrive
+//! for the cmd
+void Sonic_I2CSensorClass::messageCmd_SensorClassType(char *cmdValue)
+{
+    
+}
+//! 5.15.25 try a special command local to this class
+void Sonic_I2CSensorClass::messageLocal_SensorClassType(char *message)
+{
+    
+}
+
+#endif
+
+
 #endif

@@ -17,9 +17,11 @@
 #include "HDriverStepperClass.h"
 //! 3.31..25
 #include "SG90ServoStepperClass.h"
+//! 5.18.25 45 years Mt St Hellens Eruption
+#include "L9110S_DCStepperClass.h"
 
-
-#define NUM_STEPPER_CLASS 4
+//! MAKE SURE THIS IS UPDATED...
+#define NUM_STEPPER_CLASS 5
 
 //! instances of the PTStepeprClass
 DCMotorStepperClass* _DCMotorStepperClass;
@@ -27,12 +29,14 @@ PTStepperClass* _PTStepperClass;
 HDriverStepperClass* _HDriverStepperClass;
 //! 3.31.25 try Servo ..
 SG90ServoStepperClass* _SG90ServoStepperClass;
+//! 5.18.25 45 years Mt St Hellens Eruption
+L9110S_DCStepperClass* _L9110S_DCStepperClass;
 
 //! use this one...
 MotorStepperClassType *_whichMotorStepper;
 
 //! 3.31.25 create array of plugs
-MotorStepperClassType* _motorSteppers[4];
+MotorStepperClassType* _motorSteppers[NUM_STEPPER_CLASS];
 
 void setup_StepperClasses()
 {
@@ -52,6 +56,10 @@ void setup_StepperClasses()
     //! 3.31.25 try Servo ..
     _SG90ServoStepperClass = new SG90ServoStepperClass((char*)"SG90ServoStepperClass");
     _motorSteppers[whichStepperClasssIndex++] = _SG90ServoStepperClass;
+
+    //! 5.18.25 45 years Mt St Hellens Eruption
+    _L9110S_DCStepperClass = new L9110S_DCStepperClass((char*)"L9110S_DCStepperClass");
+    _motorSteppers[whichStepperClasssIndex++] = _L9110S_DCStepperClass;
 
     
     //!TODO: create an array of plug options .. then call their "identity" method
@@ -137,47 +145,18 @@ void setup_StepperModule()
 #else
         //! the motorStepper can be nil
         _whichMotorStepper = NULL;
+        //! 5.2.25 default to HDriver..
+        //_whichMotorStepper = _HDriverStepperClass;
 #endif
     }
-#ifdef OLD_WAY
-    //! message:  sensorPlugs
-     if (strcmp(sensorPlug,"DCMotorStepperClass")==0)
-     {
-         //! use this one...
-         _whichMotorStepper = _DCMotorStepperClass;
-     }
-     else if (strcmp(sensorPlug,"HDriverStepperClass")==0)
-     {
-         //! for now.. 3.24.25
 
-        //! use this one...
-        //       _whichMotorStepper = _DCMotorStepperClass;
-         _whichMotorStepper = _HDriverStepperClass;
-     }
-     else if (strcmp(sensorPlug,"SG90ServoStepperClass")==0)
-     {
-         //! for now.. 3.31.25
-         
-         //! use this one...
-         //       _whichMotorStepper = _DCMotorStepperClass;
-         _whichMotorStepper = _SG90ServoStepperClass;
-     }
-    //! TODO .. have a method in the plug to ask if it's the sensorPlug
-    //! then have an array of plug possible .. so the above code goes away
-    //!
-     else  // DEFAULT .. if (strcmp(sensorPlug,"PTStepperClass")==0)
-     {
-         //! use this one...
-         _whichMotorStepper = _PTStepperClass;
-     }
-#endif
     if (_whichMotorStepper)
         _whichMotorStepper->setup_MotorStepper();
 
-#else
+#else  //! not  USE_MotorStepperClassType
     //calls the PTStepper setup
     setup_PTStepper();
-#endif
+#endif //USE_MotorStepperClassType
 }
 //! 4.1.25 April Fools day. Mt Peak hike (162 bmp strange spike)
 //! get the identity of the SenasorPlug
@@ -285,29 +264,7 @@ void loop_StepperModule()
 
             break;
         }
-#ifdef MOVED_TO_TIMER_LOGIC
 
-        case AUTO_FEED:  //note: the only difference in this case is the FEED_STOPPED does NOT get set
-        {
-            unsigned long feedCurrentMillis = millis();
-
-            if (feedCurrentMillis - feedPreviousMillis >= FEED_INTERVAL) {  // changed this to check a timer to see when to fire the feeder..session length,random interval, auto increment time
-#ifdef USE_UI_MODULE
-                blinkLED_UIModule();
-#endif
-                
-#ifdef USE_MotorStepperClassType
-                if (_whichMotorStepper)
-                    _whichMotorStepper->start_MotorStepper();
-#else
-                start_PTStepper();
-#endif
-                SerialDebug.println("AUTO Feed");
-                feedPreviousMillis = feedCurrentMillis;
-            }
-            break;
-        }
-#endif
             //NOT USED..
         case JACKPOT_FEED:  //note: the only difference in this case is the FEED_STOPPED does NOT get set
         {

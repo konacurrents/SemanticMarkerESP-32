@@ -98,7 +98,7 @@ void DCMotorStepperClass::stop_MotorStepper()
     _timerDelayClass_DCMotorStepperClass->stopDelay();
 }
 
-//This will advance the stepper clockwise once by the angle specified in SetupStepper. Example 16 pockets in UNO is 22.5 degrees
+//!This will advance the stepper clockwise once by the angle specified in SetupStepper. Example 16 pockets in UNO is 22.5 degrees
 void DCMotorStepperClass::start_MotorStepper()
 {
     //!call super

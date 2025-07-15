@@ -167,6 +167,17 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
 
         processJSONMessageMQTT(credentialsJSON, TOPIC_TO_SEND);
         
+        /*
+         6.16.25 A successful scan look like:
+         ***validScannedSM = 'WIFI:S:SunnyWhiteriver;T:WPA/WPA2;P:sunny2021;H:;'
+         ATOM_processSemanticMarker(WIFI:S:SunnyWhiteriver;T:WPA/WPA2;P:sunny2021;H:;, https://SemanticMarker.org/bot/smart?uuid=QHmwUurxC3&flow=1735086442396&flowCat=Scotty&name=SMART_DeviceM5AtomSocketOutside)
+              {'ssid':'SunnyWhiteriver','ssidPassword':'sunny2021'}
+                 processJSONMessageMQTT: '{'ssid':'SunnyWhiteriver','ssidPassword':'sunny2021'}'
+                  {
+                    "ssid": "SunnyWhiteriver",
+                      "ssidPassword": "sunny2021"
+                  }
+         */
         //! Set the credentials for the WIFI using this format
         return false;
     }

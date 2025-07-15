@@ -641,8 +641,13 @@ String getJSONConfigString()
 //!called for things like the advertisement
 char *getDeviceNameMQTT()
 {
+     //! 5.3.25 notset for somereason ..
+    char *savedDeviceName = getPreference_mainModule(PREFERENCE_DEVICE_NAME_SETTING);
+    if (!savedDeviceName)
+        savedDeviceName = NOTSET_STRING;
+    
     if (!_deviceNameString)
-        _deviceNameString = NOTSET_STRING;
+        _deviceNameString = savedDeviceName; //NOTSET_STRING;
     return _deviceNameString;
     // return _chipName;
 }
@@ -2294,7 +2299,7 @@ void processBarkletMessage(String message, String topic)
         // Once connected, publish an announcement...
         // sprintf(message, "#STATUS {%s} {%s}", _deviceNameString, chipName);
 #ifdef ESP_M5
-        sprintf(_fullMessageOut, "%s {%s} {%s} {I,F} {'T':'%d','dev':'%s','user':'%s','location':'%s','ble':'%s','v':'%s','k':'%s','chipid':'%s','ssid':'%s', 'sp':'%s', %s}",
+        sprintf(_fullMessageOut, "%s {%s} {%s} {I,F} {'T':'%d','dev':'%s','user':'%s','location':'%s','ble':'%s','v':'%s','k':'%s','chipid':'%s','ssid':'%s',%s",
 #else
         sprintf(_fullMessageOut, "%s {%s} {%s} {I,F} {'T':'%d','dev':'%s','user':'%s','location':'%s','ble':'%s','v':'%s','k':'%s','chipid':'%s','ssid':'%s'}",
 #endif
@@ -2316,17 +2321,39 @@ void processBarkletMessage(String message, String topic)
                 //k='uno':'tblr"
                 ,(getFeederType_mainModule() == STEPPER_IS_UNO)?(char*)"uno":(char*)"tblr"
                 
+                //! 'chipid':'%s'
                 ,getChipIdString()
+                //! 'ssid':'%s'
                 ,get_WIFI_SSID().c_str()
               
 #ifdef ESP_M5
-                //! add the sensorPlugs
-                ,getPreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING)
-                //! last is the dynamic main_currentStatusJSON()
+                //! last %s
                 , main_currentStatusJSON()
+                );
+                //! OOPS .. the getPreference overrides the values .. remember!!   so this needs to be a strcat version....
+                //! add the sensorPlugs
+                //! 'splug':'%s'
+                strcat(_fullMessageOut,",'splug':'");
+                strcat(_fullMessageOut,getPreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING));
+                strcat(_fullMessageOut,"'");
+                
+                //! 5.21.25 add the Atom Kind and the Sensors
+                //! 'atom':'%s
+                strcat(_fullMessageOut,",'atom':'");
+                strcat(_fullMessageOut,getPreference_mainModule(PREFERENCE_ATOM_KIND_SETTING));
+                strcat(_fullMessageOut,"'");
+                //!sensors':'%s'
+                strcat(_fullMessageOut,",'sensors':'");
+                strcat(_fullMessageOut,getPreference_mainModule(PREFERENCE_SENSORS_SETTING));
+                strcat(_fullMessageOut,"'");
+//                /'splug':'%s','atom':'%s','sensors':'%s',
+                //! last is the dynamic main_currentStatusJSON()
+                //! finish
+                strcat(_fullMessageOut,"}");
+#else
+                );
 #endif
 
-                );
         
         messageValidToSendBack = true;
         
@@ -3163,9 +3190,19 @@ void invokeCurrentSMModePage(char *topic)
 //!process the JSON message (looking for FEED, etc). Note: topic can be nil, or if not, it's an MQTT topic (so send replies if you want)
 //!1.14.24 THIS is the main JSON processor of messages. But now that groups can send almost any message, there
 //!needs to be a way define a subset of messages that groups can send on..
+//!6.20.25 added Serial Monitor input,
+//!API Manual described:
+//!@see https://github.com/konacurrents/SemanticMarkerAPI
+//!
 boolean processJSONMessageMQTT(char *ascii, char *topic)
 {
     SerialLots.println(" *** processJSONMessageMQTT ***");
+    
+    //! 6.16.25 Nice out, yellow field
+    //! set below when looking at whether a command was found
+    //! if false then continue the if/else
+    boolean foundCommand;
+    
     //! use the default user topic if not specified...
     if (!topic)
     {
@@ -3369,7 +3406,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
 #endif
             }
             
-        }
+        } //device name specified (sets up processMessageOrGateway., and sets device
      
         //! basically, processMessageOrGateway is set to TRUE if the device isn't mentioned, OR
         //! the dev is mentioned, and the wildcard works (or is paired)
@@ -3386,7 +3423,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             StaticJsonDocument<2024>  smartButtonObject;
 
             deserializeJson(smartButtonObject, myObject["SMARTButton"]);
-
+             //done..
             return processJSONSMARTButton(smartButtonObject);
         }
 #endif
@@ -3413,6 +3450,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 }
             }
         }
+        //! {"cmd", <cmd>)
         else if (cmd)
         {
             //! 1.14.24 use the isGroupTopic() where needed..
@@ -3636,6 +3674,13 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 //!calls the OTA update method (this doesn't return as device is rebooted...)
                 performOTAUpdateMethod();
             }
+            //! add click  to any device, and to a group
+            //! 5.14.25 (Dead 5.14.74 3rd wall of sound)
+            else if (strcasecmp(cmd,"click")==0)
+                {
+                    //! click call
+                    main_dispatchAsyncCommand(ASYNC_CLICK_SOUND);
+                }
             else if (strcasecmp(cmd,"clean")==0 && !isGroupTopic())
             {
                 SerialDebug.println("CLEAN via BLE");
@@ -3894,7 +3939,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 char* sendCmdString  = const_cast<char*>(cmd);
 
                 //! 12.28.23, 8.28.23  Tell Main about the set,val and if others are registered .. then get informed
-                messageSend_mainModule(sendCmdString);
+                messageSend_mainModule(sendCmdString, deviceNameSpecified);
             }
         }
         //! {'guest':'guest password'}
@@ -3921,9 +3966,10 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 showSemanticMarker_displayModule(_semanticMarkerString, "Semantic Marker");
             else
                 SerialDebug.println("Not showing SemanticMarker ");
-        }
+        } //semanticMarkerCmd
 #endif //ESP_M5
         //!5.12.22
+        //!{set:<set>,"val":val,  device?)
         else if (setCmd && valCmd)
         {
             //! options:  hightemp, feedcount, timeout
@@ -3940,10 +3986,10 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             //! It's up to the receiver to decide if it has to be specified
             //! 1.14.24 for now, setVal in the ATOM will support GROUP commands if turned on (and if off it doesn't get here)
             messageSetVal_mainModule(setCmdString, valCmdString, deviceNameSpecified);
-
+            
             //!set flag (if a boolean command)
             boolean flag = isTrueString(valCmdString);
-       
+            
             //!try 5.12.22 {'set':'item'},{'val':'value'}
             //!   eg. set:hightemp, val:80)
             //!   TODO: confirm valid integer values...
@@ -3976,167 +4022,152 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     SerialTemp.printf("1.Unknown cmd: %s\n", valCmdString);
                 }
             }
-            //! 9.28.23 #272 devOnlySM only show a SM if sent to this device
-            else if (strcasecmp(setCmdString,"devOnlySM")==0)
+#pragma mark Device Name and Not Group
+            else if (deviceNameSpecified && !isGroupTopic())
             {
-                if (deviceNameSpecified)
+                //! if not found .. keep searching
+                foundCommand = true;
+                //! 9.28.23 #272 devOnlySM only show a SM if sent to this device
+                if (strcasecmp(setCmdString,"devOnlySM")==0)
                 {
                     //set ble+wifi transient state..
                     savePreferenceBoolean_mainModule(PREFERENCE_DEV_ONLY_SM_SETTING, flag);
                 }
-            }
-
-            //! 8.2.24 to let older Tumbler NOT do the auto direction (back and forth)
-            //! Isue #332
-            //! it will set via message: autoMotorDirection
-            //! {"set":"autoMotorDirection","val":"true"}
-            else if (strcasecmp(setCmdString,"autoMotorDirection")==0)
-            {
-                if (deviceNameSpecified)
+                
+                //! 8.2.24 to let older Tumbler NOT do the auto direction (back and forth)
+                //! Isue #332
+                //! it will set via message: autoMotorDirection
+                //! {"set":"autoMotorDirection","val":"true"}
+                else if (strcasecmp(setCmdString,"autoMotorDirection")==0)
                 {
                     savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, flag);
                 }
-            }
-            
-            //! 8.2.24 add includeGroups
-            //! Isue #332
-            //! it will set via message: includeGroups
-            //! {"set":"includeGroups","val":"group1,group2"}
-            else if (strcasecmp(setCmdString,"includeGroups")==0)
-            {
-                if (deviceNameSpecified)
-                {                    
+                
+                //! 8.2.24 add includeGroups
+                //! Isue #332
+                //! it will set via message: includeGroups
+                //! {"set":"includeGroups","val":"group1,group2"}
+                else if (strcasecmp(setCmdString,"includeGroups")==0)
+                {
                     //! 8.2.24 set the include group (and cache it), called from MQTT
                     setIncludeGroups(valCmdString);
                 }
-            }
-            
-            else if (strcasecmp(setCmdString,"ble+wifi")==0)
-            {
-                if (deviceNameSpecified && !isGroupTopic())
+                
+                else if (strcasecmp(setCmdString,"ble+wifi")==0)
                 {
                     //set ble+wifi transient state..
                     savePreferenceBoolean_mainModule(PREFERENCE_SENDWIFI_WITH_BLE, flag);
                 }
-            }
-            else if (strcasecmp(setCmdString,"factoryreset")==0)
-            {
-                if (deviceNameSpecified && !isGroupTopic())
+                else if (strcasecmp(setCmdString,"factoryreset")==0)
                 {
                     // factory reset .. eventually
                     resetAllPreferences_mainModule();
+                    
                 }
-            }
-            //! 11.9.22
-            else if (strcasecmp(setCmdString,"restartmodels")==0)
-            {
-                //!restarts all the menu states to the first one .. useful for getting a clean start. This doesn't care if the menu is being shown
-                if (flag)
-                    restartAllMenuStates_mainModule();
-            }
-            else if (strcasecmp(setCmdString,"screentimeout")==0)
-            {
-                //set the screen timeout
-                savePreferenceIntFromString_mainModule(PREFERENCE_DISPLAY_SCREEN_TIMEOUT_VALUE, valCmdString);
-            }
-            else if (strcasecmp(setCmdString,"stepperangle")==0)
-            {
-                SerialDebug.printf("stepperAngle: %s\n", valCmdString);
-                //!set the stepperangle.
-                savePreference_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, valCmdString);
-            }
-            else if (strcasecmp(setCmdString,"noclick")==0)
-            {
-                //!set the timeout from no click to poweroff
-                savePreferenceIntFromString_mainModule(PREFERENCE_NO_BUTTON_CLICK_POWEROFF_SETTING, valCmdString);
-            }
-            else if (strcasecmp(setCmdString,"gateway")==0)
-            {
-                if (deviceNameSpecified)
+                //! 11.9.22
+                else if (strcasecmp(setCmdString,"restartmodels")==0)
+                {
+                    //!restarts all the menu states to the first one .. useful for getting a clean start. This doesn't care if the menu is being shown
+                    if (flag)
+                        restartAllMenuStates_mainModule();
+                }
+                else if (strcasecmp(setCmdString,"screentimeout")==0)
+                {
+                    //set the screen timeout
+                    savePreferenceIntFromString_mainModule(PREFERENCE_DISPLAY_SCREEN_TIMEOUT_VALUE, valCmdString);
+                }
+                else if (strcasecmp(setCmdString,"stepperangle")==0)
+                {
+                    SerialDebug.printf("stepperAngle: %s\n", valCmdString);
+                    //!set the stepperangle.
+                    savePreference_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, valCmdString);
+                }
+                else if (strcasecmp(setCmdString,"noclick")==0)
+                {
+                    //!set the timeout from no click to poweroff
+                    savePreferenceIntFromString_mainModule(PREFERENCE_NO_BUTTON_CLICK_POWEROFF_SETTING, valCmdString);
+                }
+                else if (strcasecmp(setCmdString,"gateway")==0)
                 {
                     //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
                     savePreferenceBoolean_mainModule(PREFERENCE_MAIN_GATEWAY_VALUE, flag);
                 }
-            }
-            //! 10.4.22
-            else if (strcasecmp(setCmdString,"DiscoverM5PTClicker")==0)
-            {
-                //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
-                setDiscoverM5PTClicker(flag);
-            }
-            else if (strcasecmp(setCmdString,"usespiff")==0 && !isGroupTopic())
-            {
-                //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
-                savePreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_SETTING, flag);
-#ifdef USE_SPIFF_MODULE
-                if (flag)
+                //! 10.4.22
+                else if (strcasecmp(setCmdString,"DiscoverM5PTClicker")==0)
                 {
-                    //! the setup for this module
-                    setup_SPIFFModule();
+                    //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
+                    setDiscoverM5PTClicker(flag);
                 }
+                else if (strcasecmp(setCmdString,"usespiff")==0 && !isGroupTopic())
+                {
+                    //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
+                    savePreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_SETTING, flag);
+#ifdef USE_SPIFF_MODULE
+                    if (flag)
+                    {
+                        //! the setup for this module
+                        setup_SPIFFModule();
+                    }
 #endif //USE_SPIFF_MODULE
-            }
-            //! 4.4.24
-            else if (strcasecmp(setCmdString,"usespiff_mqtt")==0 && !isGroupTopic())
-            {
-                //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
-                savePreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_MQTT_SETTING, flag);
-            }
-            else if (strcasecmp(setCmdString,"usespiff_qratom")==0 && !isGroupTopic())
-            {
-                //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
-                savePreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_QRATOM_SETTING, flag);
-            }
+                }
+                //! 4.4.24
+                else if (strcasecmp(setCmdString,"usespiff_mqtt")==0 && !isGroupTopic())
+                {
+                    //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
+                    savePreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_MQTT_SETTING, flag);
+                }
+                else if (strcasecmp(setCmdString,"usespiff_qratom")==0 && !isGroupTopic())
+                {
+                    //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
+                    savePreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_QRATOM_SETTING, flag);
+                }
 #ifdef ESP_M5
-        //!NOTE: thes PIR and ATOM settings could be done in their modules AtomSocket but the LUX is in the butto
-            //! 1.10.24 per issue#289 support PIR calling a SM in JSON (not just the FEED)
-            else if (strcasecmp(setCmdString,"PIR_UseSM")==0 && !isGroupTopic())
-            {
-                savePreferenceBoolean_mainModule(PREFERENCE_SM_ON_PIR_SETTING, flag);
-                //FOR now .. use the default that is to turn on all sockets...
-            }
-            //! 1.12.24 AtomSocketGlobalOnOff  to turn on/off global onoff
-            else if (strcasecmp(setCmdString,"AtomSocketGlobalOnOff")==0 && !isGroupTopic())
-            {
-                //! set global on/off is supported..
-                savePreferenceBoolean_mainModule(PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING, flag);
-            }
-            //! 1.12.24 set the value for the LUX sepearator from light and dark
-            else if (strcasecmp(setCmdString,"LUXdark")==0 && !isGroupTopic())
-            {
-                //! save temporally ..
-                setLUXThreshold_mainModule(THRESHOLD_KIND_DARK, atoi(valCmdString));
-            }
-            //! 1.13.24 scannedGroup temporary setting of the group name
-            else if (strcasecmp(setCmdString,"scannedGroup")==0 && !isGroupTopic())
-            {
-                //! save temporally ..
-                main_setScannedGroupName(valCmdString);
-            }
-            //! 1.13.24 scannedDevice temporary setting of the group name
-            else if (strcasecmp(setCmdString,"scannedDevice")==0 && !isGroupTopic())
-            {
-                //! save temporally ..
-                main_setScannedDeviceName(valCmdString);
-            }
+                //!NOTE: thes PIR and ATOM settings could be done in their modules AtomSocket but the LUX is in the butto
+                //! 1.10.24 per issue#289 support PIR calling a SM in JSON (not just the FEED)
+                else if (strcasecmp(setCmdString,"PIR_UseSM")==0 && !isGroupTopic())
+                {
+                    savePreferenceBoolean_mainModule(PREFERENCE_SM_ON_PIR_SETTING, flag);
+                    //FOR now .. use the default that is to turn on all sockets...
+                }
+                //! 1.12.24 AtomSocketGlobalOnOff  to turn on/off global onoff
+                else if (strcasecmp(setCmdString,"AtomSocketGlobalOnOff")==0 && !isGroupTopic())
+                {
+                    //! set global on/off is supported..
+                    savePreferenceBoolean_mainModule(PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING, flag);
+                }
+                //! 1.12.24 set the value for the LUX sepearator from light and dark
+                else if (strcasecmp(setCmdString,"LUXdark")==0 && !isGroupTopic())
+                {
+                    //! save temporally ..
+                    setLUXThreshold_mainModule(THRESHOLD_KIND_DARK, atoi(valCmdString));
+                }
+                //! 1.13.24 scannedGroup temporary setting of the group name
+                else if (strcasecmp(setCmdString,"scannedGroup")==0 && !isGroupTopic())
+                {
+                    //! save temporally ..
+                    main_setScannedGroupName(valCmdString);
+                    
+                }
+                //! 1.13.24 scannedDevice temporary setting of the group name
+                else if (strcasecmp(setCmdString,"scannedDevice")==0 && !isGroupTopic())
+                {
+                    //! save temporally ..
+                    main_setScannedDeviceName(valCmdString);
+                }
 #endif //ESP_M5
-            
-            //!MQTT:  set: timerdelay, val:seconds
-            else if  (strcasecmp(setCmdString,"timerdelay")==0)
-            {
-                if (deviceNameSpecified)
+                
+                //!MQTT:  set: timerdelay, val:seconds
+                else if  (strcasecmp(setCmdString,"timerdelay")==0)
                 {
                     int timerdelay = atoi(valCmdString);
                     //!set the timer delay (0 == stop).
                     setTimerDelaySeconds_mainModule(timerdelay);
                     //!start or stop the timer..
                     SerialDebug.printf("timerdelay: %d\n", timerdelay);
+                    
                 }
-            }
-            //!MQTT:  set: timerdelay, val:seconds
-            else if  (strcasecmp(setCmdString,"timerdelayMax")==0)
-            {
-                if (deviceNameSpecified)
+                //!MQTT:  set: timerdelay, val:seconds
+                else if  (strcasecmp(setCmdString,"timerdelayMax")==0)
                 {
                     int timerdelay = atoi(valCmdString);
                     //!set the timer delay (0 == stop).
@@ -4144,133 +4175,123 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     //!start or stop the timer..
                     SerialDebug.printf("timerdelayMax: %d\n", timerdelay);
                 }
-            }
-            //! MQTT:  set: starttimer, val: true/false  (true == start timer, false = stop timer)
-            else if  (strcasecmp(setCmdString,"starttimer")==0)
-            {
-                if (deviceNameSpecified)
+                //! MQTT:  set: starttimer, val: true/false  (true == start timer, false = stop timer)
+                else if  (strcasecmp(setCmdString,"starttimer")==0)
                 {
                     //!start or stop the timer..
                     startStopTimer_mainModule(flag);
                     //!start or stop the timer..
                     SerialDebug.printf("startTimer: %d\n", flag);
+                    
                 }
-            }
-            //! issue #338 sensor definition (in work)
-            //! This will be a string in JSON format with various PIN and BUS information
-            else if  (strcasecmp(setCmdString,"sensorPlugs")==0)
-            {
-                if (deviceNameSpecified)
+                //! issue #338 sensor definition (in work)
+                //! This will be a string in JSON format with various PIN and BUS information
+                else if  (strcasecmp(setCmdString,"sensorPlugs")==0)
                 {
                     savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, valCmdString);
-
+                    
                     SerialDebug.printf("sensorPlugs: %s\n", valCmdString);
                     
                     //! reboot the device to set subscribe or not for groups
                     rebootDevice_mainModule();
                 }
                 
-            }
-            //!add stepper type
-            else if (strcasecmp(setCmdString,"stepper")==0)
-            {
-                //!set the stepperAngle as well for a default value
-                //!as of 8l18.24, the stepperAngle isn't used by the MINI (only the Tumbler)
-                float stepperAngle = 22.5;
-                int feederType = STEPPER_IS_UNO;
-                //!NOTE: 'mini' is deprecated
-                if (strcasecmp(valCmdString,"mini")==0)
+                //! issue #365 sensors
+                //! 5.14.25 (Dead 5.14.74 3rd wall of sound)
+                else if  (strcasecmp(setCmdString,"sensors")==0)
                 {
-                    //! mini will be backdoor to set the angle to 45
-                    // is UNO
-                    stepperAngle = 45.0;
-                    //feederType = STEPPER_IS_MINI;
+                    //! currently not rebooting the device, but letting the user do that..
+                    //! this way multiple can be done, and a "" will reset
+                    //! 5.17.25 plowing field Mark and Bud
+                    //! this is now a full set, and resets first..
+                    setSensorsString_mainModule(valCmdString);
                 }
-                else if (strcasecmp(valCmdString,"tumbler")==0)
+                //!add stepper type
+                else if (strcasecmp(setCmdString,"stepper")==0)
                 {
-                    feederType = STEPPER_IS_TUMBLER;
-                    stepperAngle = 200.0;
-                    //! set autoRotoate as well..
-                    savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
-                 
+                    //!set the stepperAngle as well for a default value
+                    //!as of 8l18.24, the stepperAngle isn't used by the MINI (only the Tumbler)
+                    float stepperAngle = 22.5;
+                    int feederType = STEPPER_IS_UNO;
+                    //!NOTE: 'mini' is deprecated
+                    if (strcasecmp(valCmdString,"mini")==0)
+                    {
+                        //! mini will be backdoor to set the angle to 45
+                        // is UNO
+                        stepperAngle = 45.0;
+                        //feederType = STEPPER_IS_MINI;
+                    }
+                    else if (strcasecmp(valCmdString,"tumbler")==0)
+                    {
+                        feederType = STEPPER_IS_TUMBLER;
+                        stepperAngle = 200.0;
+                        //! set autoRotoate as well..
+                        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
+                        
+                    }
+                    else
+                    {
+                        //! set autoRotoate as well..
+                        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, false);
+                    }
+                    SerialDebug.printf("stepper = %d, stepperAngle = %f\n", feederType, stepperAngle);
+                    //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
+                    savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, feederType);
+                    //!set stepperAngle default as well (int or float ok..)
+                    //!Issue #332 8.17.2024
+                    savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, stepperAngle);
+                    //! default to  clockwise == 1
+                    
+                    //! 8.18.24 setting this will check for the factory setting..
+                    setClockwiseMotorDirection_mainModule(true);
+                } //stepper
+                else if (strcasecmp(setCmdString,"factoryClockwiseMotor")==0)
+                {
+                    SerialCall.println(" *** Setting factory clockwise motor");
+                    //!note since clockwise == 0 we set the opposite of the value..
+                    savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING, flag);
+                    //! 8.18.24 setting this will check for the factory setting..
+                    setClockwiseMotorDirection_mainModule(true);
                 }
-                else
+                else if (strcasecmp(setCmdString,"clockwiseMotor")==0)
                 {
-                    //! set autoRotoate as well..
-                    savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, false);
+                    SerialCall.println(" *** Setting clockwise motor");
+                    //! 8.18.24 setting this will check for the factory setting..
+                    setClockwiseMotorDirection_mainModule(flag);
                 }
-                SerialDebug.printf("stepper = %d, stepperAngle = %f\n", feederType, stepperAngle);
-                //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
-                savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, feederType);
-                //!set stepperAngle default as well (int or float ok..)
-                //!Issue #332 8.17.2024
-                savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, stepperAngle);
-                //! default to  clockwise == 1
-                
-                //! 8.18.24 setting this will check for the factory setting..
-                setClockwiseMotorDirection_mainModule(true);
-
-            }
-            else if (strcasecmp(setCmdString,"factoryClockwiseMotor")==0)
-            {
-                SerialCall.println(" *** Setting factory clockwise motor");
-                //!note since clockwise == 0 we set the opposite of the value..
-                savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING, flag);
-                //! 8.18.24 setting this will check for the factory setting..
-                setClockwiseMotorDirection_mainModule(true);
-            }
-            else if (strcasecmp(setCmdString,"clockwiseMotor")==0)
-            {
-                SerialCall.println(" *** Setting clockwise motor");
-                //! 8.18.24 setting this will check for the factory setting..
-                setClockwiseMotorDirection_mainModule(flag);
-            }
-            //! 8.18.24 (back deck with Tyler - Maggie - stormy lightning last night and rain
-            //! toggleMotor  the 'Q'
-            //! 'set':'toggleMotor':'val':'on/off"
-            //! TODO: call the 'Q' code ..
-            else if (strcasecmp(setCmdString,"toggleMotor")==0)
-            {
-                //! 9.30.23 reverse direction
-                //else if (cmd == 'Q')
+                //! 8.18.24 (back deck with Tyler - Maggie - stormy lightning last night and rain
+                //! toggleMotor  the 'Q'
+                //! 'set':'toggleMotor':'val':'on/off"
+                //! TODO: call the 'Q' code ..
+                else if (strcasecmp(setCmdString,"toggleMotor")==0)
                 {
+                    //! 9.30.23 reverse direction
+                    //else if (cmd == 'Q')
+                    
                     //! note: reboot not needed as the next time a feed happens, it reads this value
                     // motor direction ==  (reverse)
                     boolean  currentDirection = getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING);
                     currentDirection = !currentDirection;
                     savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING,currentDirection);
                 }
-            }
-            //!add stepper type
-            else if (strcasecmp(setCmdString,"otafile")==0)
-            {
-                //perform the OTA via a file specified .. be careful..
-                main_dispatchAsyncCommandWithString(ASYNC_CALL_OTA_FILE_UPDATE_PARAMETER, valCmdString);
-            }
-            //!set the location
-            else if (strcasecmp(setCmdString,"location")==0 && !isGroupTopic())
-            {
-                //perform the OTA via a file specified .. be careful..
-                _jsonLocationString = createCopy(valCmdString);
-                updatePreferencesInEPROM();
-            }
-            //! rename device
-            else if (strcasecmp(setCmdString,"device")==0 && !isGroupTopic())
-            {
-                //define the device
-                _deviceNameString = createCopy(valCmdString);
-                updatePreferencesInEPROM();
+                //!add stepper type
+                else if (strcasecmp(setCmdString,"otafile")==0)
+                {
+                    //perform the OTA via a file specified .. be careful..
+                    main_dispatchAsyncCommandWithString(ASYNC_CALL_OTA_FILE_UPDATE_PARAMETER, valCmdString);
+                }
+                //!set the location
+                else if (strcasecmp(setCmdString,"location")==0 && !isGroupTopic())
+                {
+                    //perform the OTA via a file specified .. be careful..
+                    _jsonLocationString = createCopy(valCmdString);
+                    updatePreferencesInEPROM();
+                }
                 
-                //!since renaming, lets set a STATUS out..
-                //! request a STATUS be sent.
-                processBarkletMessage("#STATUS", topic);
-            }
-            //! pairnow is for invoking the pair when there isn't a user interface. Basically
-            //! once an ESP32 gets connected, especially to a GEN3, the pairnow will make it paired
-            //! for future. 10.24.22
-            else if (strcasecmp(setCmdString,"pairnow")==0)
-            {
-                if (deviceNameSpecified && !isGroupTopic())
+                //! pairnow is for invoking the pair when there isn't a user interface. Basically
+                //! once an ESP32 gets connected, especially to a GEN3, the pairnow will make it paired
+                //! for future. 10.24.22
+                else if (strcasecmp(setCmdString,"pairnow")==0)
                 {
                     //! TRUE will pair, FALSE will unpair
                     if (flag)
@@ -4282,11 +4303,8 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                         //!performs the unpairing
                         invokeUnpairNoName_ModelController();
                 }
-            }
-            //! paireddev the paired device (used with BLEUsePairedDeviceName and gen3Only
-            else if (strcasecmp(setCmdString,"pairdev")==0)
-            {
-                if (deviceNameSpecified && !isGroupTopic())
+                //! paireddev the paired device (used with BLEUsePairedDeviceName and gen3Only
+                else if (strcasecmp(setCmdString,"pairdev")==0)
                 {
                     char *previousName = getPreference_mainModule(PREFERENCE_PAIRED_DEVICE_SETTING);
                     if (strcasecmp(valCmdString,previousName)!=0)
@@ -4323,324 +4341,345 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                         }
 #endif
                     }
-                }
-            }
-            
-            //! sets the PREFERENCE_SUPPORT_GROUPS_SETTING
-            else if (strcasecmp(setCmdString,"usegroups")==0 && !isGroupTopic())
-            {
-                //! sets the PREFERENCE_SUPPORT_GROUPS_SETTING flag
-                savePreferenceBoolean_mainModule(PREFERENCE_SUPPORT_GROUPS_SETTING, flag);
+                } //pairdev
                 
-                //! reboot the device to set subscribe or not for groups
-                rebootDevice_mainModule();
-
-            }
-            //! sets the PREFERENCE_GROUP_NAMES_SETTING
-            else if (strcasecmp(setCmdString,"groups")==0 && !isGroupTopic())
-            {
-                //! sets the PREFERENCE_GROUP_NAMES_SETTING val (eg. atlasDogs, houndDogs) or (#) or ""
-                savePreference_mainModule(PREFERENCE_GROUP_NAMES_SETTING, valCmdString);
-                
-                //! reboot the device to set subscribe or not for groups
-                rebootDevice_mainModule();
-                
-            }
-#ifdef ESP_M5
-            else if (strcasecmp(setCmdString,"screencolor")==0)
-            {
-                //!set the screen color 0..n
-                int screenColor = atoi(valCmdString);
-                setScreenColor_displayModule(screenColor);
-                
-                //stay on this page, but change the marker..
-                redrawSemanticMarker_displayModule(START_NEW);
-            }
-            //! sets the gen3only flag (only look for BLEServers that are GEN3)
-            else if (strcasecmp(setCmdString,"gen3only")==0)
-            {
-                //! sets the gen3only flag
-                savePreferenceBoolean_mainModule(PREFERENCE_ONLY_GEN3_CONNECT_SETTING, flag);
-                //!for now just reboot which will use this perference
-               // rebootDevice_mainModule();
-                //TODO... maybe just disconnect .. or don't worry about it unless connected
-            }
-            //! BLEUsePairedDeviceName (Says to only look for BLEServers with the paired name..
-            else if (strcasecmp(setCmdString,"BLEUsePairedDeviceName")==0)
-            {
-                if (deviceNameSpecified && !isGroupTopic())
+                //! sets the PREFERENCE_SUPPORT_GROUPS_SETTING
+                else if (strcasecmp(setCmdString,"usegroups")==0)
                 {
-#ifdef NO_MORE_PREFERENCE_BLE_USE_DISCOVERED_PAIRED_DEVICE_SETTING
-                    //! sets the bleusepaireddevicename flag
-                    savePreferenceBoolean_mainModule(PREFERENCE_BLE_USE_DISCOVERED_PAIRED_DEVICE_SETTING, flag);
-#endif
-                }
-            }
-#endif //ESP_M5
-            //! sets the BLEUseDeviceName  flag == the BLEServer will add the name, eg PTFeeder:ScoobyDoo
-            else if (strcasecmp(setCmdString,"BLEUseDeviceName")==0)
-            {
-                if (deviceNameSpecified && !isGroupTopic())
-                {
-                    //! sets the bleusedevicename flag
-                    savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING, flag);
+                    //! sets the PREFERENCE_SUPPORT_GROUPS_SETTING flag
+                    savePreferenceBoolean_mainModule(PREFERENCE_SUPPORT_GROUPS_SETTING, flag);
                     
-                    //!for now just reboot which will use this perference and re-create the service name..
+                    //! reboot the device to set subscribe or not for groups
+                    rebootDevice_mainModule();
+                }
+                //! sets the PREFERENCE_GROUP_NAMES_SETTING
+                else if (strcasecmp(setCmdString,"groups")==0)
+                {
+                    //! sets the PREFERENCE_GROUP_NAMES_SETTING val (eg. atlasDogs, houndDogs) or (#) or ""
+                    savePreference_mainModule(PREFERENCE_GROUP_NAMES_SETTING, valCmdString);
+                    
+                    //! reboot the device to set subscribe or not for groups
                     rebootDevice_mainModule();
                     
-#ifdef USE_BLE_CLIENT_NETWORKING
-                    //! try to disconnect..
-                    // disconnect_BLEClientNetworking();
-#endif
-                }
-            }
-#ifdef ESP_M5
-            else if (strcasecmp(setCmdString,"minMenu")==0)
-            {
-                SerialDebug.println("PREFERENCE_IS_MINIMAL_MENU_SETTING  via BLE");
-                if (flag)
-                {
-                    setCurrentSMMode_mainModule(0);
-                    savePreferenceBoolean_mainModule(PREFERENCE_IS_MINIMAL_MENU_SETTING, true);
                 }
                 else
+                    foundCommand = false;
+            } // device but not group
+#pragma mark END of device and not group
+            //! if not found, continue BNF options..
+            if (!foundCommand)
+            {
+                //! rename device
+                if (strcasecmp(setCmdString,"device")==0 && !isGroupTopic())
                 {
-                    int max = minMenuModesMax_mainModule();
-                    //set to start of after min..
-                    setCurrentSMMode_mainModule(max);
+                    //define the device
+                    _deviceNameString = createCopy(valCmdString);
+                    updatePreferencesInEPROM();
+                    
+                    //!since renaming, lets set a STATUS out..
+                    //! request a STATUS be sent.
+                    processBarkletMessage("#STATUS", topic);
                 }
-                //!send message to ourself to process the current mode..
-                invokeCurrentSMModePage(topic);
-            }
-            else if (strcasecmp(setCmdString,"addwifi")==0)
-            {
-                if (deviceNameSpecified && !isGroupTopic())
-                {
-                    //has to support "Cisco:"
-                    //parse the valCmdString:  ssid:password
-                    char str[100];
-                    strcpy(str,valCmdString);
-                    char *token;
-                    char *rest = str;
-                    char* ssid = strtok_r(rest,":", &rest);
-                    char* password = strtok_r(rest,":", &rest);
-                    SerialDebug.printf("addwifi %s, %s\n", ssid?ssid:"null", password?password:"");
-                    //now save as a credential
-                    //   main_addWIFICredentials(addSSID, addPassword);
-                    //!send message to ourself to process the current mode..
-                    //   invokeCurrentSMModePage(topic);
-                    
-                    //NOTE: there can be empty passwords..
-                    char credentials[100];
-                    //!store the JSON version of these credentials..
-                    sprintf(credentials, "{'ssid':'%s','ssidPassword':'%s'}", ssid?ssid:"NULL", password?password:"");
-                    // This works by just sending the credentials to ourself .. and process correctly.
-                    SerialMin.println(credentials);
-                    //!per #224 this will also set WIFI_CREDENTIAL_2  (even if it's also setting #1)
-                    //!NOTE: this saving has to be done before calling processJSON (since the string is goofed upand == 'ssid' not the full string
-                    savePreference_mainModule(PREFERENCE_WIFI_CREDENTIAL_2_SETTING, credentials);
-                    
-                    //!now process the credentials, which will set CREDENTIAL_1
-                    processJSONMessageMQTT(credentials, TOPIC_TO_SEND);
-                    
-                    //!print the preferences to SerialDebug
-                    printPreferenceValues_mainModule();
-                    
-                    //The problem with invoking the current SMModePage is if we are on the swap WIFI page, then it will swap .. which might not be desired..
-                }
-            }
-            else if (strcasecmp(setCmdString,"usedocfollow")==0)
-            {
-                SerialDebug.printf("PREFERENCE_USE_DOC_FOLLOW_SETTING %s\n", valCmdString);
-                savePreferenceBoolean_mainModule(PREFERENCE_USE_DOC_FOLLOW_SETTING, flag);
-        
-            }
-#endif //ESP)_M5
-            else if (strcasecmp(setCmdString,"semanticMarker")==0)
-            {
-                SerialDebug.printf("SemanticMarker: %s\n", valCmdString);
-                setLastDocFollowSemanticMarker_MQTTNetworking(valCmdString);
                 
-                //! 9.28.29 devOnlySM if set, then
-                boolean showSM = true;
-                if (getPreferenceBoolean_mainModule(PREFERENCE_DEV_ONLY_SM_SETTING))
-                    showSM = deviceNameSpecified;
-                if (showSM)
-                    // 9.27.23 also show this ..
-                    //! use the name/cat/uuid ..
-                    showSemanticMarker_displayModule(valCmdString, "Semantic Marker");
-                else
-                    SerialDebug.println("Not showing SemanticMarker ");
-            }
 #ifdef ESP_M5
-            //blankscreen on/off
-            else if (strcasecmp(setCmdString,"blankscreen")==0)
-            {
-                //!if flag then blankscreen, otherwise wake the screen..
-                if (flag)
-                    //!blanks the screen
-                    blankScreen_displayModule();
-                else
-                    //!wakes up the screen
-                    wakeupScreen_displayModule();
-            }
-#endif //ESP_M5
-            
-            //!8.17.22 SubDawgpack
-            else if (strcasecmp(setCmdString,"SubDawgpack")==0)
-            {
-                if (deviceNameSpecified && !isGroupTopic())
+                else if (strcasecmp(setCmdString,"screencolor")==0)
                 {
-                    SerialDebug.println("PREFERENCE_SUB_DAWGPACK_SETTING via BLE");
-                    savePreferenceBoolean_mainModule(PREFERENCE_SUB_DAWGPACK_SETTING, flag);
-                    //!for now just reboot which will use this perference
-                    //rebootDevice_mainModule();
+                    //!set the screen color 0..n
+                    int screenColor = atoi(valCmdString);
+                    setScreenColor_displayModule(screenColor);
+                    
+                    //stay on this page, but change the marker..
+                    redrawSemanticMarker_displayModule(START_NEW);
+                }
+                //! sets the gen3only flag (only look for BLEServers that are GEN3)
+                else if (strcasecmp(setCmdString,"gen3only")==0)
+                {
+                    if (deviceNameSpecified && !isGroupTopic())
+                    {
+                        //! sets the gen3only flag
+                        savePreferenceBoolean_mainModule(PREFERENCE_ONLY_GEN3_CONNECT_SETTING, flag);
+                        //!for now just reboot which will use this perference
+                        // rebootDevice_mainModule();
+                        //TODO... maybe just disconnect .. or don't worry about it unless connected
+                    }
+                }
+                //! BLEUsePairedDeviceName (Says to only look for BLEServers with the paired name..
+                else if (strcasecmp(setCmdString,"BLEUsePairedDeviceName")==0)
+                {
+                    if (deviceNameSpecified && !isGroupTopic())
+                    {
+#ifdef NO_MORE_PREFERENCE_BLE_USE_DISCOVERED_PAIRED_DEVICE_SETTING
+                        //! sets the bleusepaireddevicename flag
+                        savePreferenceBoolean_mainModule(PREFERENCE_BLE_USE_DISCOVERED_PAIRED_DEVICE_SETTING, flag);
+#endif
+                    }
+                }
+#endif //ESP_M5
+       //! sets the BLEUseDeviceName  flag == the BLEServer will add the name, eg PTFeeder:ScoobyDoo
+                else if (strcasecmp(setCmdString,"BLEUseDeviceName")==0)
+                {
+                    if (deviceNameSpecified && !isGroupTopic())
+                    {
+                        //! sets the bleusedevicename flag
+                        savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING, flag);
+                        
+                        //!for now just reboot which will use this perference and re-create the service name..
+                        rebootDevice_mainModule();
+                        
+#ifdef USE_BLE_CLIENT_NETWORKING
+                        //! try to disconnect..
+                        // disconnect_BLEClientNetworking();
+#endif
+                    }
+                }
+#ifdef ESP_M5
+                else if (strcasecmp(setCmdString,"minMenu")==0)
+                {
+                    SerialDebug.println("PREFERENCE_IS_MINIMAL_MENU_SETTING  via BLE");
                     if (flag)
                     {
-                        //! start a dawgpack subscription
-                        //! 8.15.22  Also subscribe to the dawgpack .. but restrict what it can effect.
-                        //! For example, start with STATUS and DOCFOLLOW
-                        _mqttClient.subscribe((char*)"usersP/dawgpack");
+                        setCurrentSMMode_mainModule(0);
+                        savePreferenceBoolean_mainModule(PREFERENCE_IS_MINIMAL_MENU_SETTING, true);
                     }
                     else
                     {
-                        // unsubscribe  (tested and it works)
-                        _mqttClient.unsubscribe((char*)"usersP/dawgpack");
+                        int max = minMenuModesMax_mainModule();
+                        //set to start of after min..
+                        setCurrentSMMode_mainModule(max);
                     }
+                    //!send message to ourself to process the current mode..
+                    invokeCurrentSMModePage(topic);
                 }
-            }
-
-            //!TODO: duplicate and depreciate these and replace with set:buzz,val:on
-            else if (strcasecmp(setCmdString,"buzz")==0 && !isGroupTopic())
-            {
-                //! this uses the ASYNC since it involves a BLE command, and has to be done outside
-                //! of this WIFI (MQTT) operation..
-                if (flag)
+                else if (strcasecmp(setCmdString,"addwifi")==0)
                 {
-                    SerialDebug.println("BUZZ:ON via BLE");
-                    main_dispatchAsyncCommand(ASYNC_CALL_BUZZ_ON);
-                }
-                else
-                {
-                    SerialDebug.println("BUZZ:OFF via BLE");
-                    main_dispatchAsyncCommand(ASYNC_CALL_BUZZ_OFF);
-                }
-            }
-            
-            
-            //BLECLient
-            else if (strcasecmp(setCmdString,"bleclient")==0)
-            {
-                if (deviceNameSpecified && !isGroupTopic())
-                {
-                    SerialDebug.println("PREFERENCE_MAIN_BLE_CLIENT_VALUE via BLE");
-                    savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE
-                                                     , flag);
-                    //!for now just reboot which will use this perference
-                    rebootDevice_mainModule();
-                }
-            }
-            // bleserver
-            else if (strcasecmp(setCmdString,"bleserver")==0)
-            {
-                if (deviceNameSpecified && !isGroupTopic())
-                {
-                    SerialDebug.println("PREFERENCE_MAIN_BLE_SERVER_VALUE via BLE");
-                    savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE, flag);
-                    //!for now just reboot which will use this perference
-                    rebootDevice_mainModule();
-                }
-            }
-            else if (strcasecmp(setCmdString,"tilt")==0)
-            {
-                if (deviceNameSpecified && !isGroupTopic())
-                {
-                    SerialDebug.println("PREFERENCE_SENSOR_TILT_VALUE  via BLE");
-                    savePreferenceBoolean_mainModule(PREFERENCE_SENSOR_TILT_VALUE, flag);
-                }
-            }
-#ifdef ESP_M5
-
-            else if (strcasecmp(setCmdString,"zoomSm")==0)
-            {
-                //!zoom == the NON semantic marker version.. so min menu is true
-                if (flag)
-                {
-                    
-                    //hide semantic marker.. (but only if in the max menus)
-                    //NOTE: this only hides the Semantic Marker - if on a page that has one..
-                    SerialDebug.println("PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE ON via BLE");
-                    savePreferenceBoolean_mainModule(PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE, true);
-                    
-                    //!zoom only if in the max menu set..
-                    if (getCurrentSMMode_mainModule() >= minMenuModesMax_mainModule())
+                    if (deviceNameSpecified && !isGroupTopic())
                     {
-                        //stay on this page, but change the marker..
-                        redrawSemanticMarker_displayModule(START_NEW);
-                    }
-                    
-                }
-                else
-                {
-                    //show semantic marker..
-                    //NOTE: this only shows the Semantic Marker - if on a page that has one..
-                    SerialDebug.println("PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE OFF via BLE");
-                    savePreferenceBoolean_mainModule(PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE, false);
-                    savePreferenceBoolean_mainModule(PREFERENCE_IS_MINIMAL_MENU_SETTING, false);
-                    
-                    //!zoom only if in the max menu set..
-                    if (getCurrentSMMode_mainModule() < minMenuModesMax_mainModule())
-                    {
-                        //change to the status..
-                        setCurrentSMMode_mainModule(SM_status);
+                        //has to support "Cisco:"
+                        //parse the valCmdString:  ssid:password
+                        char str[100];
+                        strcpy(str,valCmdString);
+                        char *token;
+                        char *rest = str;
+                        char* ssid = strtok_r(rest,":", &rest);
+                        char* password = strtok_r(rest,":", &rest);
+                        SerialDebug.printf("addwifi %s, %s\n", ssid?ssid:"null", password?password:"");
+                        //now save as a credential
+                        //   main_addWIFICredentials(addSSID, addPassword);
                         //!send message to ourself to process the current mode..
-                        invokeCurrentSMModePage(topic);
+                        //   invokeCurrentSMModePage(topic);
+                        
+                        //NOTE: there can be empty passwords..
+                        char credentials[100];
+                        //!store the JSON version of these credentials..
+                        sprintf(credentials, "{'ssid':'%s','ssidPassword':'%s'}", ssid?ssid:"NULL", password?password:"");
+                        // This works by just sending the credentials to ourself .. and process correctly.
+                        SerialMin.println(credentials);
+                        //!per #224 this will also set WIFI_CREDENTIAL_2  (even if it's also setting #1)
+                        //!NOTE: this saving has to be done before calling processJSON (since the string is goofed upand == 'ssid' not the full string
+                        savePreference_mainModule(PREFERENCE_WIFI_CREDENTIAL_2_SETTING, credentials);
+                        
+                        //!now process the credentials, which will set CREDENTIAL_1
+                        processJSONMessageMQTT(credentials, TOPIC_TO_SEND);
+                        
+                        //!print the preferences to SerialDebug
+                        printPreferenceValues_mainModule();
+                        
+                        //The problem with invoking the current SMModePage is if we are on the swap WIFI page, then it will swap .. which might not be desired..
+                    }
+                }
+                else if (strcasecmp(setCmdString,"usedocfollow")==0)
+                {
+                    SerialDebug.printf("PREFERENCE_USE_DOC_FOLLOW_SETTING %s\n", valCmdString);
+                    savePreferenceBoolean_mainModule(PREFERENCE_USE_DOC_FOLLOW_SETTING, flag);
+                    
+                }
+#endif //ESP)_M5
+                else if (strcasecmp(setCmdString,"semanticMarker")==0)
+                {
+                    SerialDebug.printf("SemanticMarker: %s\n", valCmdString);
+                    setLastDocFollowSemanticMarker_MQTTNetworking(valCmdString);
+                    
+                    //! 9.28.29 devOnlySM if set, then
+                    boolean showSM = true;
+                    if (getPreferenceBoolean_mainModule(PREFERENCE_DEV_ONLY_SM_SETTING))
+                        showSM = deviceNameSpecified;
+                    if (showSM)
+                        // 9.27.23 also show this ..
+                        //! use the name/cat/uuid ..
+                        showSemanticMarker_displayModule(valCmdString, "Semantic Marker");
+                    else
+                        SerialDebug.println("Not showing SemanticMarker ");
+                }
+#ifdef ESP_M5
+                //blankscreen on/off
+                else if (strcasecmp(setCmdString,"blankscreen")==0)
+                {
+                    //!if flag then blankscreen, otherwise wake the screen..
+                    if (flag)
+                        //!blanks the screen
+                        blankScreen_displayModule();
+                    else
+                        //!wakes up the screen
+                        wakeupScreen_displayModule();
+                }
+#endif //ESP_M5
+                
+                //!8.17.22 SubDawgpack
+                else if (strcasecmp(setCmdString,"SubDawgpack")==0)
+                {
+                    if (deviceNameSpecified && !isGroupTopic())
+                    {
+                        SerialDebug.println("PREFERENCE_SUB_DAWGPACK_SETTING via BLE");
+                        savePreferenceBoolean_mainModule(PREFERENCE_SUB_DAWGPACK_SETTING, flag);
+                        //!for now just reboot which will use this perference
+                        //rebootDevice_mainModule();
+                        if (flag)
+                        {
+                            //! start a dawgpack subscription
+                            //! 8.15.22  Also subscribe to the dawgpack .. but restrict what it can effect.
+                            //! For example, start with STATUS and DOCFOLLOW
+                            _mqttClient.subscribe((char*)"usersP/dawgpack");
+                        }
+                        else
+                        {
+                            // unsubscribe  (tested and it works)
+                            _mqttClient.unsubscribe((char*)"usersP/dawgpack");
+                        }
+                    }
+                }
+                
+                //!TODO: duplicate and depreciate these and replace with set:buzz,val:on
+                else if (strcasecmp(setCmdString,"buzz")==0 && !isGroupTopic())
+                {
+                    //! this uses the ASYNC since it involves a BLE command, and has to be done outside
+                    //! of this WIFI (MQTT) operation..
+                    if (flag)
+                    {
+                        SerialDebug.println("BUZZ:ON via BLE");
+                        main_dispatchAsyncCommand(ASYNC_CALL_BUZZ_ON);
                     }
                     else
                     {
-                        //stay on this page, but change the zoom..
-                        redrawSemanticMarker_displayModule(START_NEW);
+                        SerialDebug.println("BUZZ:OFF via BLE");
+                        main_dispatchAsyncCommand(ASYNC_CALL_BUZZ_OFF);
                     }
                 }
-            } // zoomSM
-            //! 9.22.22  added button press from messages..
-            else if (strcasecmp(setCmdString,"buttonA")==0)
-            {
-                if (strcasecmp(valCmdString,"longpress")==0)
-                    buttonA_LongPress_mainModule();
-                else if (strcasecmp(valCmdString,"shortpress")==0)
-                    buttonA_ShortPress_mainModule();
-            }
-            else if (strcasecmp(setCmdString,"buttonB")==0)
-            {
-                if (strcasecmp(valCmdString,"longpress")==0)
-                    buttonB_LongPress_mainModule();
-                else if (strcasecmp(valCmdString,"shortpress")==0)
-                    buttonB_ShortPress_mainModule();
-            }
-            else if (strcasecmp(setCmdString,"M5AtomKind")==0 && !isGroupTopic())
-            {
-                //! new 1.4.24 setting ATOM kind (eg. M5AtomSocket, M5AtomScanner). MQTT message "set":"M5AtomKind", val=
-                savePreferenceATOMKind_MainModule(valCmdString);
-            
-                //!for now just reboot which will use this perference
-                rebootDevice_mainModule();
-            }
+                
+                
+                //BLECLient
+                else if (strcasecmp(setCmdString,"bleclient")==0)
+                {
+                    if (deviceNameSpecified && !isGroupTopic())
+                    {
+                        SerialDebug.println("PREFERENCE_MAIN_BLE_CLIENT_VALUE via BLE");
+                        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE
+                                                         , flag);
+                        //!for now just reboot which will use this perference
+                        rebootDevice_mainModule();
+                    }
+                }
+                // bleserver
+                else if (strcasecmp(setCmdString,"bleserver")==0)
+                {
+                    if (deviceNameSpecified && !isGroupTopic())
+                    {
+                        SerialDebug.println("PREFERENCE_MAIN_BLE_SERVER_VALUE via BLE");
+                        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE, flag);
+                        //!for now just reboot which will use this perference
+                        rebootDevice_mainModule();
+                    }
+                }
+                else if (strcasecmp(setCmdString,"tilt")==0)
+                {
+                    if (deviceNameSpecified && !isGroupTopic())
+                    {
+                        SerialDebug.println("PREFERENCE_SENSOR_TILT_VALUE  via BLE");
+                        savePreferenceBoolean_mainModule(PREFERENCE_SENSOR_TILT_VALUE, flag);
+                    }
+                }
+#ifdef ESP_M5
+                
+                else if (strcasecmp(setCmdString,"zoomSm")==0)
+                {
+                    //!zoom == the NON semantic marker version.. so min menu is true
+                    if (flag)
+                    {
+                        
+                        //hide semantic marker.. (but only if in the max menus)
+                        //NOTE: this only hides the Semantic Marker - if on a page that has one..
+                        SerialDebug.println("PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE ON via BLE");
+                        savePreferenceBoolean_mainModule(PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE, true);
+                        
+                        //!zoom only if in the max menu set..
+                        if (getCurrentSMMode_mainModule() >= minMenuModesMax_mainModule())
+                        {
+                            //stay on this page, but change the marker..
+                            redrawSemanticMarker_displayModule(START_NEW);
+                        }
+                        
+                    }
+                    else
+                    {
+                        //show semantic marker..
+                        //NOTE: this only shows the Semantic Marker - if on a page that has one..
+                        SerialDebug.println("PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE OFF via BLE");
+                        savePreferenceBoolean_mainModule(PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE, false);
+                        savePreferenceBoolean_mainModule(PREFERENCE_IS_MINIMAL_MENU_SETTING, false);
+                        
+                        //!zoom only if in the max menu set..
+                        if (getCurrentSMMode_mainModule() < minMenuModesMax_mainModule())
+                        {
+                            //change to the status..
+                            setCurrentSMMode_mainModule(SM_status);
+                            //!send message to ourself to process the current mode..
+                            invokeCurrentSMModePage(topic);
+                        }
+                        else
+                        {
+                            //stay on this page, but change the zoom..
+                            redrawSemanticMarker_displayModule(START_NEW);
+                        }
+                    }
+                } // zoomSM
+                  //! 9.22.22  added button press from messages..
+                else if (strcasecmp(setCmdString,"buttonA")==0)
+                {
+                    if (strcasecmp(valCmdString,"longpress")==0)
+                        buttonA_LongPress_mainModule();
+                    else if (strcasecmp(valCmdString,"shortpress")==0)
+                        buttonA_ShortPress_mainModule();
+                }
+                else if (strcasecmp(setCmdString,"buttonB")==0)
+                {
+                    if (strcasecmp(valCmdString,"longpress")==0)
+                        buttonB_LongPress_mainModule();
+                    else if (strcasecmp(valCmdString,"shortpress")==0)
+                        buttonB_ShortPress_mainModule();
+                }
+                else if (strcasecmp(setCmdString,"M5AtomKind")==0 && !isGroupTopic())
+                {
+                    //! new 1.4.24 setting ATOM kind (eg. M5AtomSocket, M5AtomScanner). MQTT message "set":"M5AtomKind", val=
+                    savePreferenceATOMKind_MainModule(valCmdString);
+                    
+                    //!for now just reboot which will use this perference
+                    rebootDevice_mainModule();
+                }
 #endif //ESP_M5
-            else if (strcasecmp(setCmdString,"disk")==0)
-            {
-                SerialDebug.printf("Cloud DISK space = %s\n", valCmdString);
-            }
-            else if (strcasecmp(setCmdString,"feedcount")==0)
-            {
-                SerialDebug.printf("Global feed count = %s\n", valCmdString);
-            }
-            else
-            {
-                SerialMin.printf("2.Unknown cmd: %s  (isGroupTopic=%d)\n", setCmdString, isGroupTopic());
-            }
-
-        }
+                else if (strcasecmp(setCmdString,"disk")==0)
+                {
+                    SerialDebug.printf("Cloud DISK space = %s\n", valCmdString);
+                }
+                else if (strcasecmp(setCmdString,"feedcount")==0)
+                {
+                    SerialDebug.printf("Global feed count = %s\n", valCmdString);
+                }
+                else
+                {
+                    SerialMin.printf("2.Unknown cmd: %s  (isGroupTopic=%d)\n", setCmdString, isGroupTopic());
+                }
+                
+            } // not found
+        } //  (setCmd && valCmd)
         //!5.24.22  send:<request>  .. Note these are for cmd without an argument..
         else if (sendCmd)
         {
@@ -4666,6 +4705,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 //! request a CAPTURE be sent.
                 processBarkletMessage("#CAPTURE", topic);
             }
+           
 #ifdef ESP_M5
 
             else if (strcasecmp(sendCmdString,"volume")==0)
@@ -4681,7 +4721,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 SerialTemp.println(sendCmdString);
             }
 
-        }
+        }  //sendCmd
         //! 9.18.23 set64 with a val
         else if (set64Cmd)
         {

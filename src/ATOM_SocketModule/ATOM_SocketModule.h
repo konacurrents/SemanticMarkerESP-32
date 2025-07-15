@@ -23,6 +23,7 @@ void messageSetVal_ATOM_SocketModule(char *setName, char* valValue, boolean devi
 
 //! 12.28.23, 8.28.23  Adding a way for others to get informed on messages that arrive
 //! for the set,val
+//! 5.21.22 note tthe SEND and CMD are both routed through "send"
 void messageSend_ATOM_SocketModule(char *sendValue);
 
 //! BUTTON PROCESSING abstraction

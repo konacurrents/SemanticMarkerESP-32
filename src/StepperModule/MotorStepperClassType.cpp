@@ -7,14 +7,26 @@
 
 #include "MotorStepperClassType.h"
 
-//!saves the identity
-char _MotorStepperClassIdentity[100];
+//!saves the identity (OOPS.. not working.. it's shared by all class instances.. so last one wins..
+//char _MotorStepperClassIdentity[100];
 
+//! class wide method to set identity and check if pins were specified
 MotorStepperClassType::MotorStepperClassType(char *config)
 {
-    
     SerialDebug.printf("MotorStepperClassType init %s\n", config);
-    strcpy(_MotorStepperClassIdentity, config);
+    //! 5.3.25 create storage here
+    _identityString = (char*)calloc(strlen(config)+1, sizeof(char));
+    strcpy(_identityString, config);
+    
+    //! 7.9.25
+    //! return the sensor specified or null
+    SensorStruct* sensorStruct = getSensor_mainModule(_identityString);
+    if (sensorStruct)
+    {
+        SerialDebug.printf("Setting sensor type %s pins (%d,%d)\n", sensorStruct->sensorName, sensorStruct->pin1, sensorStruct->pin2);
+        setPinValues(sensorStruct->pin1, sensorStruct->pin2);
+    }
+
 }
 
 MotorStepperClassType::~MotorStepperClassType()
@@ -27,7 +39,8 @@ MotorStepperClassType::~MotorStepperClassType()
 //! a known name (like DCMotorStepper, etc)
 char *MotorStepperClassType::classIdentity()
 {
-    return _MotorStepperClassIdentity;
+    SerialDebug.printf("MotorStepperClassType::classIdentity = %s\n", _identityString);
+    return _identityString;
 }
 
 //! returns if clockwise
@@ -39,3 +52,11 @@ boolean MotorStepperClassType::isClockwiseDirection()
     return clockwise;
 }
 
+
+//! set PIN 1 and PIN 2 .
+//! the class instance has to decide what to do with the pin definitions
+void MotorStepperClassType::setPinValues(int pin1, int pin2)
+{
+    _pin1 = pin1;
+    _pin2 = pin2;
+}

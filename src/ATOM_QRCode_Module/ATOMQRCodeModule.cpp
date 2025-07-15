@@ -235,19 +235,19 @@ void checkButtonB_ATOMQRCodeModule()
     if (M5.BtnB.wasReleasefor(3500))
     {
         //        buttonA_longPress_ATOMQRCodeModule();
-        SerialDebug.println(" **** LONG LONG PRESS ***");
+        SerialDebug.println("ATOMQRCodeModule **** LONG LONG PRESS ***");
         _longLongPress_ATOMQRCodeModule = true;
     }
     else if (M5.BtnB.wasReleasefor(1000))
     {
         //        buttonA_longPress_ATOMQRCodeModule();
-        SerialDebug.println(" **** LONG PRESS ***");
+        SerialDebug.println("ATOMQRCodeModule **** LONG PRESS ***");
         _longPress_ATOMQRCodeModule = true;
     }
     else if (M5.BtnB.wasReleased())
     {
         //        buttonA_shortPress_ATOMQRCodeModule();
-        SerialDebug.println(" **** SHORT PRESS ***");
+        SerialDebug.println("ATOMQRCodeModule **** SHORT PRESS ***");
         _shortPress_ATOMQRCodeModule = true;
         
     }
@@ -313,6 +313,7 @@ void setup_ATOMQRCodeModule()
     SerialDebug.println("setup_ATOMQRCodeModule");
     initGlobals_ATOMQRCodeModule();
     
+   
     
 //#define UART_VERSION
     /**
@@ -343,6 +344,10 @@ void setup_ATOMQRCodeModule()
                         // parity bits, and 1 stop bit, and set RX to 22 and TX to 19.
                         // 设置串口二的波特率为115200,8位数据位,没有校验位,1位停止位,并设置RX为22,TX为19
 #endif
+    //! 5.3.25 register our PIN use
+    registerPinUse_mainModule(RX, "RX", "ATOMQRCodeModule", false);
+    registerPinUse_mainModule(TX, "TX", "ATOMQRCodeModule", false);
+    
 #ifdef USE_FAST_LED
     //!NOTE: this could probably be done by ESP_IOT.ino .. but for now keep here (and in the other ATOM code..)
     setup_M5Display();
@@ -552,7 +557,7 @@ void loopCode_ATOMQRCodeModule()
             if (ch != ',')
             {
                 validScannedSM = true;
-                SerialTemp.printf("0x%x ",ch);
+                SerialCall.printf("0x%x ",ch);
                 //                SerialDebug.print(ch);
                 sprintf(buf,"%c",ch);
                 strcat(semanticMarker,buf); //adds NULL

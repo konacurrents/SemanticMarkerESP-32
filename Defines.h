@@ -2,6 +2,7 @@
 //  Defines.h
 //
 //  Created by Scott Moody on 3/8/22.
+//  NOW: May 14, 2025         5/14/25 (3+ years later)
 /*
   //emoteMe {M5QRScanner} {#connectedMe} {I,F}  {'T':'1739574713','dev':'M5QRScanner','user':'scott@konacurrents.com','location':'buckley,wa','ble':'PTClicker:M5QRScanner','v':'Version-(3.11)-4.6.24-ES','chipid':'8593020','ssid':'SunnyWhiteriver', 'smscanner':'on'}
   Publish message(usersP/groups/atlasDogs): #remoteMe {M5QRScanner} {#connectedMe} {I,F}  {'T':'1739574713','dev':'M5QRScanner','user':'scott@konacurrents.com','location':'buckley,wa','ble':'PTClicker:M5QRScanner','v':'Version-(3.11)-4.6.24-ES','chipid':'8593020','ssid':'SunnyWhiteriver', 'smscanner':'on'}
@@ -9,13 +10,13 @@
   Publish message(usersP/bark/scott@konacurrents.com): #remoteMe {M5QRScan
 */
 //! 11.18.24
-//! 2.14.25 Valentines day  (M5Atom was:
+//! 2.14.25 Valentines day  (M5Atom was:es
 //! 3.22.25 adding ScannedSemanticMarker message - to replay on button click
 
 #ifndef Defines_h
 #define Defines_h
 
-//! *******************************
+//! *******************************p
 //! *** 7 main builds numbered below ****
 //! 1. M5 Smart Clicker (Board:
 //#define ESP_M5_SMART_CLICKER_CONFIGURATION
@@ -74,7 +75,7 @@
 // 12.26.23 added for the power socket ATOM
 //BOARD = M5Stick-C-Plus,  type : make uploadFlashM5AtomLiteTEST
 // *** 4
-//#define ESP_M5_ATOM_LITE
+//#define ESP_M5_ATOM_LITEa
 
 
 // an ESP M5 with a camera 8.11.22 (same as M5 without a display or buttons, but with a camera)
@@ -127,7 +128,7 @@
 //! 4.20.24  using library M5GFX 0.1.15 (was 0.0.20) for the M5StickCPlus2
 
 /* *************************** CONFIGURATIONS **********************************/
-//  ******************************* M5 ****************************************** 
+//  ******************************* M5 ******************************************
 
 //! ****** MAIN:  M5 ****
 //M5stack 2.0.5-1.0 (Nov 2022)hula2127
@@ -228,7 +229,7 @@
 //! SEEMS this is only compiler flag for now.. Default OFF anyway
 #define FEED_ON_STARTUP
 #endif
-//  ******************************* ESP32 ****************************************** 
+//  ******************************* ESP32 ******************************************
 
 // *************************** case 3 ESP32 with BOARD *********************************
 #if defined(BOARD)
@@ -296,7 +297,7 @@
 #define USE_WIFI_AP_MODULE
 #endif //ESP_M5_SERVER
 
-//  ******************************* M5ATOM ****************************************** 
+//  ******************************* M5ATOM ******************************************
 
 //!NOTE: M5_ATOM is define for the subset of ESP_M5 that is an ATOM
 //! This turns on features like the LED display
@@ -317,8 +318,12 @@
 #ifdef ESP_M5_ATOM_S3
 #define VERSION "2025d_4.4V(1.0a)-8.30.24-M5_ATOM_S3"
 #else
-//! ***** THIS IS MAIN "ATOM" ***** 3.29.25
-#define VERSION "2025d_4.14-25(4.6c)-ATOM_MOTOR_SERVo_QR_SCAN_DOCFOLLOW_SOCKET_SCANNED_SM_BUTTON"
+//! ***** THIS IS MAIN "ATOM" ***** 3.29.25,  5.14.25   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom
+#define VERSION "v7_12_25(5.8c)-ATOM_PINS_SERIAL_QRSensorsClassSendCMD_StopMotorOnStartup"
+//#define VERSION "v6_20_25(5.7b)-ATOM_SERIAL_QRSensorsClassSendCMD_StopMotorOnStartup"
+//#define VERSION "v5_21-25(5.15d)-ATOM_L9110S_SensorsClassSendCMD_feedOnStartup"
+//#define VERSION "v5_6-25(5.2b)-ATOMClass_HDriver"
+//#define VERSION "2025d_4.14-25(4.6c)-ATOM_MOTOR_SERVo_QR_SCAN_DOCFOLLOW_SOCKET_SCANNED_SM_BUTTON"
 #endif //ESP_M5_ATOM_S3
 
 #define ESP_M5
@@ -332,6 +337,10 @@
 
 #define USE_STEPPER_MODULE
 #define USE_UI_MODULE
+
+//! 5.21.25 adding feed_on_startup .. as the M5Atom is powering the 
+//! motor before we can talk to it.. so this will at least shorten that issue
+#define FEED_ON_STARTUP
 
 //! which ATOM plugs MODULEs are included in build:
 #define ATOM_QRCODE_MODULE
@@ -365,7 +374,7 @@
 
 #endif //ESP_M5_ATOM_LITE
 
-//  ******************************* M5CORE2 ****************************************** 
+//  ******************************* M5CORE2 ******************************************
 //! 1.22.24 M5CORE2 uses M5Core2 Library (not M5StackC-Plus)
 #ifdef M5CORE2_MODULE
 #define VERSION "2025v4.1.25-V(3.8a)-4.5.24-ESP_M5CORE2_OurM5Dsp_Touch_30KPacific_KeyUnit_ClickAudio_SPIFF"
@@ -436,6 +445,10 @@ Error only one of ESP_M5 or ESP_32 or M5_ATOM or M5CORE2_MODULE must be defined
 #define MAIN_BLE_CLIENT_SERVICE (char*)"PTFeeder"
 //!name of service to call (which will always be PTClicker)
 #define M5_BLE_CLIENT_SERVICE (char*)"PTClicker"
+
+//!Defines the name of the service of the server, which for M5 will be PTClicker
+#define MAIN_BLE_SERVER_SERVICE_NAME_PTClicker (char*)"PTClicker"
+#define MAIN_BLE_SERVER_SERVICE_NAME_PTFeeder (char*)"PTFeeder"
 
 //!Defines the name of the service of the server, which for M5 will be PTClicker
 #ifdef ESP_M5
@@ -517,7 +530,6 @@ Error only one of ESP_M5 or ESP_32 or M5_ATOM or M5CORE2_MODULE must be defined
 #ifdef ATOM_SOCKET_MODULE
 #include "src/ATOM_SocketModule/ATOM_SocketModule.h"
 #endif
-
 
 //! 1.6.24
 #ifdef M5CORE2_MODULE

@@ -284,7 +284,7 @@ void checkButtonC_M5Core2Module()
     {
         // since button touched .. to quick vibrate
         vibrate_M5Core2Module(SHORT_VIBRATE);
-        SerialDebug.println(" **** C. SHORT PRESS ***");
+        SerialDebug.println("M5Core2 **** C. SHORT PRESS ***");
         //! update the model (ButtonProcessing)
         toggleShowingScrollingTextMode_displayModule();
 #ifdef USE_MQTT_NETWORKING
@@ -339,7 +339,7 @@ void checkButtonB_M5Core2Module()
         setShowingScrollingTextMode_displayModule(false);
         
         //        buttonA_shortPress_M5Core2Module();
-        SerialDebug.println(" **** B. SHORT PRESS ***");
+        SerialDebug.println("M5Core2 **** B. SHORT PRESS ***");
         //! update the model (ButtonProcessing)
         buttonB_ShortPress();
         //! set A/B/C button touched ..
@@ -392,7 +392,7 @@ void checkButtonA_M5Core2Module()
         setShowingScrollingTextMode_displayModule(false);
         
         //        buttonA_shortPress_M5Core2Module();
-        SerialDebug.println(" **** SHORT PRESS ***");
+        SerialDebug.println("M5Core2 **** SHORT PRESS ***");
         buttonA_ShortPress();
         //! set A/B/C button touched ..
         _buttonTouched_M5Core2Module = true;

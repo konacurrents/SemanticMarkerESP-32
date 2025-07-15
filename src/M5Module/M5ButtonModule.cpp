@@ -242,7 +242,7 @@ void loopKeyUnit()
     if (!digitalRead(KEY_PIN)) 
     {
         // If Key was pressed.  如果按键按下.
-        SerialDebug.println("Key Pressed");
+        SerialDebug.println("M5ButtonModule.Key Pressed");
 #ifdef USE_LED
         changeLedColor();  // Change LED color.  更换LED呼吸灯颜色.
 #endif
@@ -250,7 +250,7 @@ void loopKeyUnit()
         while (!digitalRead(KEY_PIN))
             // Hold until the key released.  在松开按键前保持状态.
             ;
-        SerialDebug.println("Key Released");
+        SerialDebug.println("Button.Key Released");
         
         sendMessageString_mainModule((char*)"KEY Pressed -- call feed");
         

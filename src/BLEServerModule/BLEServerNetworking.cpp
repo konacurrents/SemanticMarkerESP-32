@@ -160,6 +160,13 @@ class BLEServerNetworkingCharacteristicCallbacks : public NimBLECharacteristicCa
                     break;
             }
             SerialDebug.printf("_asciiMessage = '%s'\n", _asciiMessage);
+            //! try reboot...
+            if (strlen(_asciiMessage)>0 && _asciiMessage[0] == 'r')
+            {
+                //! reboot
+                SerialDebug.println(" **** REBOOT ***");
+                rebootDevice_mainModule();
+            }
             //reply right away .. see what happens..
             //sendBLEMessageACKMessage();
             //pCharacteristic->setValue(0x01);  //??  This is the acknowlege(ACK) back to client.  Later this should be contigent on a feed completed
@@ -362,7 +369,7 @@ void setup_BLEServerNetworking(char *serviceName, char * deviceName, char *servi
     _SERVICE_UUID = serviceUUID;
     _CHARACTERISTIC_UUID = characteristicUUID;
 
-    SerialMin.printf("setupBLEServerNetworking(%s,%s,%s,%s)\n", serviceName?serviceName:"NULL", deviceName?deviceName:"NULL", serviceUUID?serviceUUID:"NULL", characteristicUUID?characteristicUUID:"NULL");
+    SerialMin.printf("setup_BLEServerNetworking(%s,%s,%s,%s)\n", serviceName?serviceName:"NULL", deviceName?deviceName:"NULL", serviceUUID?serviceUUID:"NULL", characteristicUUID?characteristicUUID:"NULL");
 
     char *storedDeviceName = deviceName_mainModule();
     SerialTemp.print("Stored DeviceName = ");
