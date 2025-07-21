@@ -740,10 +740,14 @@ void setLastMessageStatus(char *token)
     SerialLots.print("setLastMessageStatus: ");
     SerialLots.println(token);
     _countSinceLastChangedMessageStatus = 0;
+    
+    //! 7.20.25
+    //!https://stackoverflow.com/questions/7352099/stdstring-to-char
+    int time = getTimeStamp_mainModule();
 
     char *deviceName = getDeviceNameMQTT();
     //! add just the version and device name to start, but add the msg=
-    sprintf(_lastMessageStatusURL,"status?v=%s&dev=%s&msg=",VERSION_SHORT, deviceName);
+    sprintf(_lastMessageStatusURL,"status?T=%sv=%s&dev=%s&msg=",time, VERSION_SHORT, deviceName);
     
     //! Make up a shorter version of the message
     if (strcasecmp(token,"FEED")==0)
@@ -2704,6 +2708,10 @@ void performFeedMethod(char *topic)
 #endif
     boolean isGateway = getPreferenceBoolean_mainModule(PREFERENCE_MAIN_GATEWAY_VALUE);
     
+    //! 7.20.25
+    //!https://stackoverflow.com/questions/7352099/stdstring-to-char
+    int time = getTimeStamp_mainModule();
+
     if (isConnectedBLE && isGateway)
     {
         //! FOR NOW , copy the code and create a _fullMessageOut that is for the Paired device...

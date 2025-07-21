@@ -59,16 +59,8 @@ KeyUnitSensorClass::~KeyUnitSensorClass()
 int getDATA_PIN()
 {
     int pin;
-
     //! 7.12.25
-#ifdef DONT_DO_THIS
-    if (getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING))
-        pin= 26;
-    else
-        pin= 23;
-#else
     pin = DATA_PIN;
-#endif
    // SerialDebug.printf("getDATA_PIN = %d\n", pin);
     return pin;
 }
@@ -101,15 +93,7 @@ int getKEY_PIN()
 {
     int pin;
     //! 7.12.25
-#ifdef DONT_DO_THIS
-    int pin;
-    if (getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING))
-        pin = 32;
-    else
-        pin = 33;
-#else
     pin = KEY_PIN;
-#endif
    // SerialDebug.printf("getKEY_PIN = %d\n", pin);
     return pin;
 
@@ -122,7 +106,7 @@ int getKEY_PIN() { return KEY_PIN; };
                    //!setup the KeyUnit
 void KeyUnitSensorClass::setupKeyUnit()
 {
-    SerialDebug.printf(" setupKeyUnit == %p\n", this);
+    SerialDebug.printf("KeyUnitSensorClass.setupKeyUnit == %p\n", this);
     
     pinMode(getKEY_PIN(), INPUT_PULLUP);  // Init Key pin.  初始化Key引脚.
     

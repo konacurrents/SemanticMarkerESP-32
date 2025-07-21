@@ -214,7 +214,7 @@ void setup_ATOM_SocketModule()
     }
     else
     {
-        SerialDebug.println("BuzzerSensorClass specified in sensors");
+        SerialDebug.println("BuzzerSensorClass already specified in sensors");
     }
 #endif
 }

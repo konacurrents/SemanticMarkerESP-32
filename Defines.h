@@ -319,7 +319,9 @@
 #define VERSION "2025d_4.4V(1.0a)-8.30.24-M5_ATOM_S3"
 #else
 //! ***** THIS IS MAIN "ATOM" ***** 3.29.25,  5.14.25   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom
-#define VERSION "v7_12_25(5.8c)-ATOM_PINS_SERIAL_QRSensorsClassSendCMD_StopMotorOnStartup"
+#define VERSION "v7_21_25(5.9d)-ATOM_PINS_GPS_TIME_KEYUNIT_QRSensorsClassSendCMD_StopMotorOnStartup"
+
+//#define VERSION "v7_12_25(5.8c)-ATOM_PINS_SERIAL_QRSensorsClassSendCMD_StopMotorOnStartup"
 //#define VERSION "v6_20_25(5.7b)-ATOM_SERIAL_QRSensorsClassSendCMD_StopMotorOnStartup"
 //#define VERSION "v5_21-25(5.15d)-ATOM_L9110S_SensorsClassSendCMD_feedOnStartup"
 //#define VERSION "v5_6-25(5.2b)-ATOMClass_HDriver"

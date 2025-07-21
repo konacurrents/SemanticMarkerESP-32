@@ -14,23 +14,32 @@
 #include "../M5AtomClassModule/M5Atom_HDriverModuleClass.h"
 //! 5.9.25 -- Dead 77
 #include "../M5AtomClassModule/M5Atom_Core2ModuleClass.h"
+//! 7.17.25 - Adding GPS
+#include "../M5AtomClassModule/M5Atom_TinyGPSModuleClass.h"
 
-#define NUM_M5ATOM_CLASS 3
 
 //! instances of the M5AtomClassType
 
+//1
 M5Atom_SocketModuleClass* _M5Atom_SocketModuleClass;
+//2
 M5Atom_QRCodeModuleClass* _M5Atom_QRCodeModuleClass;
+//3
 M5Atom_HDriverModuleClass* _M5Atom_HDriverModuleClass;
+//4
 M5Atom_Core2ModuleClass* _M5Atom_Core2ModuleClass;
+//! 7.17.25 - Adding GPS
+//! 5
+M5Atom_TinyGPSModuleClass* _M5Atom_TinyGPSModuleClass;
+//! make sure this is updated.
+#define NUM_M5ATOM_CLASS 5
+//! 3.31.25 create array of plugs
+M5AtomClassType* _M5AtomClassTypes[NUM_M5ATOM_CLASS];
 
 //! use this one...
 M5AtomClassType *_whichM5AtomClassType;
 
-//! 3.31.25 create array of plugs
-M5AtomClassType* _M5AtomClassTypes[NUM_M5ATOM_CLASS];
-
-#endif
+#endif //USE_NEW_M5ATOMCLASS
 
 #define USE_SENSOR_CLASS
 #ifdef  USE_SENSOR_CLASS
@@ -223,31 +232,9 @@ void setup_mainModule()
 #ifdef ESP_M5
         
 #ifdef M5_ATOM
-#ifdef USE_NEW_M5ATOMCLASS
         //! 5.6.25 use object version
         savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE,  true); //false);
 
-#else
-        //! 1.4.24 use the _atomKind (which CAN change)
-        switch (getM5ATOMKind_MainModule())
-        {
-            case ATOM_KIND_M5_SCANNER:
-                //! 8.1.23 for the ATOM Lite QRCode Reader
-#ifdef ATOM_QRCODE_MODULE
-                savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE,  true); //false);
-#endif
-                
-                break;
-            case ATOM_KIND_M5_SOCKET:
-                //! 12.26.23 for the ATOM Socket Power
-#ifdef ATOM_SOCKET_MODULE
-                savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE,  true); //false);
-#endif
-                break;
-        }
-        
-#endif //USE_NEW_M5ATOMCLASS
-        
 #else  // not M5_ATOM
 
         // 8.28.23 .. not doing this anymore..
@@ -571,33 +558,12 @@ void messageSetVal_mainModule(char *setName, char* valValue, boolean deviceNameS
     // THE IDEA WOULD be a callback is avaialble..
     //FOR now.. just ifdef
 #ifdef M5_ATOM
-#ifdef USE_NEW_M5ATOMCLASS
+#define USE_NEW_M5ATOMCLASS
 
     //! 5.6.25 use object version
     if (_whichM5AtomClassType)
         _whichM5AtomClassType->messageSetVal_M5AtomClassType(setName, valValue, deviceNameSpecified);
 
-#else
-    
-    //! 1.4.24 use the _atomKind (which CAN change)
-    switch (getM5ATOMKind_MainModule())
-    {
-        case ATOM_KIND_M5_SCANNER:
-            //! 8.1.23 for the ATOM Lite QRCode Reader
-#ifdef ATOM_QRCODE_MODULE
-            messageSetVal_ATOMQRCodeModule(setName, valValue, deviceNameSpecified);
-#endif
-            
-            break;
-        case ATOM_KIND_M5_SOCKET:
-            //! 12.26.23 for the ATOM Socket Power
-#ifdef ATOM_SOCKET_MODULE
-            messageSetVal_ATOM_SocketModule(setName, valValue, deviceNameSpecified);
-#endif
-            break;
-    }
-#endif //USE_NEW_M5ATOMCLASS
-    
 #endif //M5_ATOM
     
 #ifdef M5CORE2_MODULE
@@ -613,30 +579,11 @@ void messageSend_mainModule(char *sendValue, boolean deviceNameSpecified)
 {
 //! 5.21.25 this will overlap with the "cmd" .. so send == cmd
 #ifdef M5_ATOM
-#ifdef USE_NEW_M5ATOMCLASS
+#pragma mark USE_NEW_M5ATOMCLASS
 
     //! 5.6.25 use object version
     if (_whichM5AtomClassType)
         _whichM5AtomClassType->messageSend_M5AtomClassType(sendValue, deviceNameSpecified);
-
-#else
-    //! 1.4.24 use the _atomKind (which CAN change)
-    switch (getM5ATOMKind_MainModule())
-    {
-        case ATOM_KIND_M5_SCANNER:
-            //! 8.1.23 for the ATOM Lite QRCode Reader
-#ifdef ATOM_QRCODE_MODULE
-#endif
-            
-            break;
-        case ATOM_KIND_M5_SOCKET:
-            //! 12.26.23 for the ATOM Socket Power
-#ifdef ATOM_SOCKET_MODULE
-            messageSend_ATOM_SocketModule(sendValue);
-#endif
-            break;
-    }
-#endif //USE_NEW_M5ATOMCLASS
     
 #endif //M5_ATOM
     
@@ -2158,31 +2105,11 @@ char* main_currentStatusJSON()
    // return (char*)"";
     
     //! 1.4.24 work on ATOM kinds without IFDEF (except to bring in the code)
-#ifdef USE_NEW_M5ATOMCLASS
+#pragma mark USE_NEW_M5ATOMCLASS
 
     //! 5.6.25 use object version
     if (_whichM5AtomClassType)
         return _whichM5AtomClassType->currentStatusJSON_M5AtomClassType();
-
-#else
-    //! 1.4.24 use the _atomKind (which CAN change)
-    switch (getM5ATOMKind_MainModule())
-    {
-        case ATOM_KIND_M5_SCANNER:
-            //! 8.1.23 for the ATOM Lite QRCode Reader
-#ifdef ATOM_QRCODE_MODULE
-            return currentStatusJSON_ATOMQRCodeModule();
-#endif
-            
-            break;
-        case ATOM_KIND_M5_SOCKET:
-            //! 12.26.23 for the ATOM Socket Power
-#ifdef ATOM_SOCKET_MODULE
-            return currentStatusJSON_ATOM_SocketModule();
-#endif
-            break;
-    }
-#endif //USE_NEW_M5ATOMCLASS
 
     
 #ifdef M5CORE2_MODULE
@@ -2233,7 +2160,11 @@ void addMoreStatusQueryString()
     //!not done is what we look for ..
     addStatusBooleanFlag("A",!doneWIFI_APModule_Credentials());
 #endif
+#pragma mark reused
+#ifdef OVERLOADS_TIME_T
+    //! 7.20.25 this breaks the T:<time> since there is a dublicate in the URL .. with no error
     addStatusBooleanFlag("T", getPreferenceBoolean_mainModule(PREFERENCE_SENSOR_TILT_VALUE));
+#endif
     
 #ifdef USE_BLE_SERVER_NETWORKING
     addStatusBooleanFlag("S",getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE));
@@ -2276,12 +2207,15 @@ void addMoreStatusQueryString()
 //!if fullStatus, return everything, else just the ATOM stuff
 char* main_currentStatusURL(boolean fullStatus)
 {
+    //!7.20.25 add T too
+    int time = getTimeStamp_mainModule();
     if (fullStatus)
     {
 #ifdef USE_MQTT_NETWORKING
         char *deviceName = getDeviceNameMQTT();
         //!TODO: make sure no spaces ... unless escaped
-        sprintf(_fullStatusString,"status?v=%s&dev=%s&b=%02.0f&temp=%02.0f&c=%0d&t=%0d",VERSION_SHORT, deviceName, getBatPercentage_mainModule(), getTemperature_mainModule(), getFeedCount_mainModule(), getLoopTimer_displayModule());
+      
+        sprintf(_fullStatusString,"status?T=%d&v=%s&dev=%s&b=%02.0f&temp=%02.0f&c=%0d&t=%0d",time, VERSION_SHORT, deviceName, getBatPercentage_mainModule(), getTemperature_mainModule(), getFeedCount_mainModule(), getLoopTimer_displayModule());
         
 #else
         //!TODO: make sure no spaces ... unless escaped
@@ -2294,36 +2228,18 @@ char* main_currentStatusURL(boolean fullStatus)
 #ifdef USE_MQTT_NETWORKING
         char *deviceName = getDeviceNameMQTT();
         //!TODO: make sure no spaces ... unless escaped
-        sprintf(_fullStatusString,"status?v=%s&dev=%s",VERSION_SHORT, deviceName);
+        sprintf(_fullStatusString,"status?T=%d&v=%s&dev=%s",time, VERSION_SHORT, deviceName);
         
 #else
         //!TODO: make sure no spaces ... unless escaped
         sprintf(_fullStatusString,"status?v=%s",VERSION_SHORT);
 #endif
     }
-#ifdef USE_NEW_M5ATOMCLASS
+#pragma mark USE_NEW_M5ATOMCLASS
     //! 5.6.25 use object version
     if (_whichM5AtomClassType)
         strcat(_fullStatusString, _whichM5AtomClassType->currentStatusURL_M5AtomClassType());
-#else
-    //! 1.4.24 use the _atomKind (which CAN change)
-    switch (getM5ATOMKind_MainModule())
-    {
-        case ATOM_KIND_M5_SCANNER:
-            //! 8.1.23 for the ATOM Lite QRCode Reader
-#ifdef ATOM_QRCODE_MODULE
-            strcat(_fullStatusString, currentStatusURL_ATOMQRCodeModule());
-#endif
-            
-            break;
-        case ATOM_KIND_M5_SOCKET:
-            //! 12.26.23 for the ATOM Socket Power
-#ifdef ATOM_SOCKET_MODULE
-            strcat(_fullStatusString, currentStatusURL_ATOM_SocketModule());
-#endif
-            break;
-    }
-#endif //USE_NEW_M5ATOMCLASS
+
     //add to _fullStatusString
     addMoreStatusQueryString();
     
@@ -2423,358 +2339,403 @@ void processClientCommandChar_mainModule(char cmd)
     
     //char cmd = message[0];
     //!only process things that are stored persistently..
-    if ((cmd == 0x00) || (cmd == 's') || (cmd == 'c'))
+    switch (cmd)
     {
-        sendToStepperModule = true;
-    }
-    else if (cmd == 'a')
-    {
-
-        SerialDebug.println("cmd=a startTimer");
-        //!start timer..
-        startStopTimer_mainModule(true);
-
-    }
-    else if (cmd == 'A')
-    {
-
-        SerialDebug.println("cmd=A stopTimer");
-
-        //!start timer..
-        startStopTimer_mainModule(false);
-        
-    }
-    else if (cmd == 'j')
-    {
-        sendToStepperModule = true;
-        SerialLots.println("Setting FeedState = JACKPOT_FEED");
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_JACKPOT_FEED_VALUE, true);
-    
-    }
-    else if (cmd == 'u')
-    {
-        SerialLots.println("Setting feederType = UNO");
-        savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_UNO);
-        
-        //!Issue #332 8.17.2024
-        savePreferenceInt_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 45);
-        //! set autoRotoate as well..
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, false);
-        //! default to  clockwise == 0
-        //! 8.18.24 setting this will check for the factory setting..
-        setClockwiseMotorDirection_mainModule(true);
-    }
-    else if (cmd == 'm')
-    {
-        SerialLots.println("Setting feederType = MINI");
-        //save preference
-        savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_MINI);
-        // turn clockwise..
-        //! 8.18.24 setting this will check for the factory setting..
-        setClockwiseMotorDirection_mainModule(true);
-    }
-    else if (cmd == 'L')
-    {
-        SerialLots.println("Setting feederType = Tumbler");
-        //save preference
-        savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
-        //!Issue #332 8.17.2024
-        savePreferenceInt_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 200);
-        //! set autoRotoate as well..
-        //! 8.18.24 setting this will check for the factory setting..
-        setClockwiseMotorDirection_mainModule(true);
-    }
-    else if (cmd == 'B')
-    {
-        sendToStepperModule = true;
-        SerialDebug.println("Setting buzzStatus = BUZZON");
-        //save pref
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE, true);
-    }
-    else if (cmd == 'b')
-    {
-        sendToStepperModule = true;
-
-        SerialDebug.println("Setting buzzStatus = BUZZOFF");
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE, false);
-    }
-    else if (cmd == 'T')
-    {
-        SerialDebug.println("*** Setting tilt = ON");
-        savePreferenceBoolean_mainModule(PREFERENCE_SENSOR_TILT_VALUE, true);
-    }
-    else if (cmd == 't')
-    {
-        SerialDebug.println("Setting tilt = OFF");
-        savePreferenceBoolean_mainModule(PREFERENCE_SENSOR_TILT_VALUE, false);
-    }
-    else if (cmd == 'R')
-    {
-        SerialLots.println("Clean Credentials");
-        //! dispatches a call to the command specified. This is run on the next loop()
-        main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_CREDENTIALS);
-    }
-    //!6.20.25
+        case 0x00:
+        case 's':
+        case 'c':
+        {
+            sendToStepperModule = true;
+        } break;
+        case 'a':
+        {
+            
+            SerialDebug.println("cmd=a startTimer");
+            //!start timer..
+            startStopTimer_mainModule(true);
+            
+        } break;
+        case 'A':
+        {
+            
+            SerialDebug.println("cmd=A stopTimer");
+            
+            //!start timer..
+            startStopTimer_mainModule(false);
+            
+        } break;
+        case 'j':
+        {
+            sendToStepperModule = true;
+            SerialLots.println("Setting FeedState = JACKPOT_FEED");
+            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_JACKPOT_FEED_VALUE, true);
+            
+        } break;
+        case 'u':
+        {
+            SerialLots.println("Setting feederType = UNO");
+            savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_UNO);
+            
+            //!Issue #332 8.17.2024
+            savePreferenceInt_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 45);
+            //! set autoRotoate as well..
+            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, false);
+            //! default to  clockwise == 0
+            //! 8.18.24 setting this will check for the factory setting..
+            setClockwiseMotorDirection_mainModule(true);
+        } break;
+        case 'm':
+        {
+            SerialLots.println("Setting feederType = MINI");
+            //save preference
+            savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_MINI);
+            // turn clockwise..
+            //! 8.18.24 setting this will check for the factory setting..
+            setClockwiseMotorDirection_mainModule(true);
+        } break;
+        case 'L':
+        {
+            SerialLots.println("Setting feederType = Tumbler");
+            //save preference
+            savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
+            //!Issue #332 8.17.2024
+            savePreferenceInt_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 200);
+            //! set autoRotoate as well..
+            //! 8.18.24 setting this will check for the factory setting..
+            setClockwiseMotorDirection_mainModule(true);
+        } break;
+        case 'B':
+        {
+            sendToStepperModule = true;
+            SerialDebug.println("Setting buzzStatus = BUZZON");
+            //save pref
+            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE, true);
+        } break;
+        case 'b':
+        {
+            sendToStepperModule = true;
+            
+            SerialDebug.println("Setting buzzStatus = BUZZOFF");
+            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE, false);
+        } break;
+        case 'T':
+        {
+            SerialDebug.println("*** Setting tilt = ON");
+            savePreferenceBoolean_mainModule(PREFERENCE_SENSOR_TILT_VALUE, true);
+        } break;
+        case 't':
+        {
+            SerialDebug.println("Setting tilt = OFF");
+            savePreferenceBoolean_mainModule(PREFERENCE_SENSOR_TILT_VALUE, false);
+        } break;
+        case 'R':
+        {
+            SerialLots.println("Clean Credentials");
+            //! dispatches a call to the command specified. This is run on the next loop()
+            main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_CREDENTIALS);
+        } break;
+            //!6.20.25
 #ifdef NOT_SUPPORTED_RIGHT_NOW
-    else if (cmd == 'O')
-    {
-        SerialLots.println("OTA Update.. ");
-        //! dispatches a call to the command specified. This is run on the next loop()
-        main_dispatchAsyncCommand(ASYNC_CALL_OTA_UPDATE);
-    }
+        case 'O':
+        {
+            SerialLots.println("OTA Update.. ");
+            //! dispatches a call to the command specified. This is run on the next loop()
+            main_dispatchAsyncCommand(ASYNC_CALL_OTA_UPDATE);
+        } break;
 #endif
-    else if (cmd == 'X')
-    {
-        SerialDebug.println("Clean EPROM.. ");
-        //! dispatches a call to the command specified. This is run on the next loop()
-        main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_EPROM);
-    }
-    
-    //!NOTE: the gateway is auto selected for now. A future version might manually set it in other situations (eg. my iPhone app should have a flag to not be a gateway at time)
-    else if (cmd == 'G')
-    {
-        SerialDebug.println("Setting Gateway = ON");
-        main_dispatchAsyncCommand(ASYNC_SET_GATEWAY_ON);
-    }
-    else if (cmd == 'g')
-    {
-        SerialDebug.println("Setting Gateway = OFF");
-        main_dispatchAsyncCommand(ASYNC_SET_GATEWAY_OFF);
-    }
-    else if (cmd == '_')
-    {
-        //This is from the handshake like "_BLEClient_ESP_M5"
-        SerialLots.println("unused cmd '_'");
-    }
-    else if (cmd == 'Z')
-    {
-        sendToStepperModule = false;
-        
-        SerialDebug.println("Setting SM Zoom = zoomed");
-        savePreferenceBoolean_mainModule(PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE, true);
-    }
-    else if (cmd == 'z')
-    {
-        sendToStepperModule = false;
-        
-        SerialDebug.println("Setting SM Zoom = full SM");
-        savePreferenceBoolean_mainModule(PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE, false);
-    }
-    else if (cmd == 'N')
-    {
-        //NOTE: this might be where we toggle credentials?? TODO
-        //found other one..
-        char *credentials = main_JSONStringForWIFICredentials();
-
-        //!These are the ASYNC_CALL_PARAMETERS_MAX
-        main_dispatchAsyncCommandWithString(ASYNC_CALL_BLE_CLIENT_PARAMETER, credentials);
-    }
-    else if (cmd == 'n')
-    {
-        //!NOTE: this is almost the same as 'w' except there might be more WIFI than 2 (so swap is different).
-        main_dispatchAsyncCommand(ASYNC_NEXT_WIFI);
-    }
-    else if (cmd == 'W')
-    {
-        main_dispatchAsyncCommand(ASYNC_RESTART_WIFI_MQTT);
-    }
-    else if (cmd == 'w')
-    {
-        SerialDebug.println("w for swapWifi");
-
-        main_dispatchAsyncCommand(ASYNC_SWAP_WIFI);
-    }
-    else if (cmd == 'P')
-    {
-        //printout the spiff.. to the serial debug monitor
-        //!Restarts (or attempts) a restart of the WIFI using the existing credentials -- vs the 'n' command
-        printFile_SPIFFModule();
-    }
-    //! 8.16.24 per #332
-    else if (cmd == 'H')
-    {
-        SerialDebug.printf("PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING true");
-
-        // autoMotorDirection ON
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
-        
-    }
-    //! 8.16.24 per #332
-    
-    else if (cmd == 'h')
-    {
-        SerialDebug.printf("PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING false");
-
-        // autoMotorDirection off
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, false);
-    }
-    else if (cmd == 'D')
-    {
-        SerialDebug.printf("PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING counter clockwise");
-
-        //!NOTE: no current mode to specify CCW or CW dynamically (non factory reset)
-        // motor direction = counterclockwise
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING,false);
-    }
-    else if (cmd == 'd')
-    {
-        SerialDebug.printf("PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING clockwise");
-
-        // motor direction ==  (clockwise)
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING,true);
-    }
-    //! 9.30.23 reverse direction
-    else if (cmd == 'Q')
-    {
-        SerialDebug.printf("PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING reverse direction");
-
-        //! note: reboot not needed as the next time a feed happens, it reads this value
-        // motor direction ==  (reverse)
-        boolean  currentDirection = getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING);
-        currentDirection = !currentDirection;
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING,currentDirection);
-
-    }
-    else if (cmd == 'E')
-    {
-        SerialDebug.printf("PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING false");
-
-        //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
-        savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,false);
-        // reboot
-        rebootDevice_mainModule();
-    }
-    else if (cmd == 'e')
-    {
-        SerialDebug.printf("PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING true");
-
-        //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
-        savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
-        // reboot
-        rebootDevice_mainModule();
-    }
-    else if (cmd == 'r')
-    {
-        // reboot
-        SerialDebug.println("REBOOT ...");
-        rebootDevice_mainModule();
-    }
-
-    else if (cmd == 'p')
-    {
-        //! poweroff
-        SerialDebug.printf("(%c) POWEROFF ...", cmd);
-        poweroff_mainModule();
-    }
-    //! 7.12.25
-    //!  0 == Clear SENSOR definitions
-    else if (cmd == '0')
-    {
-        //! poweroff
-        SerialDebug.println("Clearing Sensors");
-        setSensorsString_mainModule((char*)"");
-
-        //! reboot .. so the sensors are set..
-        rebootDevice_mainModule();
-    }
-    //! 7.9.25
-    //!  1 == Init SENSOR definitions
-    else if (cmd == '1')
-    {
-        //! poweroff
-        SerialDebug.println("Default Sensors");
-        //resetSensorToDefault_mainModule();
-        setSensorsString_mainModule((char*)"BuzzerSensorClass,23,33,L9110S_DCStepperClass,21,25");
-
-        //! reboot .. so the sensors are set..
-        rebootDevice_mainModule();
-    }
-    //! 7.12.25
-    //!  2 == default for SMART Button
-    else if (cmd == '2')
-    {
-        //! poweroff
-        SerialDebug.println("Default for SMART Button");
-        setSensorsString_mainModule((char*)"");
-        
-        //! reboot .. so the sensors are set..
-        rebootDevice_mainModule();
-    }
-    //! 7.9.25 grabbed from BOOTSTRAP let someone update the atom to the recent OTA
-    else if (cmd == '5')
-    {
-        SerialDebug.println(" *** performing m5atom OTA Update");
-        
-        //!retrieves from constant location
-        performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5Atom/ESP_IOT.ino.m5stick_c_plus.bin");
-    }
-    //! 7.9.25 grabbed from BOOTSTRAP let someone update the atom to the recent OTA
-    else if (cmd == '6')
-    {
-        SerialDebug.println(" *** performing m5atom OTA Update - DAILY");
-        
-        //!retrieves from constant location
-        performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5Atom/daily/ESP_IOT.ino.m5stick_c_plus.bin");
-    }
-    else if (cmd == '.')
-    {
-        
-        SerialMin.println("Valid Commands: ");
-        SerialMin.println("         . = help, this message");
-        SerialMin.println("         p = poweroff if can");
-        SerialMin.println(" 0x0, s, c == Single Feed ");
-        SerialMin.println("         a == AutoFeed On");
-        SerialMin.println("         A == AutoFeed Off");
-        SerialMin.println("         u == UNO ");
-        SerialMin.println("         m == MINI ");
-        SerialMin.println("         L == tumbler");
-        SerialMin.println("         H == autoMotorDirection on");
-        SerialMin.println("         h == autoMotorDirection off");
-        SerialMin.println("         D == FACTORY counter clockwise motor direction");
-        SerialMin.println("         d == FACTORY clockwise motor direction");
-        SerialMin.println("         Q == change motor direction opposite of current");
-
-        SerialMin.println("         B == Buzzer On");
-        SerialMin.println("         b == Buzzer Off");
-        SerialMin.println("         G == Gateway On");
-        SerialMin.println("         g == Gateway Off");
-        SerialMin.println("         R == clean credentials");
-        SerialMin.println("         X == clean EPROM");
-        SerialMin.println("         r == reboot ");
-        //!6.20.25
+        case 'X':
+        {
+            SerialDebug.println("Clean EPROM.. ");
+            //! dispatches a call to the command specified. This is run on the next loop()
+            main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_EPROM);
+        } break;
+            
+            //!NOTE: the gateway is auto selected for now. A future version might manually set it in other situations (eg. my iPhone app should have a flag to not be a gateway at time)
+        case 'G':
+        {
+            SerialDebug.println("Setting Gateway = ON");
+            main_dispatchAsyncCommand(ASYNC_SET_GATEWAY_ON);
+        } break;
+        case 'g':
+        {
+            SerialDebug.println("Setting Gateway = OFF");
+            main_dispatchAsyncCommand(ASYNC_SET_GATEWAY_OFF);
+        } break;
+        case '_':
+        {
+            //This is from the handshake like "_BLEClient_ESP_M5"
+            SerialLots.println("unused cmd '_'");
+        } break;
+        case 'Z':
+        {
+            sendToStepperModule = false;
+            
+            SerialDebug.println("Setting SM Zoom = zoomed");
+            savePreferenceBoolean_mainModule(PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE, true);
+        } break;
+        case 'z':
+        {
+            sendToStepperModule = false;
+            
+            SerialDebug.println("Setting SM Zoom = full SM");
+            savePreferenceBoolean_mainModule(PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE, false);
+        } break;
+        case 'N':
+        {
+            //NOTE: this might be where we toggle credentials?? TODO
+            //found other one..
+            char *credentials = main_JSONStringForWIFICredentials();
+            
+            //!These are the ASYNC_CALL_PARAMETERS_MAX
+            main_dispatchAsyncCommandWithString(ASYNC_CALL_BLE_CLIENT_PARAMETER, credentials);
+        } break;
+        case 'n':
+        {
+            //!NOTE: this is almost the same as 'w' except there might be more WIFI than 2 (so swap is different).
+            main_dispatchAsyncCommand(ASYNC_NEXT_WIFI);
+        } break;
+        case 'W':
+        {
+            main_dispatchAsyncCommand(ASYNC_RESTART_WIFI_MQTT);
+        } break;
+        case 'w':
+        {
+            SerialDebug.println("w for swapWifi");
+            
+            main_dispatchAsyncCommand(ASYNC_SWAP_WIFI);
+        } break;
+        case 'P':
+        {
+            //printout the spiff.. to the serial debug monitor
+            //!Restarts (or attempts) a restart of the WIFI using the existing credentials -- vs the 'n' command
+            printFile_SPIFFModule();
+        } break;
+            //! 8.16.24 per #332
+        case 'H':
+        {
+            SerialDebug.printf("PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING true");
+            
+            // autoMotorDirection ON
+            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
+            
+        } break;
+            //! 8.16.24 per #332
+            
+        case 'h':
+        {
+            SerialDebug.printf("PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING false");
+            
+            // autoMotorDirection off
+            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, false);
+        } break;
+        case 'D':
+        {
+            SerialDebug.printf("PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING counter clockwise");
+            
+            //!NOTE: no current mode to specify CCW or CW dynamically (non factory reset)
+            // motor direction = counterclockwise
+            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING,false);
+        } break;
+        case 'd':
+        {
+            SerialDebug.printf("PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING clockwise");
+            
+            // motor direction ==  (clockwise)
+            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_FACTORY_CLOCKWISE_MOTOR_DIRECTION_SETTING,true);
+        } break;
+            //! 9.30.23 reverse direction
+        case 'Q':
+        {
+            SerialDebug.printf("PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING reverse direction");
+            
+            //! note: reboot not needed as the next time a feed happens, it reads this value
+            // motor direction ==  (reverse)
+            boolean  currentDirection = getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING);
+            currentDirection = !currentDirection;
+            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING,currentDirection);
+            
+        } break;
+        case 'E':
+        {
+            SerialDebug.printf("PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING false");
+            
+            //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
+            savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,false);
+            // reboot
+            rebootDevice_mainModule();
+        } break;
+        case 'e':
+        {
+            SerialDebug.printf("PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING true");
+            
+            //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
+            savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
+            // reboot
+            rebootDevice_mainModule();
+        } break;
+        case 'r':
+        {
+            // reboot
+            SerialDebug.println("REBOOT ...");
+            rebootDevice_mainModule();
+        } break;
+            
+        case 'p':
+        {
+            //! poweroff
+            SerialDebug.printf("(%c) POWEROFF ...", cmd);
+            poweroff_mainModule();
+        } break;
+            //! 7.12.25
+            //!  0 == Clear SENSOR definitions
+        case '0':
+        {
+            //! poweroff
+            SerialDebug.println("Clearing Sensors");
+            setSensorsString_mainModule((char*)"");
+            
+            //! reboot .. so the sensors are set..
+            rebootDevice_mainModule();
+        } break;
+            //! 7.9.25
+            //!  1 == Init SENSOR definitions
+        case '1':
+        {
+            //! poweroff
+            SerialDebug.println("Default Sensors");
+            //resetSensorToDefault_mainModule();
+            setSensorsString_mainModule((char*)"BuzzerSensorClass,23,33,L9110S_DCStepperClass,21,25");
+            
+            //! reboot .. so the sensors are set..
+            rebootDevice_mainModule();
+        } break;
+            //! 7.12.25
+            //!  2 == default for SMART Button
+        case '2':
+        {
+            //! poweroff
+            SerialDebug.println("Default for SMART Button");
+            setSensorsString_mainModule((char*)"");
+            
+            //! reboot .. so the sensors are set..
+            rebootDevice_mainModule();
+        } break;
+            //! 7.19.25 add Clear Sensors
+        case '3':
+        {
+            //! poweroff
+            SerialDebug.println("No Sensors");
+            setSensorsString_mainModule((char*)"");
+            
+            //! reboot .. so the sensors are set..
+            rebootDevice_mainModule();
+        } break;
+            //! 7.19.25 BLE Client ON
+        case '4':
+        {
+            boolean val = getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE);
+            val = !val;
+            //! poweroff
+            SerialDebug.printf("BLE Client %s\n", val?"ON":"OFF");
+            savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE, val);
+            
+            //! reboot .. so the sensors are set..
+            rebootDevice_mainModule();
+        } break;
+            //! 7.9.25 grabbed from BOOTSTRAP let someone update the atom to the recent OTA
+        case '5':
+        {
+            SerialDebug.println(" *** performing m5atom OTA Update");
+            
+            //!retrieves from constant location
+            performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5Atom/ESP_IOT.ino.m5stick_c_plus.bin");
+        } break;
+            //! 7.9.25 grabbed from BOOTSTRAP let someone update the atom to the recent OTA
+        case '6':
+        {
+            SerialDebug.println(" *** performing m5atom OTA Update - DAILY");
+            
+            //!retrieves from constant location
+            performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5Atom/daily/ESP_IOT.ino.m5stick_c_plus.bin");
+        } break;
+        case '7':
+        {
+            SerialDebug.println(" *** performing m5atom OTA Update - BOOTSTRAP");
+            
+            //!retrieves from constant location
+            performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/Bootstrap/ESP_M5_BOOTSTRAP.ino.m5stack_stickc_plus.bin");
+        } break;
+        case '.':
+        {
+            
+            //! returns if the BLEClient is turned on.. note, if connected to a BLE device, then disconnect
+            
+            boolean val = getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE);
+            
+            
+            SerialMin.println("Valid Commands: ");
+            SerialMin.println("         . = help, this message");
+            SerialMin.println("         p = poweroff if can");
+            SerialMin.println(" 0x0, s, c == Single Feed ");
+            SerialMin.println("         a == AutoFeed On");
+            SerialMin.println("         A == AutoFeed Off");
+            SerialMin.println("         u == UNO ");
+            SerialMin.println("         m == MINI ");
+            SerialMin.println("         L == tumbler");
+            SerialMin.println("         H == autoMotorDirection on");
+            SerialMin.println("         h == autoMotorDirection off");
+            SerialMin.println("         D == FACTORY counter clockwise motor direction");
+            SerialMin.println("         d == FACTORY clockwise motor direction");
+            SerialMin.println("         Q == change motor direction opposite of current");
+            
+            SerialMin.println("         B == Buzzer On");
+            SerialMin.println("         b == Buzzer Off");
+            SerialMin.println("         G == Gateway On");
+            SerialMin.println("         g == Gateway Off");
+            SerialMin.println("         R == clean credentials");
+            SerialMin.println("         X == clean EPROM");
+            SerialMin.println("         r == reboot ");
+            //!6.20.25
+            
+            SerialMin.println("         T == tiltOn");
+            SerialMin.println("         t == tiltOff");
+            SerialMin.println("         N == send WIFI Credential to BLEServer");
+            SerialMin.println("         n == next WIFI Credential");
+            SerialMin.println("         W == retry WIFI");
+            SerialMin.println("         w == swap WIFI");
+            SerialMin.println("         P == print SPIFF");
+            SerialMin.println("         E == use only PTFeeder naming");
+            SerialMin.println("         e == use naming PTFeeder:name");
+            SerialMin.println("         Z == Setting SM Zoom = zoomed");
+            SerialMin.println("         z == Setting SM Zoom = full SM");
+            SerialMin.println("         0 == no sensors");
+            SerialMin.println("         1 == Default SENSOR for new feeder");
+            SerialMin.println("         2 == Default SENSOR for SMART Button");
+            SerialMin.println("         3 == Clear Sensors");
+            SerialMin.printf ("         4 == Turn BLE Client %s (will look for PTFeeder)\n", val?"OFF":"ON");
+            
 #ifdef NOT_SUPPORTED_RIGHT_NOW
-        SerialMin.println("         O == OTA update");
+            SerialMin.println("         O == OTA update");
 #else
-        SerialMin.println("         5 == m5atom DEV OTA update");
-        SerialMin.println("         6 == m5atom DAILY TEST DEV OTA update");
+            SerialMin.println("         5 == m5atom DEV OTA update");
+            SerialMin.println("         6 == m5atom DAILY TEST DEV OTA update");
+            SerialMin.println("         7 == go back to m5atom BOOTSTRAP");
 
 #endif
-        SerialMin.println("         T == tiltOn");
-        SerialMin.println("         t == tiltOff");
-        SerialMin.println("         N == send WIFI Credential to BLEServer");
-        SerialMin.println("         n == next WIFI Credential");
-        SerialMin.println("         W == retry WIFI");
-        SerialMin.println("         w == swap WIFI");
-        SerialMin.println("         P == print SPIFF");
-        SerialMin.println("         E == use only PTFeeder naming");
-        SerialMin.println("         e == use naming PTFeeder:name");
-        SerialMin.println("         Z == Setting SM Zoom = zoomed");
-        SerialMin.println("         z == Setting SM Zoom = full SM");
-        SerialMin.println("         0 == no sensors");
-        SerialMin.println("         1 == Default SENSOR for new feeder");
-        SerialMin.println("         2 == Default SENSOR for SMART Button");
-
-        SerialMin.println();
-        SerialMin.println("Full API at: https://github.com/konacurrents/SemanticMarkerAPI");
-        SerialMin.println();
-
-        //!print out stuff
-        main_printModuleConfiguration();
-   
-    }
-    else
-    {
-        SerialMin.printf("*****invalid command '%c' from client (use '.' for help)  *****\n", cmd);
+            SerialMin.println();
+            SerialMin.println("Full API at: https://github.com/konacurrents/SemanticMarkerAPI");
+            SerialMin.println();
+            
+            //!print out stuff
+            main_printModuleConfiguration();
+            
+        } break;
+            break;
+        default:
+            
+        {
+            SerialMin.printf("*****invalid command '%c' from client (use '.' for help)  *****\n", cmd);
+        }
     }
     
 #ifdef USE_STEPPER_MODULE
@@ -3091,7 +3052,7 @@ void loop_Sensors_mainModule()
     loop_M5Core2Module();
 #elif defined(M5_ATOM)
     
-#ifdef USE_NEW_M5ATOMCLASS
+#pragma mark USE_NEW_M5ATOMCLASS
     //! 5.6.25 use object version
     if (_whichM5AtomClassType)
     {
@@ -3103,27 +3064,7 @@ void loop_Sensors_mainModule()
         SerialDebug.println("*** _whichM5AtomClassType NULL ***");
 
     }
-#else
-    // start atom
-    //! multiple ATOM's alive at same time
-    //! 1.4.24 use the _atomKind (which CAN change)
-    switch (getM5ATOMKind_MainModule())
-    {
-        case ATOM_KIND_M5_SCANNER:
-            //! 8.1.23 for the ATOM Lite QRCode Reader
-#ifdef ATOM_QRCODE_MODULE
-            loop_ATOMQRCodeModule();
-#endif
-            
-            break;
-        case ATOM_KIND_M5_SOCKET:
-            //! 12.26.23 for the ATOM Socket Power
-#ifdef ATOM_SOCKET_MODULE
-            loop_ATOM_SocketModule();
-#endif
-            break;
-    }
-#endif //USE_NEW_M5ATOMCLASS
+
     // end atom
     
 #elif defined(USE_CAMERA_MODULE)
@@ -3156,6 +3097,8 @@ void setup_Sensors_mainModule()
     _M5Atom_SocketModuleClass = new M5Atom_SocketModuleClass((char*)"M5AtomSocket");
     _M5Atom_QRCodeModuleClass = new M5Atom_QRCodeModuleClass((char*)"M5AtomScanner");
     _M5Atom_HDriverModuleClass = new M5Atom_HDriverModuleClass((char*)"M5HDriver");
+    //! 7.17.25
+    _M5Atom_TinyGPSModuleClass = new M5Atom_TinyGPSModuleClass((char*)"M5AtomTinyGPS");
 
     int whichM5AtomIndex = 0;
     SerialDebug.println("setup_M5Atoms");
@@ -3164,6 +3107,14 @@ void setup_Sensors_mainModule()
     _M5AtomClassTypes[whichM5AtomIndex++] = _M5Atom_SocketModuleClass;
     _M5AtomClassTypes[whichM5AtomIndex++] = _M5Atom_QRCodeModuleClass;
     _M5AtomClassTypes[whichM5AtomIndex++] = _M5Atom_HDriverModuleClass;
+    //! 7.17.25
+    _M5AtomClassTypes[whichM5AtomIndex++] = _M5Atom_TinyGPSModuleClass;
+
+    //! add check..
+    if (whichM5AtomIndex > NUM_M5ATOM_CLASS)
+    {
+        SerialDebug.printf("**** sensors are more than max .. FIX CODE");
+    }
     
     //! use this one...
     _whichM5AtomClassType = NULL;
@@ -3195,32 +3146,10 @@ void setup_Sensors_mainModule()
 #endif
     
     //! now the setup() call
-#ifdef USE_NEW_M5ATOMCLASS
+#pragma mark USE_NEW_M5ATOMCLASS
     //! 5.6.25 use object version
     if (_whichM5AtomClassType)
         _whichM5AtomClassType->setup_M5AtomClassType();
-#else
-    // start atom
-    //! multiple ATOM's alive at same time
-    //! 1.4.24 use the _atomKind (which CAN change)
-    switch (getM5ATOMKind_MainModule())
-    {
-        case ATOM_KIND_M5_SCANNER:
-            //! 8.1.23 for the ATOM Lite QRCode Reader
-#ifdef ATOM_QRCODE_MODULE
-            setup_ATOMQRCodeModule();
-#endif
-            
-            break;
-        case ATOM_KIND_M5_SOCKET:
-            //! 12.26.23 for the ATOM Socket Power
-#ifdef ATOM_SOCKET_MODULE
-            setup_ATOM_SocketModule();
-#endif
-            break;
-    }
-    
-#endif //USE_NEW_M5ATOMCLASS
     
     // end atom
 #elif defined(USE_CAMERA_MODULE)
@@ -3240,30 +3169,11 @@ void buttonA_ShortPress_mainModule()
 #ifdef M5CORE2_MODULE
     buttonA_ShortPress_M5Core2Module();
 #elif defined(M5_ATOM)
-#ifdef USE_NEW_M5ATOMCLASS
+#pragma mark USE_NEW_M5ATOMCLASS
     //! 5.6.25 use object version
     if (_whichM5AtomClassType)
         _whichM5AtomClassType->buttonA_ShortPress_M5AtomClassType();
-#else
-    
-    //! 1.4.24 use the _atomKind (which CAN change)
-    switch (getM5ATOMKind_MainModule())
-    {
-        case ATOM_KIND_M5_SCANNER:
-            //! 8.1.23 for the ATOM Lite QRCode Reader
-#ifdef ATOM_QRCODE_MODULE
-            buttonA_ShortPress_ATOMQRCodeModule();
-#endif
-            
-            break;
-        case ATOM_KIND_M5_SOCKET:
-            //! 12.26.23 for the ATOM Socket Power
-#ifdef ATOM_SOCKET_MODULE
-            buttonA_ShortPress_ATOM_SocketModule();
-#endif
-            break;
-    }
-#endif //USE_NEW_M5ATOMCLASS
+
 // end atom
 #elif defined(USE_CAMERA_MODULE)
     buttonA_ShortPress_CameraModule();
@@ -3283,30 +3193,10 @@ void buttonA_LongPress_mainModule()
     buttonA_ShortPress_M5Core2Module();
 #elif defined(M5_ATOM)
     
-#ifdef USE_NEW_M5ATOMCLASS
+#pragma mark USE_NEW_M5ATOMCLASS
     //! 5.6.25 use object version
     if (_whichM5AtomClassType)
         _whichM5AtomClassType->buttonA_LongPress_M5AtomClassType();
-#else
-    //! 1.4.24 use the _atomKind (which CAN change)
-    switch (getM5ATOMKind_MainModule())
-    {
-        case ATOM_KIND_M5_SCANNER:
-            //! 8.1.23 for the ATOM Lite QRCode Reader
-#ifdef ATOM_QRCODE_MODULE
-            buttonA_LongPress_ATOMQRCodeModule();
-#endif
-            
-            break;
-        case ATOM_KIND_M5_SOCKET:
-            //! 12.26.23 for the ATOM Socket Power
-#ifdef ATOM_SOCKET_MODULE
-            buttonA_LongPress_ATOM_SocketModule();
-#endif
-            break;
-    }
-    // end atom
-#endif //USE_NEW_M5ATOMCLASS
     
 #elif defined(USE_CAMERA_MODULE)
     buttonA_LongPress_CameraModule();

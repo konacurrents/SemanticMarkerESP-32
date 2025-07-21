@@ -63,7 +63,7 @@ void setup_StepperClasses()
 
     
     //!TODO: create an array of plug options .. then call their "identity" method
-
+    SerialDebug.println("Done setup_StepperClasses");
 }
 #else
 //! for now..
