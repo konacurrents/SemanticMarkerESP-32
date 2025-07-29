@@ -323,7 +323,10 @@ void sendStrings_SPIFFModule(int numberOfLines)
     
     int len = len_SPIFFFile(SPIFFS, SPIFF_FILE_NAME);
     SerialDebug.printf("sendStrings_SPIFFModule (%d)\n", len);
-    publishSPIFFFile((char*)"usersP/bark/images", SPIFF_FILE_NAME, len);
+#ifdef USE_MQTT_NETWORKING
+    publishSPIFFFile_MQTT((char*)"usersP/bark/images", SPIFF_FILE_NAME, len);
+#endif
+    
 #ifdef OLD
     
     SerialDebug.println("sendStrings_SPIFFModule");

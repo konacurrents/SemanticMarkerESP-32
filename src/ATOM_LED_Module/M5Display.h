@@ -29,6 +29,8 @@ void clear();
 //! color the button light
 void fillpix(CRGB Color);
 
+//! 7.24.25 return a (semi) random color
+CRGB getRandomColor();
 
 //! colors
 #define L_RED    (CRGB) 0xff0000

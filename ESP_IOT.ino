@@ -1,7 +1,7 @@
 /*
   Name:		NimBLE_PetTutor_Server.ino
   Created:	8/25/2021 7:49:11 PM
-  Author:	wes and scott
+  Author:	wes and scottl
 */
 
 //!defines.h defines the #ifdef USE_MODULE statements, as they are included elsewhere.. Don't define them here.
@@ -442,4 +442,4 @@ void loop() {
 #else
     delay(50); // 1.26.24 try a smaller loop delay
 #endif
-}
+} //loop()

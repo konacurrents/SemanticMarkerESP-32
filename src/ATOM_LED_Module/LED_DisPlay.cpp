@@ -2,6 +2,8 @@
 #ifdef USE_FAST_LED
 #include "LED_DisPlay.h"
 
+#define DATA_PIN 27
+
 /**
  * Code is from M5Atom.h object, but refactored to be it's own object
  */
@@ -18,6 +20,9 @@ void LED_DisPlay::begin(uint8_t LEDNumber)
     FastLED.addLeds<WS2812, DATA_PIN, GRB>(_ledbuff, LEDNumber);
     _xSemaphore = xSemaphoreCreateMutex();
     _numberled = LEDNumber;
+    
+    registerPinUse_mainModule(DATA_PIN, "DATA_PIN", "LED_DisPlay::begin", false);
+
 }
 
 void LED_DisPlay::run(void *data)

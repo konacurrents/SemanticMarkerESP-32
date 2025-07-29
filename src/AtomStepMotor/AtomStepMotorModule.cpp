@@ -17,6 +17,8 @@ StepperDriver _stepperDriver(_motor_steps, _step_divisition, _en_pin, _dir_pin, 
 
 void setup_AtomStepMotorModule()
 {
+    SerialDebug.println("StepperDriver.M5.begin");
+
     M5.begin(true, false, true);
     _stepperDriver.setSpeed(0);
     _stepperDriver.powerEnable(true);

@@ -641,6 +641,7 @@ void readPreferences_mainModule()
 //!BUT these are not stored in EPROM. The next method 
 void initPreferencesMainModule()
 {
+    SerialDebug.println("***initPreferencesMainModule");
 #ifdef AP_DEBUG_MODE
 #else
    // savePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING,"");
@@ -754,7 +755,7 @@ void initPreferencesMainModule()
                 (char*) EPROM_STEPPER_ANGLE_FLOAT_SETTING;
 #ifdef ESP_M5
                 //! 5.2.25 default 0.5 SECONDS (not angle for the HDriver
-                _preferenceMainModuleLookupDefaults[i] = (char*)"0.5";
+                _preferenceMainModuleLookupDefaults[i] = (char*)"0.25";
 #else
                 _preferenceMainModuleLookupDefaults[i] = (char*)"22.5";
 #endif
@@ -1062,7 +1063,7 @@ void initPreferencesMainModule()
             case PREFERENCE_SENSOR_PLUGS_SETTING:
                 _preferenceMainModuleLookupEPROMNames[i] =
                 (char*)EPROM_SENSOR_PLUGS_SETTING;
-                _preferenceMainModuleLookupDefaults[i] = (char*)"";
+                _preferenceMainModuleLookupDefaults[i] = (char*)"L9110S_DCStepperClass";
                 break;
                 
                 //!5.14.25 Dead 5.14.74 Montana
@@ -1324,8 +1325,8 @@ SensorStruct* getSensor_mainModule(char *sensorName)
             break;
         }
     }
-    if (!sensor)
-        PRINT("*** No sensor: %s\n", sensorName);
+//    if (!sensor)
+//        PRINT("*** No sensor: %s\n", sensorName);
     return sensor;
 }
 

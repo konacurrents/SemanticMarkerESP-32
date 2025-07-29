@@ -13,7 +13,7 @@
 //! class wide method to set identity and check if pins were specified
 MotorStepperClassType::MotorStepperClassType(char *config)
 {
-    SerialDebug.printf("MotorStepperClassType init %s\n", config);
+    //SerialDebug.printf("MotorStepperClassType init %s\n", config);
     //! 5.3.25 create storage here
     _identityString = (char*)calloc(strlen(config)+1, sizeof(char));
     strcpy(_identityString, config);

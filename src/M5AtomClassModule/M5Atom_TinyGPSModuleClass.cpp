@@ -45,7 +45,9 @@ void M5AtomCallback_TinyGPS(char *parameter, boolean flag)
     sendStatusMQTT_mainModule();
 
 #ifdef USE_FAST_LED
-    fillpix(L_BLUE);
+    CRGB randomColor = getRandomColor();
+    fillpix(randomColor);
+    //fillpix(L_BLUE);
 #endif
     
     //! 7.21.25 flume with laura (cloudy)
@@ -90,6 +92,16 @@ void M5Atom_TinyGPSModuleClass::start_M5AtomClassType()
 //!setup the PTStepper
 void M5Atom_TinyGPSModuleClass::setup_M5AtomClassType()
 {
+#ifdef USE_FAST_LED
+    SerialDebug.println("M5Atom_TinyGPSModuleClass.M5.begin");
+    
+    //  M5.begin(true,false,true);
+    //!NOTE: this could probably be done by ESP_IOT.ino .. but for now keep here (and in the other ATOM code..)
+    setup_M5Display();
+    //  fillpix(L_GREEN);
+    fillpix(L_BLUE);
+    
+#endif
     
     //! 5.3.25 register our PIN use
     registerPinUse_mainModule(TinyGPS_RXPin,  "TinyGPS_RXPin", "M5Atom_TinyGPSModuleClass", false);
@@ -111,11 +123,7 @@ void M5Atom_TinyGPSModuleClass::setup_M5AtomClassType()
     gps.setSatelliteMode(SATELLITE_MODE_GPS);
   
     
-#ifdef USE_FAST_LED
-    //!NOTE: this could probably be done by ESP_IOT.ino .. but for now keep here (and in the other ATOM code..)
-    setup_M5Display();
-    fillpix(L_GREEN);
-#endif
+
     
 #ifdef KEY_UNIT_SENSOR_CLASS
     _KeyUnitSensorClass_ATOMTinyGPSModule = new KeyUnitSensorClass((char*)"KeyUnitSensorClass_ATOMTinyGPSModule");
@@ -178,7 +186,17 @@ void M5Atom_TinyGPSModuleClass::updateLocation_TinyGPS()
         int timestamp = getTimeStamp_mainModule();
 
         //! TODO: use that RTC Server to get time...
-        SerialDebug.printf("T = %ld", timestamp);
+        //SerialDebug.printf("T = %ld\n", timestamp);
+        
+#ifdef USE_SPIFF_MODULE
+        //! add SPIFF output
+        char spiffBuffer[100];
+        //sprintf(spiffBuffer, "T=%d, (%d,%d,%d)", timestamp, this->_lat, this->_lon, this->_alt);
+        sprintf(spiffBuffer,"{'time':'%d','lat':'%0f','lon':'%0f','alt':'%0f'},", timestamp, this->_lat, this->_lon, this->_alt);
+        SerialDebug.printf("%s\n",spiffBuffer);
+        //! now send to SPIFF append
+        println_SPIFFModule(spiffBuffer);
+#endif
     }
 }
 
@@ -203,11 +221,10 @@ void M5Atom_TinyGPSModuleClass::displayInfo_TinyGPS()
         _lat = gps.location.lat();
         _lon = gps.location.lng();
         _alt = gps.altitude.meters();
-        
-        
-
-
-    } else {
+   
+    }
+    else
+    {
        // SerialDebug.print(F("INVALID\n"));
     }
 
@@ -222,7 +239,11 @@ void M5Atom_TinyGPSModuleClass::displayInfo_TinyGPS()
         SerialDebug.print(gps.date.year());
         SerialDebug.println();
 
-    } else {
+        SerialDebug.printf("DATE = %d\n", gps.date.value());
+
+    }
+    else
+    {
        // SerialDebug.print(F("INVALID"));
     }
 
@@ -243,11 +264,14 @@ void M5Atom_TinyGPSModuleClass::displayInfo_TinyGPS()
         SerialDebug.print(gps.time.centisecond());
         SerialDebug.println();
 
-    } else {
+        SerialDebug.printf("TIME = %d\n", gps.time.value());
+    }
+    else
+    {
         //SerialDebug.print(F("INVALID"));
     }
 
-    delay(500);
+    //delay(100);
 }
 
 

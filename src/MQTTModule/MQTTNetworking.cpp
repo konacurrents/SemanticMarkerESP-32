@@ -501,11 +501,11 @@ void publishBinaryFile(char *topic, uint8_t * buf, size_t len, String fileExtens
 
 //! publish a binary file..
 //! fileExtension is .jpg, .json, .txt etc
-void publishSPIFFFile(char *topic, char *path, int len)
+void publishSPIFFFile_MQTT(char *topic, char *path, int len)
 {
     char *fileExtension = (char*)"json";
     
-    SerialMin.printf("publishSPIFFFile topid=%s, file(%s) len = %d\n", topic, path, len);
+    SerialMin.printf("publishSPIFFFile topic=%s, file(%s) len = %d\n", topic, path, len);
     //   _mqttClient.publish(_mqttTopicString, buf, len);
     //!https://randomnerdtutorials.com/esp32-http-get-post-arduino/
     //!https://randomnerdtutorials.com/esp32-cam-post-image-photo-server/
@@ -560,11 +560,19 @@ void publishSPIFFFile(char *topic, char *path, int len)
         
         // add front
         postClient.write(addFront, strlen(addFront));
-               
+              
+        SerialDebug.println(head);
+        
         //now the rest of the lines can be sent..
         while(file.available())
         {
             String line = file.readString();
+            //! 7.25.25 (rainiy TDF last mt stage.
+            //! remove any single quote with double quote
+            //! @see https://docs.arduino.cc/built-in-examples/strings/StringReplace/
+            //!   stringTwo.replace("<", "</");
+            line.replace("'", "\"");
+            
             SerialDebug.println(line);
             //char * cstr = new char [str.length()+1];
             if (line)
@@ -572,6 +580,8 @@ void publishSPIFFFile(char *topic, char *path, int len)
                 postClient.write(line.c_str(), line.length());
             }
         }
+        SerialDebug.println(tail);
+
         // add back of JSON string..
         postClient.write(addBack, strlen(addBack));
         
@@ -586,6 +596,9 @@ void publishSPIFFFile(char *topic, char *path, int len)
         //! /home/ec2-user/httpd/conf/httpd.conf
         //! Alias /uploads "/var/lib/tomcat8/webapps/examples/uploads"
         sprintf(_semanticMarkerString,"#url {%s} {https://KnowledgeShark.me/uploads/%s}", getDeviceNameMQTT(),  &filename[0]);
+        
+        //! 7.25.25 print on serial monitor too..
+        SerialDebug.println(_semanticMarkerString);
         
         //sendSemanticMarkerDocFollow_mainModule(&fileURL[0]);
         //! for now only send if it start message starts with "#"
@@ -747,7 +760,7 @@ void setLastMessageStatus(char *token)
 
     char *deviceName = getDeviceNameMQTT();
     //! add just the version and device name to start, but add the msg=
-    sprintf(_lastMessageStatusURL,"status?T=%sv=%s&dev=%s&msg=",time, VERSION_SHORT, deviceName);
+    sprintf(_lastMessageStatusURL,"status?T=%dv=%s&dev=%s&msg=",time, VERSION_SHORT, deviceName);
     
     //! Make up a shorter version of the message
     if (strcasecmp(token,"FEED")==0)
@@ -3908,7 +3921,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             }
             else if (strcasecmp(cmd,"sendspiff")==0)
             {
-                sendStrings_SPIFFModule(10);
+                sendStrings_SPIFFModule(100);
             }
             else if (strcasecmp(cmd,"deletespiff")==0 && !isGroupTopic())
             {
@@ -5225,5 +5238,24 @@ String MQTT_urlDecode(String input) {
     s.replace("%7D", "}");
 
     return s;
+}
+#else
+
+//!process the JSON message, which can be configuration information. This is called from outside on things like a Bluetooth message..
+//!return true if valid JSON, and false otherwise. This looks for '{'  as the starting character (after possible spaces in front). A topic can be sent, or nil
+boolean processJSONMessageMQTT(char *ascii, char* topic)
+{ return false; }
+
+//! send semantic /smrun
+//! 3.25.24 this is an HTTP not https
+void publishSMRunMessage(char* smrunMessage)
+{
+    
+}
+
+//!Decode the URL (exposed 12.17.23 for the scanner
+String MQTT_urlDecode(String input)
+{
+    return input;
 }
 #endif //USE_MQTT_NETWORKING

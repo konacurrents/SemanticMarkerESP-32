@@ -165,8 +165,9 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
         sprintf(credentialsJSON, "{'ssid':'%s','ssidPassword':'%s'}", ssidStr, ssidPassStr);
         SerialDebug.println(credentialsJSON);
 
+#ifdef USE_MQTT_NETWORKING
         processJSONMessageMQTT(credentialsJSON, TOPIC_TO_SEND);
-        
+#endif
         /*
          6.16.25 A successful scan look like:
          ***validScannedSM = 'WIFI:S:SunnyWhiteriver;T:WPA/WPA2;P:sunny2021;H:;'
@@ -476,6 +477,8 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
         //! right now it shows smart of smflowinfo .. 
         SerialDebug.println("send as DOCFOLLOW");
         SerialDebug.println(getCommand);
+#ifdef USE_MQTT_NETWORKING
+
 #ifdef NOT_NEEDED
         char buffer[MAX_SM];
         
@@ -490,6 +493,7 @@ boolean ATOM_processSemanticMarker(char *semanticMarker, char *lastSemanticMarke
         //! 3.25.24 try the http to tomcat, then it sends https to node-red
         publishSMRunMessage(getCommand);
 #endif
+#endif //MQTT
         
 #endif //use REST
         return true;
@@ -526,7 +530,9 @@ void parseQueryArgs(char *credentialsStringInput, boolean useAnyArgs)
    
     //!decode the URL (removing %20 etc)
     String decoded = String(credentialsStringInput);
+#ifdef USE_MQTT_NETWORKING
     decoded = MQTT_urlDecode(decoded);
+#endif
     SerialDebug.println(decoded);
     char credentialsStringStorage[MAX_SM];
     strcpy(credentialsStringStorage, decoded.c_str());
@@ -630,9 +636,10 @@ void parseQueryArgs(char *credentialsStringInput, boolean useAnyArgs)
     strcat(credentialsJSON, "}");
     SerialDebug.printf("JSON = %s\n", credentialsJSON);
     
+#ifdef USE_MQTT_NETWORKING
     //! send whatever credentials were created
     processJSONMessageMQTT(credentialsJSON, TOPIC_TO_SEND);
-
+#endif
 }
 
 #endif //ATOM_QRCODE_MODULE

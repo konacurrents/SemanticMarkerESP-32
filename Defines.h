@@ -319,17 +319,14 @@
 #define VERSION "2025d_4.4V(1.0a)-8.30.24-M5_ATOM_S3"
 #else
 //! ***** THIS IS MAIN "ATOM" ***** 3.29.25,  5.14.25   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom
-#define VERSION "v7_21_25(5.9d)-ATOM_PINS_GPS_TIME_KEYUNIT_QRSensorsClassSendCMD_StopMotorOnStartup"
+//!
+#define VERSION "v7_29_25(5.10f)-ATOM_NOMOTOR_SPIFF_COLOR_GPS_TIME_KEYUNIT_QR_TIME"
 
-//#define VERSION "v7_12_25(5.8c)-ATOM_PINS_SERIAL_QRSensorsClassSendCMD_StopMotorOnStartup"
-//#define VERSION "v6_20_25(5.7b)-ATOM_SERIAL_QRSensorsClassSendCMD_StopMotorOnStartup"
-//#define VERSION "v5_21-25(5.15d)-ATOM_L9110S_SensorsClassSendCMD_feedOnStartup"
-//#define VERSION "v5_6-25(5.2b)-ATOMClass_HDriver"
-//#define VERSION "2025d_4.14-25(4.6c)-ATOM_MOTOR_SERVo_QR_SCAN_DOCFOLLOW_SOCKET_SCANNED_SM_BUTTON"
 #endif //ESP_M5_ATOM_S3
 
 #define ESP_M5
 #define M5_ATOM
+
 #define USE_MQTT_NETWORKING
 //#define USE_BUTTON_MODULE  ... ATOMQButtons.cpp
 #define USE_WIFI_AP_MODULE
@@ -342,7 +339,7 @@
 
 //! 5.21.25 adding feed_on_startup .. as the M5Atom is powering the 
 //! motor before we can talk to it.. so this will at least shorten that issue
-#define FEED_ON_STARTUP
+//#define FEED_ON_STARTUP
 
 //! which ATOM plugs MODULEs are included in build:
 #define ATOM_QRCODE_MODULE

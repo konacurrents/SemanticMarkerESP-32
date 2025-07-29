@@ -32,6 +32,7 @@ L9110S_DCStepperClass::L9110S_DCStepperClass(char *config) : MotorStepperClassTy
 const int IN1_PIN = 21;  //IN1 on the ULN2003 Board, BLUE end of the Blue/Yellow motor coil
 const int IN2_PIN = 25;  //IN2 on the ULN2003 Board, PINK end of the Pink/Orange motor coil
 
+
 //https://randomnerdtutorials.com/esp32-pwm-arduino-ide/
 
 //Keeps track of the current direction
@@ -61,6 +62,9 @@ boolean _isSetup_L9110S_DCStepper = false;
 //!Prepare motor controller
 void L9110S_DCStepperClass::setup_MotorStepper()
 {
+    if (_isSetup_L9110S_DCStepper)
+        return;
+    
     SerialDebug.println("L9110S_DCStepperClass::setup_MotorStepper");
     SerialDebug.printf("PINS = %d, %d\n", _pin1, _pin2);
     //! 7.9.25 if the pin was set use it otherwise use the hard coded values
@@ -74,11 +78,17 @@ void L9110S_DCStepperClass::setup_MotorStepper()
     //! set output pins
     pinMode(_pin1, OUTPUT);
     pinMode(_pin2, OUTPUT);
+ 
+    //! stop the motor (or something) THis seems to be working.. the LOW worked sometimes..
+    for (int i=0; i< 3; i++)
+    {
+        digitalWrite(_pin1, LOW);
+        digitalWrite(_pin2, LOW);
+    }
     
     //! 5.3.25 trying to figure out the PIN use
     registerPinUse_mainModule(_pin1, "IN1_PIN", "L9110S_DCStepperClass", false);
     registerPinUse_mainModule(_pin2, "IN2_PIN", "L9110S_DCStepperClass", false);
-    
     
     _isSetup_L9110S_DCStepper = true;
 }
@@ -88,7 +98,8 @@ void L9110S_DCStepperClass::setup_MotorStepper()
 void L9110S_DCStepperClass::start_MotorStepper()
 {
     SerialDebug.println("L9110S_DCStepperClass::start_MotorStepper");
- 
+    L9110S_DCStepperClass::setup_MotorStepper();
+
     //! ask the class wide method for the clockwise direction
     _clockwise_L9110S_DCStepperClass = this->isClockwiseDirection();
     

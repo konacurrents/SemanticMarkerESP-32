@@ -11,6 +11,11 @@ void ATOMSOCKET::Init(HardwareSerial& SerialData, int _RelayIO, int _RXD) {
     pinMode(RelayIO, OUTPUT);
     VF = VolR1 / VolR2 / 1000.0;
     CF = 1.0 / (CurrentRF * 1000.0);
+    
+    //! 7.26.25 trying power all day...
+    //! poweroff on init..
+    digitalWrite(RelayIO, LOW);
+
 }
 
 void ATOMSOCKET::SetPowerOn() {

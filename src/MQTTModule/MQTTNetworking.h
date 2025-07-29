@@ -140,8 +140,23 @@ String get_WIFI_SSID();
 #ifdef USE_SPIFF_MODULE
 //! publish a binary file..
 //! fileExtension is .jpg, .json, .txt etc
-void publishSPIFFFile(char *topic, char *path, int len);
+void publishSPIFFFile_MQTT(char *topic, char *path, int len);
 #endif
+
+
+#else //PLACEHOLDERS
+
+//!process the JSON message, which can be configuration information. This is called from outside on things like a Bluetooth message..
+//!return true if valid JSON, and false otherwise. This looks for '{'  as the starting character (after possible spaces in front). A topic can be sent, or nil
+boolean processJSONMessageMQTT(char *ascii, char* topic);
+
+//! send semantic /smrun
+//! 3.25.24 this is an HTTP not https
+void publishSMRunMessage(char* smrunMessage);
+
+
+//!Decode the URL (exposed 12.17.23 for the scanner
+String MQTT_urlDecode(String input);
 
 #endif // USE_MQTT_NETWORKING
 

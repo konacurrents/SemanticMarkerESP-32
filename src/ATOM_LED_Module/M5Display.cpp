@@ -10,6 +10,7 @@ boolean _M5DisplaySetup = false;
 
 void setup_M5Display()
 {
+    SerialDebug.println("setup_M5Display");
   _dis.begin();
   _dis.setTaskName("LEDs");
   _dis.setTaskPriority(2);
@@ -47,15 +48,15 @@ void clear()
 }
 char *colorName(CRGB Color)
 {
-    if (Color == (CRGB) 0xff0000)
+    if (Color == L_RED)
         return (char*)"L_RED";
-    else if (Color == (CRGB) 0x00ff00)
+    else if (Color == L_GREEN)
         return (char*)"L_GREEN";
-    else if (Color == (CRGB) 0x0000ff)
+    else if (Color == L_BLUE)
         return (char*)"L_BLUE";
-    else if (Color == (CRGB) 0xe0e0e0)
+    else if (Color == L_WHITE)
         return (char*)"L_WHITE";
-    else if (Color == (CRGB) 0xfff000)
+    else if (Color == L_YELLOW)
         return (char*)"L_YELLOW";
     else
         return (char*)"UNKNOWN";
@@ -66,7 +67,27 @@ void fillpix(CRGB Color)
     SerialDebug.printf("atom.fillPix %s\n", colorName(Color));
     if (_M5DisplaySetup)
         _dis.fillpix(Color);
+    else
+        SerialDebug.printf("***atom.fillPix NOT Setup yet");
+
 }
 
+long _randomColorIndex = 0;
+#define MAX_COLORS 5
+//! 7.24.25 return a (semi) random color
+CRGB getRandomColor()
+{
+    _randomColorIndex = (++_randomColorIndex) % MAX_COLORS;
+    switch (_randomColorIndex)
+    {
+        case 0: return L_RED;
+        case 1: return L_GREEN;
+        case 2: return L_BLUE;
+        case 3: return L_WHITE;
+            default:
+        case 4: return L_YELLOW;
+            
+    }
+}
 
 #endif // USE_FAST_LED

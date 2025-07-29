@@ -8,7 +8,7 @@
 #define __MULITIPLESATELITE_H
 
 #include <Arduino.h>
-#include "TinyGPS++.h"
+#include "TinyGPS.h"
 
 typedef enum {
     SATELLITE_MODE_GPS = 0,  // GPS mode

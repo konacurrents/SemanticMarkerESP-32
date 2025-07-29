@@ -17,6 +17,12 @@
 //! 7.17.25 - Adding GPS
 #include "../M5AtomClassModule/M5Atom_TinyGPSModuleClass.h"
 
+//! 7.24.25 Hot Day, Ballon last night, Mt Out
+//! for the 'C' option of atom color
+#ifdef USE_FAST_LED
+#include "../ATOM_LED_Module/M5Display.h"
+#endif
+
 
 //! instances of the M5AtomClassType
 
@@ -2339,6 +2345,8 @@ void processClientCommandChar_mainModule(char cmd)
     
     //char cmd = message[0];
     //!only process things that are stored persistently..
+    //!7.20.25 6 months T
+    //!Using switch to guarentee unique case of single characters
     switch (cmd)
     {
         case 0x00:
@@ -2449,6 +2457,18 @@ void processClientCommandChar_mainModule(char cmd)
             //! dispatches a call to the command specified. This is run on the next loop()
             main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_EPROM);
         } break;
+        case 'x':
+        {
+            SerialDebug.println("Clean SSID from EPROM.. ");
+            char cleanWIFI[100];
+            strcpy(cleanWIFI,"{'ssid':'','ssidPassword':''}");
+            SerialDebug.println(cleanWIFI);
+#ifdef USE_MQTT_NETWORKING
+            //! send to ourself
+            sendMessageNoChangeMQTT((char*)cleanWIFI);
+#endif
+                        
+        } break;
             
             //!NOTE: the gateway is auto selected for now. A future version might manually set it in other situations (eg. my iPhone app should have a flag to not be a gateway at time)
         case 'G':
@@ -2466,6 +2486,7 @@ void processClientCommandChar_mainModule(char cmd)
             //This is from the handshake like "_BLEClient_ESP_M5"
             SerialLots.println("unused cmd '_'");
         } break;
+#ifdef OLD_FOR_M5_DISPLAY
         case 'Z':
         {
             sendToStepperModule = false;
@@ -2480,6 +2501,47 @@ void processClientCommandChar_mainModule(char cmd)
             SerialDebug.println("Setting SM Zoom = full SM");
             savePreferenceBoolean_mainModule(PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE, false);
         } break;
+#else
+            //! 7.25.25 chilly morning, Mt starting to come out.
+            //! SPIFF
+        case 'Z':
+        {
+            //! clean SPIFF file"
+            
+            SerialDebug.println("clean SPIFF file");
+            deleteFiles_SPIFFModule();
+        } break;
+        case 'z':
+        {
+            //! upload SPIFF to web
+            
+            SerialDebug.println("upload SPIFF to web");
+            //! number of lines to send
+            //! TODO: configure thie number of lines to save..
+            sendStrings_SPIFFModule(1500);
+        } break;
+#endif
+        case 'P':
+        {
+            //printout the spiff.. to the serial debug monitor
+            //!Restarts (or attempts) a restart of the WIFI using the existing credentials -- vs the 'n' command
+            printFile_SPIFFModule();
+        } break;
+            //! 7.24.25 use SPIFF
+        case 'S':
+        {
+            //! toggle spiff on/off
+            boolean spiffFlag = getPreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_SETTING);
+            spiffFlag = !spiffFlag;
+            
+            SerialDebug.printf("Changing current USE_SPIFF = %s\n", spiffFlag?"NOYES":"NO");
+            savePreferenceInt_mainModule(PREFERENCE_USE_SPIFF_SETTING, spiffFlag);
+            
+            // reboot
+            rebootDevice_mainModule();
+            
+        }
+            //! WIFI credential changes...
         case 'N':
         {
             //NOTE: this might be where we toggle credentials?? TODO
@@ -2504,12 +2566,7 @@ void processClientCommandChar_mainModule(char cmd)
             
             main_dispatchAsyncCommand(ASYNC_SWAP_WIFI);
         } break;
-        case 'P':
-        {
-            //printout the spiff.. to the serial debug monitor
-            //!Restarts (or attempts) a restart of the WIFI using the existing credentials -- vs the 'n' command
-            printFile_SPIFFModule();
-        } break;
+      
             //! 8.16.24 per #332
         case 'H':
         {
@@ -2646,32 +2703,47 @@ void processClientCommandChar_mainModule(char cmd)
         case '5':
         {
             SerialDebug.println(" *** performing m5atom OTA Update");
-            
+#ifdef USE_MQTT_NETWORKING
             //!retrieves from constant location
             performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5Atom/ESP_IOT.ino.m5stick_c_plus.bin");
+#endif
         } break;
             //! 7.9.25 grabbed from BOOTSTRAP let someone update the atom to the recent OTA
         case '6':
         {
             SerialDebug.println(" *** performing m5atom OTA Update - DAILY");
-            
+#ifdef USE_MQTT_NETWORKING
             //!retrieves from constant location
             performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5Atom/daily/ESP_IOT.ino.m5stick_c_plus.bin");
+#endif
         } break;
         case '7':
         {
             SerialDebug.println(" *** performing m5atom OTA Update - BOOTSTRAP");
-            
+#ifdef USE_MQTT_NETWORKING
             //!retrieves from constant location
             performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/Bootstrap/ESP_M5_BOOTSTRAP.ino.m5stack_stickc_plus.bin");
+#endif
         } break;
+            
+        case 'C':
+        {
+            SerialDebug.println("'C' change color touched");
+#ifdef USE_FAST_LED
+            CRGB randomColor = getRandomColor();
+            fillpix(randomColor);
+            delay(50);
+#endif
+        }
+            break;
         case '.':
         {
             
             //! returns if the BLEClient is turned on.. note, if connected to a BLE device, then disconnect
             
             boolean val = getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE);
-            
+            //! toggle spiff on/off
+            boolean spiffFlag = getPreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_SETTING);
             
             SerialMin.println("Valid Commands: ");
             SerialMin.println("         . = help, this message");
@@ -2694,6 +2766,7 @@ void processClientCommandChar_mainModule(char cmd)
             SerialMin.println("         g == Gateway Off");
             SerialMin.println("         R == clean credentials");
             SerialMin.println("         X == clean EPROM");
+            SerialMin.println("         x == clean SSID from EPROM");
             SerialMin.println("         r == reboot ");
             //!6.20.25
             
@@ -2703,11 +2776,23 @@ void processClientCommandChar_mainModule(char cmd)
             SerialMin.println("         n == next WIFI Credential");
             SerialMin.println("         W == retry WIFI");
             SerialMin.println("         w == swap WIFI");
+            
+            SerialMin.println("    SPIFF internal memory ");
+#ifndef OLD_FOR_M5_DISPLAY
+            SerialMin.println("         Z == clean SPIFF file");
+            SerialMin.println("         z == upload SPIFF to web");
+#endif
             SerialMin.println("         P == print SPIFF");
+            SerialMin.printf ("         S == toggle SPIFF %s\n", spiffFlag?"OFF":"ON");
+            
+            SerialMin.println("    BLE Naming ");
+
             SerialMin.println("         E == use only PTFeeder naming");
             SerialMin.println("         e == use naming PTFeeder:name");
+#ifdef OLD_FOR_M5_DISPLAY
             SerialMin.println("         Z == Setting SM Zoom = zoomed");
             SerialMin.println("         z == Setting SM Zoom = full SM");
+#endif
             SerialMin.println("         0 == no sensors");
             SerialMin.println("         1 == Default SENSOR for new feeder");
             SerialMin.println("         2 == Default SENSOR for SMART Button");
@@ -2720,6 +2805,7 @@ void processClientCommandChar_mainModule(char cmd)
             SerialMin.println("         5 == m5atom DEV OTA update");
             SerialMin.println("         6 == m5atom DAILY TEST DEV OTA update");
             SerialMin.println("         7 == go back to m5atom BOOTSTRAP");
+            SerialMin.println("         C == change m5 atom to random color");
 
 #endif
             SerialMin.println();
@@ -2756,6 +2842,9 @@ int getTimeStamp_mainModule()
     time_t now;
     struct tm timeinfo;
     time(&now);
+    //! 7.27.25
+    //! miliseconds .. convert to seconds
+    //now = now * 1000;
     SerialMin.printf("Unix Time: %d\n", now);
     return now;
 }
@@ -3115,6 +3204,8 @@ void setup_Sensors_mainModule()
     {
         SerialDebug.printf("**** sensors are more than max .. FIX CODE");
     }
+    SerialDebug.printf("Created %d M5AtomClassTypes\n", whichM5AtomIndex);
+    
     
     //! use this one...
     _whichM5AtomClassType = NULL;
@@ -3124,6 +3215,11 @@ void setup_Sensors_mainModule()
     //! find which one..
     for (int i=0; i<NUM_M5ATOM_CLASS; i++)
     {
+        if (!_M5AtomClassTypes[i])
+        {
+            SerialDebug.println("NULL M5AtomClassType");
+            continue;
+        }
         //! check against the identity.. (or make this part of that method?)
         if (strcmp(_M5AtomClassTypes[i]->classIdentity(), atomKind) == 0)
         {
@@ -3134,11 +3230,11 @@ void setup_Sensors_mainModule()
     }
     if (_whichM5AtomClassType)
     {
-        SerialDebug.printf("Found M5AtomClass = %s\n", atomKind);
+        SerialDebug.printf("** Found M5AtomClass = %s\n", atomKind);
     }
     else
     {
-        SerialDebug.printf("Cannot find M5AtomClass = %s\n", atomKind);
+        SerialDebug.printf("****^^^ Cannot find M5AtomClass = %s\n", atomKind);
 
     }
 #else

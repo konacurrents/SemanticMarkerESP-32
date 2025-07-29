@@ -306,8 +306,10 @@ void setup_ATOMQRCodeModule()
 #ifdef ESP_M5_ATOM_S3
     M5.begin();
 #else
+    SerialDebug.println("setup_ATOMQRCodeModule.M5.begin");
     //M5.begin(true, false, true);
-    M5.begin(false, false, true);
+    // SerialEnable: true, I2CEnable: false, DisplayEnable: true
+    M5.begin(true, false, true);
 #endif
     
     SerialDebug.println("setup_ATOMQRCodeModule");

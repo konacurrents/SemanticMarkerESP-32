@@ -6,9 +6,6 @@
 
 
 //! 3.16.25 using a class version (thisi is for ESP_32 and ESP_M5 now)
-#define USE_MotorStepperClassType
-
-#ifdef USE_MotorStepperClassType
 
 #include "PTStepperClass.h"
 #include "DCMotorStepperClass.h"
@@ -44,6 +41,7 @@ void setup_StepperClasses()
     SerialDebug.println("setup_StepperClasses");
         
     //! instances of the PTStepeprClass
+    //! NOTE: These are the "identity' so that is also the "message" sent around. So SELF defining.
     _DCMotorStepperClass = new DCMotorStepperClass((char*)"DCMotorStepperClass");
     _motorSteppers[whichStepperClasssIndex++] = _DCMotorStepperClass;
     
@@ -61,15 +59,13 @@ void setup_StepperClasses()
     _L9110S_DCStepperClass = new L9110S_DCStepperClass((char*)"L9110S_DCStepperClass");
     _motorSteppers[whichStepperClasssIndex++] = _L9110S_DCStepperClass;
 
-    
+    if (whichStepperClasssIndex != NUM_STEPPER_CLASS)
+    {
+        SerialError.printf("stepperIndex %d not %d\n", whichStepperClasssIndex, NUM_STEPPER_CLASS);
+    }
     //!TODO: create an array of plug options .. then call their "identity" method
     SerialDebug.println("Done setup_StepperClasses");
 }
-#else
-//! for now..
-#include "PTStepper.h"
-#endif
-
 
 //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
 void stepperModule_savePreference(int preferenceID, String preferenceValue);
@@ -113,7 +109,6 @@ void setup_StepperModule()
     _feedState = SINGLE_FEED;
 #endif
 
-#ifdef USE_MotorStepperClassType
     //! 3.16.25 use the class ..
     setup_StepperClasses();
     
@@ -129,9 +124,15 @@ void setup_StepperModule()
     //! 3.31.25
     for (int i=0; i< NUM_STEPPER_CLASS; i++)
     {
+        if (!_motorSteppers[i])
+        {
+            SerialDebug.printf("sensorPlug[%d] == null\n", i);
+            continue;
+        }
         if (strcmp(sensorPlug,_motorSteppers[i]->classIdentity())==0)
         {
             _whichMotorStepper = _motorSteppers[i];
+            SerialDebug.printf("Match motorSteppers[%d] = %s\n", i, sensorPlug);
             break;
         }
     }
@@ -144,19 +145,18 @@ void setup_StepperModule()
         _whichMotorStepper = _PTStepperClass;
 #else
         //! the motorStepper can be nil
-        _whichMotorStepper = NULL;
+        //_whichMotorStepper = NULL;
         //! 5.2.25 default to HDriver..
         //_whichMotorStepper = _HDriverStepperClass;
 #endif
     }
 
+#define SETUP_FIRST_TIME
+#ifdef  SETUP_FIRST_TIME
     if (_whichMotorStepper)
         _whichMotorStepper->setup_MotorStepper();
+#endif
 
-#else  //! not  USE_MotorStepperClassType
-    //calls the PTStepper setup
-    setup_PTStepper();
-#endif //USE_MotorStepperClassType
 }
 //! 4.1.25 April Fools day. Mt Peak hike (162 bmp strange spike)
 //! get the identity of the SenasorPlug
@@ -221,12 +221,10 @@ void stepperModule_ProcessClientCmdFinal(char cmd) {
 //!the main loop fro the StepperModule. This used be called FeederStateMachine()
 void loop_StepperModule()
 {
-#ifdef USE_MotorStepperClassType
     //! 3.24.25 warm rain all day.. no ski
     //! call the loop (which might have a timer to stop a motor)
     if (_whichMotorStepper)
         _whichMotorStepper->loop_MotorStepper();
-#endif
     // FeedState is NO LONGER public and can be set by BLE client via the GATT for the characteristic
     
     switch (_feedState)
@@ -236,13 +234,11 @@ void loop_StepperModule()
 #ifdef USE_UI_MODULE
             blinkLED_UIModule();
 #endif
-#ifdef USE_MotorStepperClassType
+            SerialDebug.println("SINGLE Feed"); //this should write a 0x01 for feed ack
+
             if (_whichMotorStepper)
                 _whichMotorStepper->start_MotorStepper();
-#else
-            start_PTStepper();
-#endif
-            SerialDebug.println("SINGLE Feed"); //this should write a 0x01 for feed ack
+
             _feedState = FEED_STOPPED; //this will cancel Continous feed if it is set
             
             //! 5.3.24 Issue #332 if TUMBLER .. reverse direction
@@ -275,12 +271,9 @@ void loop_StepperModule()
                     blinkLED_UIModule();                          // Moved 021622 WJL
 #endif
                     
-#ifdef USE_MotorStepperClassType
                     if (_whichMotorStepper)
                         _whichMotorStepper->start_MotorStepper();
-#else
-                    start_PTStepper();
-#endif
+
                     SerialDebug.println("JACKPOT Feed");
                     _feedCount--;
                     feedPreviousMillis = feedCurrentMillis;
