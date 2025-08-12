@@ -1,7 +1,7 @@
 /*
   Name:		NimBLE_PetTutor_Server.ino
   Created:	8/25/2021 7:49:11 PM
-  Author:	wes and scott
+  Author:	wes and scottl
 */
 
 //!defines.h defines the #ifdef USE_MODULE statements, as they are included elsewhere.. Don't define them here.
@@ -62,12 +62,12 @@ void setup() {
     //! added 8.29.23 .. figure if this is right!
     //! 9.25.23 .. took out .. might be cause of crash..
   pinMode(LED, OUTPUT);
+   //! 5.3.25 register our PIN use
+   registerPinUse_mainModule(LED, "LED_OUTPUT", "ESP_IOT", false);
+
 //#endif
     
-#ifdef FEED_ON_STARTUP
-   setup_StepperModule();
-   loop_StepperModule();
- #endif
+
 
     
 
@@ -133,7 +133,19 @@ void setup() {
 #ifdef USE_STEPPER_MODULE
   //reads credentials, etc..
   setup_StepperModule();
-#endif
+
+#ifdef FEED_ON_STARTUP
+   //! 6.6.25 this is because the M5Atom on power-on will send current to the feeder
+   //! so when we get here .. we try to break the "feed" by actually feeding for a fraction of a second 0.0
+  // setup_StepperModule();
+   {
+
+      SerialDebug.println("stopMotor ..");
+      stopMotor_mainModule();
+   }
+#endif //FEED ON STARTUP
+ 
+#endif //USE_STEPPER_MODULE
 
 #ifdef USE_UI_MODULE
   //setup the stepper for the feeder
@@ -186,6 +198,7 @@ void setup() {
         //*** The callback for "onWrite" of the bluetooth "onWrite'
         registerCallbackMain(CALLBACKS_BLE_SERVER, BLE_SERVER_CALLBACK_ONWRITE, &onWriteBLEServerCallback);
         //*** The callback for "onWrite" of the bluetooth "onWrite'
+        registerCallbackMain(CALLBACKS_BLE_SERVER, BLE_SERVER_CALLBACK_STATUS_MESSAGE, &onStatusMessageBLEServerCallback);
         registerCallbackMain(CALLBACKS_BLE_SERVER, BLE_SERVER_CALLBACK_STATUS_MESSAGE, &onStatusMessageBLEServerCallback);
         
         //strdup() get away from the
@@ -429,4 +442,4 @@ void loop() {
 #else
     delay(50); // 1.26.24 try a smaller loop delay
 #endif
-}
+} //loop()
