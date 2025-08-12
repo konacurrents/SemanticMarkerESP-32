@@ -2354,6 +2354,13 @@ void processBarkletMessage(String message, String topic)
                 strcat(_fullMessageOut,getPreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING));
                 strcat(_fullMessageOut,"'");
                 
+                //! 8.10.25 add the Stepper Angle Kind
+                //! #393
+                //! 'sa':'%s
+                strcat(_fullMessageOut,",'sa':'");
+                strcat(_fullMessageOut,getPreference_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING));
+                strcat(_fullMessageOut,"'");
+                
                 //! 5.21.25 add the Atom Kind and the Sensors
                 //! 'atom':'%s
                 strcat(_fullMessageOut,",'atom':'");
@@ -4043,6 +4050,56 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     SerialTemp.printf("1.Unknown cmd: %s\n", valCmdString);
                 }
             }
+#pragma mark COPIED FROM BELOW .. so can set without DEVICE name
+#define USE_WITHOUT_DEVICE_NAME
+            //! 7.31.25 copied from below .. so
+#ifdef  USE_WITHOUT_DEVICE_NAME
+            //! 7.31.25 make this without DEV to make it easier..
+            else if (strcasecmp(setCmdString,"stepperangle")==0)
+            {
+                SerialDebug.printf("stepperAngle: %s\n", valCmdString);
+                //!set the stepperangle.
+                savePreference_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, valCmdString);
+                foundCommand = true;
+            }
+            //! issue #338 sensor definition (in work)
+            //! This will be a string in JSON format with various PIN and BUS information
+            else if  (strcasecmp(setCmdString,"sensorPlugs")==0)
+            {
+                savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, valCmdString);
+                
+                SerialDebug.printf("sensorPlugs: %s\n", valCmdString);
+                foundCommand = true;
+
+                //! reboot the device to set subscribe or not for groups
+                rebootDevice_mainModule();
+            }
+            
+            //! issue #365 sensors
+            //! 5.14.25 (Dead 5.14.74 3rd wall of sound)
+            else if  (strcasecmp(setCmdString,"sensors")==0)
+            {
+                //! currently not rebooting the device, but letting the user do that..
+                //! this way multiple can be done, and a "" will reset
+                //! 5.17.25 plowing field Mark and Bud
+                //! this is now a full set, and resets first..
+                setSensorsString_mainModule(valCmdString);
+                
+                foundCommand = true;
+
+            }
+            else if (strcasecmp(setCmdString,"M5AtomKind")==0)
+            {
+                //! new 1.4.24 setting ATOM kind (eg. M5AtomSocket, M5AtomScanner). MQTT message "set":"M5AtomKind", val=
+                savePreferenceATOMKind_MainModule(valCmdString);
+                
+                foundCommand = true;
+
+                //!for now just reboot which will use this perference
+                rebootDevice_mainModule();
+            }
+#endif
+            
 #pragma mark Device Name and Not Group
             else if (deviceNameSpecified && !isGroupTopic())
             {

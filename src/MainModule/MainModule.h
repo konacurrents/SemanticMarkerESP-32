@@ -490,4 +490,13 @@ char *semanticMarkerToJSON_mainModule(char* semanticMarker);
 //! isI2C is whether this is a I2C bus (which we aren't using much yet)
 void registerPinUse_mainModule(long pin, String pinName, String moduleName, boolean isI2C);
 
+//! note these are the sets of pin use
+#define PIN_USE_MAX 10
+typedef struct  {
+    int pineUseCount;
+    char *pinUseArray[PIN_USE_MAX];
+} PinUseStruct;
+//! get the pin use array
+PinUseStruct getPinUseStruct_mainModule();
+
 #endif /* MainModule_h */

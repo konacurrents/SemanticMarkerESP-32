@@ -86,12 +86,13 @@ void M5Atom_HDriverModuleClass::buttonA_LongPress_M5AtomClassType()
 //!starts with "&"*
 char * M5Atom_HDriverModuleClass::currentStatusURL_M5AtomClassType()
 {
-    return (char*)"s=HDriver_TODO";
+    //! 8.4.25 add k=HD  (HDriver)
+    return (char*)"&k=HD";
 }
 
 //!returns a string in in JSON so:  status&battery=84'&buzzon='off'  } .. etc
-//!starts with "&"*
+//!   (SINGLE QUOTES)
 char * M5Atom_HDriverModuleClass::currentStatusJSON_M5AtomClassType()
 {
-    return (char*)"hdriverTODO";
+    return (char*)"'kind':'HD'";
 }

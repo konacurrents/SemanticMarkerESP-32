@@ -382,10 +382,11 @@ void loopCode_ATOM_SocketModule()
 //!returns a string in in URL so:  status&battery=84'&buzzon='off'  } .. etc
 char * currentStatusURL_ATOM_SocketModule()
 {
+    //! 8.4.25 add k=PWR
     if (_isOn_ATOM_SocketModule)
-        return (char*)"&socket=on";
+        return (char*)"&socket=on&k=PWR";
     else
-        return (char*)"&socket=off";
+        return (char*)"&socket=off&k=PWR";
 }
 
 //!returns a string in in JSON so:  status&battery=84'&buzzon='off'  } .. etc

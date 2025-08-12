@@ -1099,6 +1099,7 @@ void printPreferenceValues_mainModule()
     SerialTemp.println("******************");
     SerialTemp.println(VERSION);
     SerialTemp.printf("CHIP_ID: %s\n", getChipIdString());
+    SerialTemp.printf("PREFERENCE_DEVICE_NAME_SETTING: %s\n", getPreference_mainModule(PREFERENCE_DEVICE_NAME_SETTING));
 
     //ouch.. this sets 2 values ..
     //  readPreferences_mainModule();
@@ -1119,7 +1120,6 @@ void printPreferenceValues_mainModule()
     SerialTemp.printf("WIFI_CREDENTIAL_2: %s\n", getPreference_mainModule(PREFERENCE_WIFI_CREDENTIAL_2_SETTING));
     SerialTemp.printf("PREFERENCE_PAIRED_DEVICE_SETTING: %s\n", getPreference_mainModule(PREFERENCE_PAIRED_DEVICE_SETTING));
     SerialTemp.printf("PREFERENCE_PAIRED_DEVICE_ADDRESS_SETTING: %s\n", getPreference_mainModule(PREFERENCE_PAIRED_DEVICE_ADDRESS_SETTING));
-    SerialTemp.printf("PREFERENCE_DEVICE_NAME_SETTING: %s\n", getPreference_mainModule(PREFERENCE_DEVICE_NAME_SETTING));
     SerialTemp.printf("PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING));
 
     SerialTemp.printf("PREFERENCE_MAIN_BLE_CLIENT_VALUE: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE));
@@ -1172,6 +1172,27 @@ void printPreferenceValues_mainModule()
     //! 5.14.25 also print out the sensors
     //! print sensors
     printSensors_mainModule(getSensors_mainModule());
+    
+    //! 7.31.25
+    SerialTemp.println(" *** Example JSON messages you can modify and paste into serial monitor, no DEV required");
+    //! TODO: add preference to not support this??
+    //! show example JSON  (break up as getPreference re-uses same string...
+    SerialTemp.printf("{\"set\":\"sensors\",\"val\":\"%s\"}", (char*)"BuzzerSensorClass,19,22,L9110S_DCStepperClass,21,25");
+    SerialTemp.println();
+    SerialTemp.printf("{\"set\":\"sensorPlugs\",\"val\":\"L9110S_DCStepperClass\"}");
+    SerialTemp.println();
+    SerialTemp.printf("{\"set\":\"M5AtomKind\",\"val\":\"M5HDriver\"}");
+    SerialTemp.println();
+    SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"0.25\"}");
+    SerialTemp.println();
+    
+    //! 7.31.25 PIN USE
+    SerialTemp.println(" *** PIN USE .. check for duplicated. Will do this for you later..");
+    PinUseStruct pinUseStruct = getPinUseStruct_mainModule();
+    for (int i=0; i< pinUseStruct.pineUseCount; i++)
+    {
+        SerialTemp.println(pinUseStruct.pinUseArray[i]);
+    }
     
 #endif
 }

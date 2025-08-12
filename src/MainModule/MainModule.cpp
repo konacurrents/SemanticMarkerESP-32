@@ -907,7 +907,8 @@ void cleanEpromPreferences()
 #ifdef USE_WIFI_AP_MODULE
     cleanEPROM_WIFI_APModule();
 #endif
-    
+    //! 7.29.25 set the FIRST time ..
+    savePreferenceBoolean_mainModule(PREFERENCE_FIRST_TIME_FEATURE_SETTING, true);
     
     SerialDebug.println("REBOOTING...");
     
@@ -2187,6 +2188,12 @@ void addMoreStatusQueryString()
     //!show G for gateway
     addStatusBooleanFlag("G",getPreferenceBoolean_mainModule(PREFERENCE_MAIN_GATEWAY_VALUE));
     
+    //! 8.10.25
+    //! #393 add stepper angle
+    //!show SA for stepper angle float ..
+    addStatusStringFlag("sm",getPreferenceString_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING));
+    
+    
     //!P = paired
     char *pairedDeviceName = getPreferenceString_mainModule(PREFERENCE_PAIRED_DEVICE_SETTING);
     if (isValidPairedDevice_mainModule())
@@ -2661,8 +2668,14 @@ void processClientCommandChar_mainModule(char cmd)
             //! poweroff
             SerialDebug.println("Default Sensors");
             //resetSensorToDefault_mainModule();
-            setSensorsString_mainModule((char*)"BuzzerSensorClass,23,33,L9110S_DCStepperClass,21,25");
-            
+            //! 7.30.25 changing to the HDriver's board
+            setSensorsString_mainModule((char*)"BuzzerSensorClass,19,22,L9110S_DCStepperClass,21,25");
+            //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
+            savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5HDriver");
+             //! also specify the sensor plug
+            savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "L9110S_DCStepperClass");
+            //! 1 second motor (overloads "angle" field)
+            savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 1.0);
             //! reboot .. so the sensors are set..
             rebootDevice_mainModule();
         } break;
@@ -3236,6 +3249,8 @@ void setup_Sensors_mainModule()
     {
         SerialDebug.printf("****^^^ Cannot find M5AtomClass = %s\n", atomKind);
 
+        SerialDebug.println("Defaulting to _M5Atom_HDriverModuleClass");
+        _whichM5AtomClassType = _M5Atom_HDriverModuleClass;
     }
 #else
     SerialDebug.printf("M5AtomKind = %d\n", getM5ATOMKind_MainModule());
@@ -3353,7 +3368,25 @@ char *semanticMarkerToJSON_mainModule(char* semanticMarker)
     return semanticMarkerToJSON_TokenParser(semanticMarker);
 }
 
+#pragma mark PIN USE to see if overlaps.
+//! 7.31.25 add this for a status, saw that QRCode was using 22 also  .. so buzer didn't work.
+/**
+#define PIN_USE_MAX 10
+struct pinUseStruct {
+    int pineUseCount;
+    char *pinUseArray[PIN_USE_MAX];
+} _pinUseStruct;
+*/
 
+//! global for use
+PinUseStruct _pinUseStruct;
+//! get the pin use array
+PinUseStruct getPinUseStruct_mainModule()
+{
+    return _pinUseStruct;
+}
+
+//! 7.31.25 store this information.. for STATUS
 //! 5.3.25 add a central clearing house for defining PIN use
 //! @see issue #365
 //! central clearing house for all pins used to we can analyze if there are overlaps
@@ -3362,5 +3395,15 @@ char *semanticMarkerToJSON_mainModule(char* semanticMarker)
 //! isI2C is whether this is a I2C bus (which we aren't using much yet)
 void registerPinUse_mainModule(long pin, String pinName, String moduleName, boolean isI2C)
 {
+    char pinUseSample[100];
+    sprintf(pinUseSample,"PIN_USE: %2d = %s, %s %s", pin, pinName.c_str(), moduleName.c_str(), isI2C?"(I2C)":"");
+    //! 5.3.25 create storage here
+    char *pinUse = (char*)calloc(strlen(pinUseSample)+1, sizeof(char));
+    strcpy(pinUse, pinUseSample);
+    //!store globally
+    _pinUseStruct.pinUseArray[_pinUseStruct.pineUseCount] = pinUse;
+    //! increment
+    _pinUseStruct.pineUseCount++;
+    
     SerialDebug.printf("** PIN_USE: %s = %d, module=%s %s\n", pinName.c_str(), pin, moduleName.c_str(), isI2C?"(I2C)":"");
 }

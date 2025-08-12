@@ -718,8 +718,9 @@ char *parsedSM_fromSemanticMarker(char *semanticMarker)
 //!returns a string in in URL so:  status&battery=84'&buzzon='off'  } .. etc
 char * currentStatusURL_ATOMQRCodeModule()
 {
+    //! 8.4.25 add QR
     char *parsedSM = parsedSM_fromSemanticMarker(_lastSemanticMarker);
-    sprintf(_statusBuffer_ATOMQRCodeModule,"&smscanner=on&sm=%s", parsedSM);
+    sprintf(_statusBuffer_ATOMQRCodeModule,"&k=QR&smscanner=on&sm=%s", parsedSM);
     return _statusBuffer_ATOMQRCodeModule;
 }
 

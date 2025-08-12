@@ -320,7 +320,8 @@ char * M5Atom_TinyGPSModuleClass::currentStatusURL_M5AtomClassType()
     //! add timestamp
     int timestamp = getTimeStamp_mainModule();
     
-    sprintf(_locationBuffer,"time=%d&lat=%0f&lon=%0f&alt=%0f",time, _lat, _lon, _alt);
+    //! 8.4.25 add k=GPS
+    sprintf(_locationBuffer,"time=%d&lat=%0f&lon=%0f&alt=%0f&k=GPS",time, _lat, _lon, _alt);
     return (char*)_locationBuffer;
 }
 

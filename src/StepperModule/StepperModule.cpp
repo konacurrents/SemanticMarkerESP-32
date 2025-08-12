@@ -148,6 +148,9 @@ void setup_StepperModule()
         //_whichMotorStepper = NULL;
         //! 5.2.25 default to HDriver..
         //_whichMotorStepper = _HDriverStepperClass;
+        
+        //! 7.31.25 use default..
+        _whichMotorStepper = _L9110S_DCStepperClass;
 #endif
     }
 
