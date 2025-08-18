@@ -46,14 +46,6 @@ int _pins_HDriverStepperClass[NUM_PINS]{
     IN2_PIN  //IN2 on the ULN2003 Board, PINK end of the Pink/Orange motor coil
 };
 
-
-//Keeps track of the current direction
-//Relative to the face of the motor.
-//Clockwise (true) or Counterclockwise(false)
-//We'll default to clockwise
-bool _clockwise_HDriverStepperClass = true;
-
-
 /************* Set all motor pins off which turns off the motor ************************************************/
 void clearPins_HDriverStepper()
 {
@@ -134,8 +126,7 @@ void HDriverStepperClass::start_MotorStepper()
     //! 3.26.25 try to only setup on the first feed
     setup_again();
 #endif
-    //! ask the class wide method for the clockwise direction
-    _clockwise_HDriverStepperClass = this->isClockwiseDirection();
+
     
     SerialDebug.println("**************** HDriverStepperStepper::Starting HDriverStepper *******************");
     //! 5.15.25 try the async CLICK
@@ -146,7 +137,7 @@ void HDriverStepperClass::start_MotorStepper()
     //Set the four pins to their proper state for the current step in the sequence,
     //and for the current direction
     
-    if (_clockwise_HDriverStepperClass) {
+    if (this->isClockwiseDirection()) {
         //M5.dis.drawpix(0, 0x0000f0);
         ledcWrite(_ledChannel1_HDriverStepper, 1000);
         ledcWrite(_ledChannel2_HDriverStepper, 0);

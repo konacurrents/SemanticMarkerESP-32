@@ -14,7 +14,7 @@
 
 #include "../../Defines.h"
 
-#ifdef USE_CAMERA_MODULE
+#ifdef USE_CAMERA_MODULE_XXX
 #include <HTTPClient.h>
 #endif //USE_CAMERA_MODULE
 
@@ -57,7 +57,7 @@
 #define ESP_EPROM_NAME "ESP32"
 
 
-#ifdef USE_MQTT_NETWORKING
+//! 8.16.25 MQTT
 #include "OTAImageUpdate.h"
 
 /*******************************MQTT*************************************/
@@ -159,6 +159,14 @@ int _startTimestamp = 0;
 
 //!The WIFI client
 WiFiClient _espClient;
+
+//! 8.17.25
+//! for use by others, like RTSP
+//!  return the WiFi Client
+//WiFiClient getWIFIClient()
+//{
+//    return _espClient;
+//}
 
 //!The PubSub MQTT Client
 PubSubClient _mqttClient(_espClient);
@@ -395,7 +403,7 @@ void publishSMRunMessage(char* smrunMessage)
 
 }
                 
-#ifdef USE_CAMERA_MODULE
+#ifdef USE_CAMERA_MODULE_XXX
 
 //! Users/scott/Library/Arduino15/packages/m5stack/hardware/esp32/2.0.3/tools/sdk
 #include "esp_camera.h"
@@ -2252,11 +2260,9 @@ void processBarkletMessage(String message, String topic)
         }
         else
             strcpy(pairedDevice,"none");
-#ifdef USE_BLE_CLIENT_NETWORKING
+        //! 8.16.25 BLE CLIENT
         boolean isConnectedBLE = isConnectedBLEClient();
-#else
-        boolean isConnectedBLE = false;
-#endif
+
         boolean isGateway = getPreferenceBoolean_mainModule(PREFERENCE_MAIN_GATEWAY_VALUE);
         //! process the pair if match
         if (isConnectedBLE && isGateway)
@@ -2272,12 +2278,10 @@ void processBarkletMessage(String message, String topic)
                     _mqttUserString?_mqttUserString:"NULL",
                     _jsonLocationString?_jsonLocationString:"somewhere",
                     shortVersion(),
-#ifdef USE_BLE_SERVER_NETWORKING
+                    //! 8.16.25 BLE SERVER
                     //! retrieve the service name (PTFEEDER, PTFeeder:Name, PTClicker:Name, etc)
                     getServiceName_BLEServerNetworking()
-#else
-                    "none"
-#endif
+
                     // if calling this.. add "%s" to sprintf above..
                     , main_currentStatusJSON()
                     );
@@ -2327,12 +2331,10 @@ void processBarkletMessage(String message, String topic)
                 _deviceNameString?_deviceNameString:"NULL",
                 _mqttUserString?_mqttUserString:"NULL",
                 _jsonLocationString?_jsonLocationString:"somewhere",
-#ifdef USE_BLE_SERVER_NETWORKING
+                //! 8.16.25 BLE SERVER
                 //! retrieve the service name (PTFEEDER, PTFeeder:Name, PTClicker:Name, etc)
                 getServiceName_BLEServerNetworking()
-#else
-                "none"
-#endif
+
                 
                 ,shortVersion()
                 //k='uno':'tblr"
@@ -2341,7 +2343,7 @@ void processBarkletMessage(String message, String topic)
                 //! 'chipid':'%s'
                 ,getChipIdString()
                 //! 'ssid':'%s'
-                ,get_WIFI_SSID().c_str()
+                ,get_WIFI_SSID()
               
 #ifdef ESP_M5
                 //! last %s
@@ -2503,10 +2505,11 @@ void processBarkletMessage(String message, String topic)
         }
         messageValidToSendBack = true;
     }
+#ifdef PASS_ONTO_PLUGS
     //!note: this might be candidate for wider use
     else if (containsSubstring(message, "#CAPTURE")  && !isDawgpackTopic())
     {
-#ifdef ESP_M5_CAMERA
+#ifdef ESP_M5_CAMERA_not_here
        // sprintf(_fullMessageOut, "#TAKING_PIC {%s} {real soon to be implemented 8.11.22}", _deviceNameString);
         takePicture_MainModule();
 
@@ -2520,6 +2523,8 @@ void processBarkletMessage(String message, String topic)
 #endif //ESP_M5_CAMERA
         messageValidToSendBack = false;
     }
+#endif //pass onto plugs
+    
 #endif // ESP_M5
     else if (containsSubstring(message, "#TEMP") && !isDawgpackTopic())
     {
@@ -2571,11 +2576,9 @@ void processBarkletMessage(String message, String topic)
 #endif
 
         }
-       
-        
+               
         //parse out the {kind, host, binfile}
         //SOON .. this might be a triple click?? or keep the messaging?
-        
         
         if (performOTAUpdate)
         {
@@ -2721,11 +2724,9 @@ void performFeedMethod(char *topic)
     else
         strcpy(pairedDevice,"none");
     
-#ifdef USE_BLE_CLIENT_NETWORKING
+    //! 8.16.25 BLE CLIENT
     boolean isConnectedBLE = isConnectedBLEClient();
-#else
-    boolean isConnectedBLE = false;
-#endif
+
     boolean isGateway = getPreferenceBoolean_mainModule(PREFERENCE_MAIN_GATEWAY_VALUE);
     
     //! 7.20.25
@@ -3221,7 +3222,7 @@ void invokeCurrentSMModePage(char *topic)
 //!6.20.25 added Serial Monitor input,
 //!API Manual described:
 //!@see https://github.com/konacurrents/SemanticMarkerAPI
-//!
+//! note: The strcasecmp() function shall compare, while ignoring differences in case, the string pointed to by s1 to the string pointed to by s2.
 boolean processJSONMessageMQTT(char *ascii, char *topic)
 {
     SerialLots.println(" *** processJSONMessageMQTT ***");
@@ -3962,7 +3963,9 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             
             //! 12.27.23 pass this onto those registered (which mainModule is handling..)
             //! 1.14.24 .. what about groups??
-            if (deviceNameSpecified)
+            //! 8.16.25 Gods of War (Hawaii)
+            //! send this .. and let the caller decide if deviceNameSpecified needed..
+            //if (deviceNameSpecified)
             {
                 char* sendCmdString  = const_cast<char*>(cmd);
 
@@ -4052,7 +4055,16 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             }
 #pragma mark COPIED FROM BELOW .. so can set without DEVICE name
 #define USE_WITHOUT_DEVICE_NAME
-            //! 7.31.25 copied from below .. so
+            //! 7.31.25 copied from below .. so it doesn't need 'dev' name in message
+            //! eg:
+            /*
+             {"set":"sensors","val":"BuzzerSensorClass,19,22,L9110S_DCStepperClass,21,25"}
+             {"set":"sensors","val":"BuzzerSensorClass,21,25,ULN2003_StepperClass,23,33"}
+             {"set":"sensorPlugs","val":"L9110S_DCStepperClass"}
+             {"set":"M5AtomKind","val":"M5HDriver"}
+             {"set":"stepperAngle","val":"0.25"}
+             {"ssid":"Bob", "ssidPassword":"scott"}
+             */
 #ifdef  USE_WITHOUT_DEVICE_NAME
             //! 7.31.25 make this without DEV to make it easier..
             else if (strcasecmp(setCmdString,"stepperangle")==0)
@@ -4062,6 +4074,18 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 savePreference_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, valCmdString);
                 foundCommand = true;
             }
+            
+            //!8.14.25 Dead Movie from 10.19.1974 tonight..
+            //! issue #394 stepperRPM
+            //! stepper RPM
+            else if (strcasecmp(setCmdString,"stepperRPM")==0)
+            {
+                SerialDebug.printf("stepperRPM: %s\n", valCmdString);
+                //!set the stepperangle.
+                savePreference_mainModule(PREFERENCE_STEPPER_RPM_SETTING, valCmdString);
+                foundCommand = true;
+            }
+            
             //! issue #338 sensor definition (in work)
             //! This will be a string in JSON format with various PIN and BUS information
             else if  (strcasecmp(setCmdString,"sensorPlugs")==0)
@@ -4160,6 +4184,16 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     //!set the stepperangle.
                     savePreference_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, valCmdString);
                 }
+                //!8.14.25 Dead Movie from 10.19.1974 tonight..
+                //! issue #394 stepperRPM
+                //! stepper RPM
+                else if (strcasecmp(setCmdString,"stepperRPM")==0)
+                {
+                    SerialDebug.printf("stepperRPM: %s\n", valCmdString);
+                    //!set the stepperangle.
+                    savePreference_mainModule(PREFERENCE_STEPPER_RPM_SETTING, valCmdString);
+                }
+                
                 else if (strcasecmp(setCmdString,"noclick")==0)
                 {
                     //!set the timeout from no click to poweroff
@@ -4394,7 +4428,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                         
                         //! paired address is null until found..
                         //! Keep whatever is set ...???
-#ifdef USE_BLE_CLIENT_NETWORKING
+                        //! 8.16.25 BLE CLIENT
                         //!if BLE connected, then we keep the address if any and GEN3
                         if (isConnectedBLEClient() && connectedBLEDeviceIsGEN3_mainModule())
                         {
@@ -4408,7 +4442,6 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                                 //! try to disconnect..
                                 disconnect_BLEClientNetworking();
                         }
-#endif
                         
 #ifdef NO_MORE_PREFERENCE_BLE_USE_DISCOVERED_PAIRED_DEVICE_SETTING
                         if (strlen(valCmdString)==0)
@@ -4504,10 +4537,9 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                         //!for now just reboot which will use this perference and re-create the service name..
                         rebootDevice_mainModule();
                         
-#ifdef USE_BLE_CLIENT_NETWORKING
+                        //! 8.16.25 BLE CLIENT
                         //! try to disconnect..
                         // disconnect_BLEClientNetworking();
-#endif
                     }
                 }
 #ifdef ESP_M5
@@ -4762,8 +4794,11 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
         else if (sendCmd)
         {
             //!NOTE: This will be calling ourself
-
+          
             char* sendCmdString  = const_cast<char*>(sendCmd);
+            //! 8.16.25 call the main to pass onto plugs
+            messageSend_mainModule(sendCmdString, deviceNameSpecified);
+
             if (strcasecmp(sendCmdString,"temp")==0)
             {
                 SerialCall.println("sendCmd == temp");
@@ -5296,23 +5331,4 @@ String MQTT_urlDecode(String input) {
 
     return s;
 }
-#else
 
-//!process the JSON message, which can be configuration information. This is called from outside on things like a Bluetooth message..
-//!return true if valid JSON, and false otherwise. This looks for '{'  as the starting character (after possible spaces in front). A topic can be sent, or nil
-boolean processJSONMessageMQTT(char *ascii, char* topic)
-{ return false; }
-
-//! send semantic /smrun
-//! 3.25.24 this is an HTTP not https
-void publishSMRunMessage(char* smrunMessage)
-{
-    
-}
-
-//!Decode the URL (exposed 12.17.23 for the scanner
-String MQTT_urlDecode(String input)
-{
-    return input;
-}
-#endif //USE_MQTT_NETWORKING

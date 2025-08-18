@@ -118,13 +118,21 @@ uploadFlashM5CameraTEST: .
 # 7.9.25
 
 # Module M5ATOM Generically morphs to different ones ********** M5 Atom ***********
+
 uploadFlashM5AtomTEST: .
 	mv ESP_IOT.ino.m5stack_stickc_plus.bin ESP_IOT.ino.m5stick_c_plus.bin
 	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5Atom
 	
 # Module M5ATOM Generically morphs to different ones ********** M5 Atom *********** DAILY
 # Upload a daily test..
+
 uploadFlashM5AtomTEST_daily: .
+	mv ESP_IOT.ino.m5stack_stickc_plus.bin ESP_IOT.ino.m5stick_c_plus.bin
+	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5Atom/daily
+
+# for now .. the M5TimerCAM is renamed for the M5Atom 
+uploadFlashM5AtomCAMERA_TEST_daily: .
+	mv ESP_IOT.ino.m5stack_timer_cam.bin ESP_IOT.ino.m5stack_stickc_plus.bin
 	mv ESP_IOT.ino.m5stack_stickc_plus.bin ESP_IOT.ino.m5stick_c_plus.bin
 	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5Atom/daily
 

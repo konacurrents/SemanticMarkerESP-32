@@ -2,94 +2,83 @@
 //  Defines.h
 //
 //  Created by Scott Moody on 3/8/22.
-//  NOW: May 14, 2025         5/14/25 (3+ years later)
-/*
-  //emoteMe {M5QRScanner} {#connectedMe} {I,F}  {'T':'1739574713','dev':'M5QRScanner','user':'scott@konacurrents.com','location':'buckley,wa','ble':'PTClicker:M5QRScanner','v':'Version-(3.11)-4.6.24-ES','chipid':'8593020','ssid':'SunnyWhiteriver', 'smscanner':'on'}
-  Publish message(usersP/groups/atlasDogs): #remoteMe {M5QRScanner} {#connectedMe} {I,F}  {'T':'1739574713','dev':'M5QRScanner','user':'scott@konacurrents.com','location':'buckley,wa','ble':'PTClicker:M5QRScanner','v':'Version-(3.11)-4.6.24-ES','chipid':'8593020','ssid':'SunnyWhiteriver', 'smscanner':'on'}
-  ASYNC_SEND_MQTT_STATUS_URL: status?usev=v6&dev=M5QRScanner&b=100&temp=00&c=0&t=0&smscanner=on&W=on&M=on&B=off&C=off&A=off&T=off&S=on&bleS=PTClicker:M5QRScanner&Z=on&G=off
-  Publish message(usersP/bark/scott@konacurrents.com): #remoteMe {M5QRScan
-*/
-//! 11.18.24
-//! 2.14.25 Valentines day  (M5Atom was:es
-//! 3.22.25 adding ScannedSemanticMarker message - to replay on button click
+//  NOW: May 14, 2025         8/16/25 (3+ years later)
 
 #ifndef Defines_h
 #define Defines_h
 
-//! *******************************p
+//! *******************************
 //! *** 7 main builds numbered below ****
-//! 1. M5 Smart Clicker (Board:
+
+// ******** M5 Smart clicker (RED with Display) *******
+//! 1. M5 Smart Clicker 
+//! make uploadFlashM5TEST
 //#define ESP_M5_SMART_CLICKER_CONFIGURATION
+//#define PARTITION_SCHEME (char*)"Board=M5StickCPlus,P=legacy=default
+
 //
 //! 2. ESP32 Feeder(orig old),
+//! original feeder: (and any without PetTutor board. Otherwise Blue light doesn't flash)
 //#define ESP_32_FEEDER
-//
+//#define PARTITION_SCHEME (char*)"Board=ESP32 Dev Module,,P=legacy=default
+
 //! 3. ESP32Feeder Board (Board: ESP-32 dev module, partition: default 4mb withspiffs(1.2MB app/1.5MB SPIFFS)
+//! When testing the new board, define _WITH_BOARD  -- make uploadFlashBoardTEST
+//! original feeder: (or any) that also pairs with a GEN3 only, and gateways messages.
 //! NOTE: we should change this to Minimal spiffs (1.9MB App with OTA.190KB SPIFFS) -- but all deployed feeders couldn't OTA
 //#define ESP_32_FEEDER_WITH_BOARD
 //#define ESP_32_FEEDER_BLE_GEN3
-//
-//! 4. M5 Atom  This includes QR and Socket
-#define ESP_M5_ATOM_LITE
+//#define PARTITION_SCHEME (char*)"Board=ESP32 Dev Module,P=Default"
 
-//
+// ******** >>>>>  M5Atom <<<<  *******
+//! 4. M5 Atom  This includes QR and Socket, BOARD:  M5StickCPlus, Minimal SPIFFS withOTA
+//! BOARD = M5Stick-C-Plus,  type : make uploadFlashM5AtomLiteTEST
+#define ESP_M5_ATOM_LITE
+#define PARTITION_SCHEME (char*)"Board=M5StickCPlus,P=1.9 Minimal SPIFFS with OTA"
+
+//  ******** M5Camera ***
 //! 5. M5 Camera
+// an ESP M5 with a camera 8.11.22 (same as M5 without a display or buttons, but with a camera)
+// Use the M5Stack-Timer-CAM library
+// NOW: 8.17.25 use M5StickCPlus - sadly no.. it compiles, but cannot create the pics ..
+// BUT the M5Atom works (it seems)
 //#define ESP_M5_CAMERA
-//
+//#define PARTITION_SCHEME (char*)"Board=M5StickCPlus,P=1.9 Minimal SPIFFS with OTA"
+//#define PARTITION_SCHEME (char*)"Board=M5TinyCam,P=1.9MB App Minimal SPIFFS with OTA"
+
+//  ******** M5Core2 the White one with display ***
 //! 6. M5Core2
+//!  1.6.24 M5Core2Module
+//! library M5Core2
+//! minimal SPIFFS (1.9MB APP, with OTA/190KB SPIFFS)
+//! https://docs.m5stack.com/en/api/core2/lcd_api
 //#define M5CORE2_MODULE
-//!
+//#define PARTITION_SCHEME (char*)"Board=M5Core2,P=1.9MB App Minimal SPIFFS with OTA"
+
+//  ******** ATOM S2 the White one with display and M5Unified .. ***
 //! 7 ESP_M5_ATOM_S3  (for the M5AtomS3 with a display)
 //!       Board: M5AtomS3 library Minimal spiffs (1.9MB App with OTA.190KB SPIFFS)
 //#define ESP_M5_ATOM_S3
 #ifdef ESP_M5_ATOM_S3
+#define PARTITION_SCHEME (char*)"Board=M5AtomS3 Unified,P=1.9MB App Minimal SPIFFS with OTA"
+
 #define ESP_M5_ATOM_LITE
 //#define ESP_M5_MINIMAL_SENSORS
 #endif
-//
+
+// *** Start of Configurations ***
+#define M5STACK_VERSION "2.0.4"
+//#define DHAT not working.. with 2.1.0
+//#define M5STACK_VERSION "2.0.7"  //9.24.23  (didn't seem to have heap space to start BLE server)
+// 2.1 is too BIG .. 2.22.24   (ALSO: issue OTA of too big an app...)
+//#define M5STACK_VERSION "2.1.0"
+
+//! 4.20.24  using library M5GFX 0.1.15 (was 0.0.20) for the M5StickCPlus2
 //! *******************************
 //! *** CURRENTLY: 4
 //! ****************************************
+//! ****************************************
 
-//turn on or off which configuration is desired..
-//BOARD = M5Stick-C-Plus,  type : make uploadFlashM5TEST
-// *** 1
-//#define ESP_M5_SMART_CLICKER_CONFIGURATION
-//! comment out the following to use the SENSORS (like KeyUnitSensor)
-//#define ESP_M5_MINIMAL_SENSORS
-
-//original feeder: (and any without PetTutor board. Otherwise Blue light doesn't flash)
-//BOARD = ESP32 Dev Modulef   type: make uploadFlashOrigTEST
-// *** 2
-//#define ESP_32_FEEDER
-
-//When testing the new board, define _WITH_BOARD  -- make uploadFlashBoardTEST
-// *** 3
-//#define ESP_32_FEEDER_WITH_BOARD
-
-//original feeder: (or any) that also pairs with a GEN3 only, and gateways messages.
-// *** 3b
-//#define ESP_32_FEEDER_BLE_GEN3
-
-//turn on or off which configuration is desired..
-// 12.26.23 added for the power socket ATOM
-//BOARD = M5Stick-C-Plus,  type : make uploadFlashM5AtomLiteTEST
-// *** 4
-//#define ESP_M5_ATOM_LITEa
-
-
-// an ESP M5 with a camera 8.11.22 (same as M5 without a display or buttons, but with a camera)
-// Use the M5Stack-Timer-CAM library
-// Use the Minimal SPIFF (1.9MB app, with OTA 190KB SPIFF), uses 57% so far (now: 61%)
-// *** 5
-//#define ESP_M5_CAMERA
-
-//! 1.6.24 M5Core2Module
-//! library M5Core2
-//! minimal SPIFFS (1.9MB APP, with OTA/190KB SPIFFS)
-//! https://docs.m5stack.com/en/api/core2/lcd_api
-// *** 6
-//#define M5CORE2_MODULE
 
 //TRY this for close to minimal BLEClient (no WIFI, no BLEServerr)
 //#define ESP_M5_SMART_CLICKER_CONFIGURATION_MINIMAL
@@ -99,7 +88,7 @@
 
 
 //!global to all releases (for now) used in Status for M5 (only 2 characters)
-#define VERSION_SHORT "v8"
+#define VERSION_SHORT "v1"
 
 //!used to force using the BLE Device name in SERVER( eg. PTFEEDER:ScoobyDoo)
 //NOT NOW 9.14.22 (no)
@@ -118,17 +107,88 @@
 //#define PROCESS_SMART_BUTTON_JSON
 
 
-// *** Start of Configurations ***
-#define M5STACK_VERSION "2.0.4"
-//#define DHAT not working.. with 2.1.0
-//#define M5STACK_VERSION "2.0.7"  //9.24.23  (didn't seem to have heap space to start BLE server)
-// 2.1 is too BIG .. 2.22.24   (ALSO: issue OTA of too big an app...)
-//#define M5STACK_VERSION "2.1.0"
-
-//! 4.20.24  using library M5GFX 0.1.15 (was 0.0.20) for the M5StickCPlus2
-
 /* *************************** CONFIGURATIONS **********************************/
-//  ******************************* M5 ******************************************
+
+
+
+//  ******************************* M5ATOM ******************************************
+
+//!NOTE: M5_ATOM is define for the subset of ESP_M5 that is an ATOM
+//! This turns on features like the LED display
+
+//! 1.5.24 NOW the M5AtomLite is all the ATOM's but configured to 1 at a time
+//This is an easy way to turn on the smart clicker configuration...
+//! https://docs.m5stack.com/en/atom/atomic_qr
+//! library:  not using M5Stack-ATOM (actually using M5Stick-C-Plus)
+//! 12.26.23 day after xmas
+//! https://docs.m5stack.com/en/atom/atom_socket
+//! ALSO: use the Minimal SPIFF, 1.9m app, OTA and 190KB spiff
+//! 2.25.23 Sketch uses 1497093 bytes (76%) of program storage space. Maximum is 1966080 bytes.
+//! 8.22.24 (seems to generate m5stack_stickc_plus.bin)   .. and size now 65%
+#ifdef ESP_M5_ATOM_LITE
+#ifdef ESP_M5_ATOM_S3
+#define VERSION "v7_31_25(2.0a)-M5_ATOM_S3"
+//#define VERSION "2025d_4.4V(1.0a)-8.30.24-M5_ATOM_S3"
+//previous: V(2.0a).11.21.24-UNIFIED_M5_ATOM_S3
+//!  "v8_16_25(5.12d)-ATOM_UNL2003_PTStepper_K_BUZ_SA_NOMOTOR_SPIFF_COLOR_GPS_TIME_KEYUNIT_QR_TIME"
+
+
+#else
+//! ***** THIS IS MAIN "ATOM" *****   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom
+//!
+#define VERSION "v8_17_25(5.12d)-ATOM_UNL2003_REFACTOR_CAMERA_TOO"
+
+#endif //ESP_M5_ATOM_S3
+
+#define ESP_M5
+#define M5_ATOM
+
+//! 8.17.25 mix in the CAMERA .. 73%
+#define USE_CAMERA_MODULE
+
+
+//#define USE_BUTTON_MODULE  ... ATOMQButtons.cpp
+//#define USE_DISPLAY_MODULE  .. no display
+
+#define USE_STEPPER_MODULE
+#define USE_UI_MODULE
+
+//! 5.21.25 adding feed_on_startup .. as the M5Atom is powering the
+//! motor before we can talk to it.. so this will at least shorten that issue
+//#define FEED_ON_STARTUP
+
+//! which ATOM plugs MODULEs are included in build:
+#define ATOM_QRCODE_MODULE
+//! including ATOM_SOCKET_MODULE now ...
+#define ATOM_SOCKET_MODULE
+//#else
+
+//! the ATOM uses FAST_LED (the light on top button, but not M5AtomS3)
+#define USE_FAST_LED
+
+//! Sensors:  2.8.24 (30K above pacific)
+#define KEY_UNIT_SENSOR_CLASS
+#define USE_LED_BREATH
+//! 11.14.23 try "https" secure web call (to SemanticMarker.org/bot/...)
+//!  See https://GitHub.com/konacurrents/SemanticMarkerAPI for more info
+//crashing .. 3.22.24 (just send DOCFOLLOW for now)
+//#define USE_REST_MESSAGING
+//! 3.25.24 try again ... (not working)
+
+
+//! 4.4.24 (after glacier skiing at Crystal ice, but snowing) -- year ago now 4.4.25 (yesterday good. Today would have been amazing views)
+#define USE_SPIFF_MODULE
+#define USE_SPIFF_MQTT_SETTING
+#define USE_SPIFF_QRATOM_SETTING
+
+//! 4.10.24 GPS sensor  (NOT WORKING .. but the Sensor GPS is working)
+//#define USE_GPS_SENSOR_CLASS
+
+//#endif // not M5AtomS3
+
+#endif //ESP_M5_ATOM_LITE
+
+//  ******************************* M5 red with display ******************************************
 
 //! ****** MAIN:  M5 ****
 //M5stack 2.0.5-1.0 (Nov 2022)hula2127
@@ -140,13 +200,8 @@
 //#define VERSION "Version-(3.6a)-2.22.24-BOOTSTRAP"
 
 #define ESP_M5
-#define USE_MQTT_NETWORKING
 #define USE_BUTTON_MODULE
-#define USE_WIFI_AP_MODULE
-#define USE_BLE_CLIENT_NETWORKING
-#define USE_BLE_SERVER_NETWORKING
 #define USE_DISPLAY_MODULE
-#define M5BUTTON_MODULE
 
 //! 4.20.24 Beau Birthday, 4.20, etc
 //! trying the M5StickCPlus2 (which uses M5.unified) YELLOW version (not red)
@@ -183,22 +238,45 @@
 #endif //SMART_CLICKER_CONFIGURATION_M5
 
 
+//  ******************************* M5 CAMERA ******************************************
+
 //! This is an ESP_M5 camera (such as the M5 Timer X. 8.11.22
 //! Select  M5Stack-Timer-CAM, Minimal SPIFFS (1.9mB APP with OTA/190KB Spiffs) 240MH WiFi/BT
 #ifdef ESP_M5_CAMERA
 //#define VERSION "Version-(2.13)-11.21.2022-ESP_M5_CAMERA_WEBPAGE_Timer"
-#define VERSION "V(2.2e)-1.20.2024-ESP_M5_CAMERA_WEBPAGE_Timer_Groups_HTTPS_RTSP"
+//#define VERSION "V(2.2e)-1.20.2024-ESP_M5_CAMERA_WEBPAGE_Timer_Groups_HTTPS_RTSP"
+#define VERSION "8.17.2025(v2.3)-M5ATOM_CAMERA_WEBPAGE_HTTPS_RTSP"
+
 //! still getting xQueueGenericSend error on "status" and "feed" message
 #define ESP_M5
-#define USE_MQTT_NETWORKING
-#define USE_WIFI_AP_MODULE
-#define USE_BLE_SERVER_NETWORKING
-//add client too .. but turn off.. can act like gateway..
-#define USE_BLE_CLIENT_NETWORKING
 #define USE_SPIFF_MODULE
 #define USE_CAMERA_MODULE
+
+//! 8.16.24 bring these in to compile
+#define KEY_UNIT_SENSOR_CLASS
+#define USE_LED_BREATH
+
+//! which ATOM plugs MODULEs are included in build:
+#define ATOM_QRCODE_MODULE
+#define ATOM_SOCKET_MODULE
+#define USE_FAST_LED
+#define M5_ATOM
+
+//! FULL M5 Atom set 73% seems to compile..
+#define USE_STEPPER_MODULE
+#define USE_UI_MODULE
+#define ATOM_QRCODE_MODULE
+#define ATOM_SOCKET_MODULE
+#define USE_FAST_LED
+#define KEY_UNIT_SENSOR_CLASS
+#define USE_LED_BREATH
+#define USE_SPIFF_MODULE
+#define USE_SPIFF_MQTT_SETTING
+#define USE_SPIFF_QRATOM_SETTING
+
 #endif
 
+//  ******************************* M5 SMART CLICKER ******************************************
 //This is an easy way to turn on the smart clicker configuration...
 #ifdef ESP_M5_SMART_CLICKER_CONFIGURATION_MINIMAL
 #define VERSION "V(v1.3)-5.9.2022-ESP_M5_SMART_CLICKER-minimal"
@@ -207,11 +285,13 @@
 //! 1.22.24 added M5ButtonModule by itself..
 #define M5BUTTON_MODULE
 
-#define USE_BLE_CLIENT_NETWORKING
 #define USE_DISPLAY_MODULE
 
 
 #endif //ESP_M5_SMART_CLICKER_CONFIGURATION_MINIMAL
+
+//  ******************************* ESP_32_FEEDER_WITH_BOARD ******************************************
+
 
 #ifdef ESP_32_FEEDER_WITH_BOARD
 #define ESP_32_FEEDER // inherit that below
@@ -260,118 +340,35 @@
 #endif //BOARD
 #define ESP_32
 
-#define USE_MQTT_NETWORKING
-#define USE_BLE_SERVER_NETWORKING
 #define USE_BUTTON_MODULE
-#define USE_WIFI_AP_MODULE
 #define USE_STEPPER_MODULE
 #define USE_UI_MODULE
 //#define USE_SPIFF_MODULE
 
 #ifdef ESP_32_FEEDER_BLE_GEN3
 //! This is a feeder that gateways to a GEN3
-// NOT NOW.. #define USE_BLE_CLIENT_NETWORKING
 #endif
 
 #endif //ESP_32_FEEDER
+
+
+// *************************** ESP_32_SMART_CLICKER_CONFIGURATION*********************************
 
 //This is an easy way to turn on the smart clicker configuration...
 //This is a version that is a smart clicker, and the right button of ESP32 is the "button"
 #ifdef ESP_32_SMART_CLICKER_CONFIGURATION
 #define VERSION "V2.6-4.23.2022-ESP_32_SMART_CLICKER"
 #define ESP_32
-#define USE_MQTT_NETWORKING
 #define USE_BUTTON_MODULE
-#define USE_WIFI_AP_MODULE
-#define USE_BLE_CLIENT_NETWORKING
-#define USE_BLE_SERVER_NETWORKING
 #endif //ESP_32_SMART_CLICKER_CONFIGURATION
 
 //This is an easy way to turn on the smart clicker configuration...
 #ifdef ESP_M5_SERVER
 #define VERSION "Version-2.5-4.23.2022-ESP_M5_SERVER"
 #define ESP_M5
-#define USE_MQTT_NETWORKING
-#define USE_BLE_SERVER_NETWORKING
 #define USE_BUTTON_MODULE
-#define USE_WIFI_AP_MODULE
 #endif //ESP_M5_SERVER
 
-//  ******************************* M5ATOM ******************************************
-
-//!NOTE: M5_ATOM is define for the subset of ESP_M5 that is an ATOM
-//! This turns on features like the LED display
-
-//! m5Atom kind supported
-
-
-//! 1.5.24 NOW the M5AtomLite is all the ATOM's but configured to 1 at a time
-//This is an easy way to turn on the smart clicker configuration...
-//! https://docs.m5stack.com/en/atom/atomic_qr
-//! library:  not using M5Stack-ATOM (actually using M5Stick-C-Plus)
-//! 12.26.23 day after xmas
-//! https://docs.m5stack.com/en/atom/atom_socket
-//! ALSO: use the Minimal SPIFF, 1.9m app, OTA and 190KB spiff
-//! 2.25.23 Sketch uses 1497093 bytes (76%) of program storage space. Maximum is 1966080 bytes.
-//! 8.22.24 (seems to generate m5stack_stickc_plus.bin)   .. and size now 65%
-#ifdef ESP_M5_ATOM_LITE
-#ifdef ESP_M5_ATOM_S3
-#define VERSION "2025d_4.4V(1.0a)-8.30.24-M5_ATOM_S3"
-#else
-//! ***** THIS IS MAIN "ATOM" ***** 3.29.25,  5.14.25   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom
-//!
-#define VERSION "v7_29_25(5.10f)-ATOM_NOMOTOR_SPIFF_COLOR_GPS_TIME_KEYUNIT_QR_TIME"
-
-#endif //ESP_M5_ATOM_S3
-
-#define ESP_M5
-#define M5_ATOM
-
-#define USE_MQTT_NETWORKING
-//#define USE_BUTTON_MODULE  ... ATOMQButtons.cpp
-#define USE_WIFI_AP_MODULE
-#define USE_BLE_SERVER_NETWORKING
-#define USE_BLE_CLIENT_NETWORKING //try to be a smart clicker too..
-//#define USE_DISPLAY_MODULE  .. no display
-
-#define USE_STEPPER_MODULE
-#define USE_UI_MODULE
-
-//! 5.21.25 adding feed_on_startup .. as the M5Atom is powering the 
-//! motor before we can talk to it.. so this will at least shorten that issue
-//#define FEED_ON_STARTUP
-
-//! which ATOM plugs MODULEs are included in build:
-#define ATOM_QRCODE_MODULE
-//! including ATOM_SOCKET_MODULE now ...
-#define ATOM_SOCKET_MODULE
-//#else
-
-//! the ATOM uses FAST_LED (the light on top button, but not M5AtomS3)
-#define USE_FAST_LED
-
-//! Sensors:  2.8.24 (30K above pacific)
-#define KEY_UNIT_SENSOR_CLASS
-#define USE_LED_BREATH
-//! 11.14.23 try "https" secure web call (to SemanticMarker.org/bot/...)
-//!  See https://GitHub.com/konacurrents/SemanticMarkerAPI for more info
-//crashing .. 3.22.24 (just send DOCFOLLOW for now)
-//#define USE_REST_MESSAGING
-//! 3.25.24 try again ... (not working)
-
-
-//! 4.4.24 (after glacier skiing at Crystal ice, but snowing) -- year ago now 4.4.25 (yesterday good. Today would have been amazing views)
-#define USE_SPIFF_MODULE
-#define USE_SPIFF_MQTT_SETTING
-#define USE_SPIFF_QRATOM_SETTING
-
-
-//! 4.10.24 GPS sensor
-//#define USE_GPS_SENSOR_CLASS
-
-//#endif // not M5AtomS3
-
-#endif //ESP_M5_ATOM_LITE
 
 //  ******************************* M5CORE2 ******************************************
 //! 1.22.24 M5CORE2 uses M5Core2 Library (not M5StackC-Plus)
@@ -379,11 +376,7 @@
 #define VERSION "2025v4.1.25-V(3.8a)-4.5.24-ESP_M5CORE2_OurM5Dsp_Touch_30KPacific_KeyUnit_ClickAudio_SPIFF"
 //#define VERSION "Version-(3.6)-3.17.24-ESP_M5CORE2_OurM5Dsp_Touch_30KPacific_KeyUnit_ChipID"
 #define ESP_M5
-#define USE_MQTT_NETWORKING
 #define USE_BUTTON_MODULE  ///... ATOMQButtons.cpp
-#define USE_WIFI_AP_MODULE
-#define USE_BLE_SERVER_NETWORKING
-#define USE_BLE_CLIENT_NETWORKING //try to be a smart clicker too..
 #define USE_DISPLAY_MODULE
 
 //! 11.14.23 try "https" secure web call (to SemanticMarker.org/bot/...)
@@ -406,7 +399,6 @@
 #define USE_SPIFF_QRATOM_SETTING
 
 #endif //M5CORE2_MODULE
-
 
 
 #if !defined(ESP_M5) && !defined(ESP_32) && !defined(M5_ATOM) && !defined(M5CORE2_MODULE)
@@ -493,15 +485,16 @@ Error only one of ESP_M5 or ESP_32 or M5_ATOM or M5CORE2_MODULE must be defined
 //! set bootstrap_clean one time, then turn it off.. Sometimes get's it out of error funk.
 //#define BOOTSTRAP_CLEAN
 
-#ifdef USE_MQTT_NETWORKING
+//! 8.16.25 MQTT
 #include "src/MQTTModule/MQTTNetworking.h"
-#endif
-#ifdef USE_BLE_SERVER_NETWORKING
+//! 8.16.25 BLE SERVER
 #include "src/BLEServerModule/BLEServerNetworking.h"
-#endif
-#ifdef USE_BLE_CLIENT_NETWORKING
+//! 8.16.25 BLE CLIENT
 #include "src/BLEClientModule/BLEClientNetworking.h"
-#endif
+//! 8.16.25 WIFI AP
+#include "src/WIFI_APModule/WIFI_APModule.h"
+
+//! 8.16.25 REST ARE still IFDEF
 #ifdef USE_BUTTON_MODULE
 #include "src/ButtonModule/ButtonProcessing.h"
 #endif
@@ -511,9 +504,7 @@ Error only one of ESP_M5 or ESP_32 or M5_ATOM or M5CORE2_MODULE must be defined
 #ifdef USE_UI_MODULE
 #include "src/UIModule/UI.h"
 #endif
-#ifdef USE_WIFI_AP_MODULE
-#include "src/WIFI_APModule/WIFI_APModule.h"
-#endif
+
 #ifdef USE_CAMERA_MODULE
 #include "src/CameraModule/CameraModule.h"
 #endif

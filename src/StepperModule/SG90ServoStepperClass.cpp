@@ -36,13 +36,6 @@ SG90ServoStepperClass::SG90ServoStepperClass(char *config) : MotorStepperClassTy
 const int IN1_PIN = 19;
 
 
-//Keeps track of the current direction
-//Relative to the face of the motor.
-//Clockwise (true) or Counterclockwise(false)
-//We'll default to clockwise
-bool _clockwise_SG90ServoStepperClass = true;
-
-
 /************* Set all motor pins off which turns off the motor ************************************************/
 void clearPins_SG90ServoStepper()
 {
@@ -77,7 +70,7 @@ void SG90ServoStepperClass::start_MotorStepper()
     SerialDebug.println("SG90ServoStepperClass::start_MotorStepper");
     
     //! ask the class wide method for the clockwise direction
-    _clockwise_SG90ServoStepperClass = this->isClockwiseDirection();
+    // this->isClockwiseDirection();
     
     SerialDebug.println("**************** SG90ServoStepperStepper::Starting SG90ServoStepper *******************");
     

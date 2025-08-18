@@ -57,11 +57,10 @@ void M5Core2Callback(char *parameter, boolean flag)
     {
         case SM_doc_follow:
             //! lets do whatever the DOC FOLLOW shows to do..
-#ifdef USE_MQTT_NETWORKING
+            //! 8.16.25 MQTT
             //send feed over MQTT
             sendMessageMQTT((char *)"#FEED");
             
-#endif  //useMQTT
             break;
         default:
             //This (in mainModule) will look if connected so sends over BLE, otherwise MQTT (if connected)
@@ -273,10 +272,9 @@ void checkButtonC_M5Core2Module()
         //! update the model (ButtonProcessing)
        // buttonB_LongPress();
         
-#ifdef USE_MQTT_NETWORKING
+        //! 8.16.25 MQTT
         //!also send a #STATUS
         sendMessageMQTT((char*)"#STATUS");
-#endif
         //! set A/B/C button touched ..
         _buttonTouched_M5Core2Module = true;
     }
@@ -287,10 +285,9 @@ void checkButtonC_M5Core2Module()
         SerialDebug.println("M5Core2 **** C. SHORT PRESS ***");
         //! update the model (ButtonProcessing)
         toggleShowingScrollingTextMode_displayModule();
-#ifdef USE_MQTT_NETWORKING
+        //! 8.16.25 MQTT
         //!also send a #STATUS
         sendMessageMQTT((char*)"#STATUS");
-#endif
         //! set A/B/C button touched ..
         _buttonTouched_M5Core2Module = true;
     }

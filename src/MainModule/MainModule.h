@@ -104,11 +104,10 @@ void sendMessageString_mainModule(char *messageString);
 //!adding a synchronous call to send a message over the network (assuming MQTT but not specified), this tacks on {device} and {t:time}
 void sendMessageStringTopic_mainModule(char *messageString, char*topicString);
 
-#ifdef USE_MQTT_NETWORKING
+//! 8.16.25 MQTT
 //!example callback: but the scope would have the pCharacteristic defined, etc..
 //!This is pased just before the setupMQTTNetworking() is called..
 void feedMessageCallback(char *message);
-#endif
 
 //!supports turning on the solid light.. 
 void solidLightOnOff(boolean flag);
@@ -145,7 +144,7 @@ void blinkMessageCallback(char *message);
 
 
 //!take a picture (calls the camera module).. what to do with picture??? TODO
-void takePicture_MainModule();
+//void takePicture_MainModule();
 
 //!clean the SSID eprom (MQTT_CLEAN_SSID_EPROM)
 void cleanSSID_EPROM_MessageCallback(char *message);

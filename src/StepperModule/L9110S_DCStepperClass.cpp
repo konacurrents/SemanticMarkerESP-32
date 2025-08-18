@@ -35,12 +35,6 @@ const int IN2_PIN = 25;  //IN2 on the ULN2003 Board, PINK end of the Pink/Orange
 
 //https://randomnerdtutorials.com/esp32-pwm-arduino-ide/
 
-//Keeps track of the current direction
-//Relative to the face of the motor.
-//Clockwise (true) or Counterclockwise(false)
-//We'll default to clockwise
-bool _clockwise_L9110S_DCStepperClass = true;
-
 /************* Set all motor pins off which turns off the motor ************************************************/
 
 //! stop the motor
@@ -100,9 +94,6 @@ void L9110S_DCStepperClass::start_MotorStepper()
     SerialDebug.println("L9110S_DCStepperClass::start_MotorStepper");
     L9110S_DCStepperClass::setup_MotorStepper();
 
-    //! ask the class wide method for the clockwise direction
-    _clockwise_L9110S_DCStepperClass = this->isClockwiseDirection();
-    
     SerialDebug.println("***** L9110S_DCStepperStepper::Starting L9110S_DCStepper *********");
     
     //! 5.15.25 try the async CLICK
@@ -113,7 +104,7 @@ void L9110S_DCStepperClass::start_MotorStepper()
     //Set the four pins to their proper state for the current step in the sequence,
     //and for the current direction
     
-    if (_clockwise_L9110S_DCStepperClass)
+    if (this->isClockwiseDirection())
     {
         digitalWrite(_pin1, LOW);
         digitalWrite(_pin2, HIGH);

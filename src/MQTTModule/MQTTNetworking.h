@@ -12,7 +12,7 @@
 #define MQTTNetworking_h
 
 #include "../../Defines.h"
-#ifdef USE_MQTT_NETWORKING
+//! 8.16.25 MQTT
 
 #include "OTAImageUpdate.h"
 //does this make those .h available?
@@ -37,9 +37,10 @@
 //NEW 4.1.22  (what to do if no MQTT??)
 #define MQTT_CALLBACK_TILT_MOTION_DETECTED 5
 #define MQTT_CALLBACK_PIR_DETECTED 6
+#define MQTT_CALLBACK_SSID_DETECTED 7
 
 //! MAX must be updated to 1 more than last item..
-#define MQTT_MAX_CALLBACKS 7
+#define MQTT_MAX_CALLBACKS 8
 
 //!THIS IS the setup() and loop() but using the "component" name, eg MQTTNetworking()
 //! called from the setup()
@@ -85,6 +86,10 @@ void publishMQTTMessageDefaultTopic(char *message);
 //! fileExtension is .jpg, .json, .txt etc
 void publishBinaryFile(char *topic, uint8_t * buf, size_t len, String fileExtension);
 
+//! 8.17.25
+//! for use by others, like RTSP
+//!  return the WiFi Client
+//WiFiClient getWIFIClient();
 
 //! send semantic /smrun
 //! 3.25.24 this is an HTTP not https
@@ -158,7 +163,6 @@ void publishSMRunMessage(char* smrunMessage);
 //!Decode the URL (exposed 12.17.23 for the scanner
 String MQTT_urlDecode(String input);
 
-#endif // USE_MQTT_NETWORKING
 
 #endif // MQTTNetworking_h
 

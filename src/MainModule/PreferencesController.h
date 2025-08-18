@@ -153,8 +153,13 @@
 //! define the sensors (not sensorPlugs). MQTT:  set:sensor,  set:sensors
 #define PREFERENCE_SENSORS_SETTING 52
 
+//!8.14.25 Dead Movie from 10.19.1974 tonight..
+//! issue #394 stepperRPM
+//! stepper RPM
+#define PREFERENCE_STEPPER_RPM_SETTING 53
+
 //! *******  1 greater than last value **** IMPORTANT *** and no gaps..
-#define MAX_MAIN_PREFERENCES 53
+#define MAX_MAIN_PREFERENCES 54
 
 //! 8.2.24 retrieve the includeGroup
 //! really ask a topic if it's in the include group

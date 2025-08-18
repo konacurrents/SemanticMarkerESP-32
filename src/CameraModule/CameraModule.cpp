@@ -5,9 +5,9 @@
 
 //! 1.20.24 try to merge the RTSP server (not Web yet)
 //!Stream Link: rtsp://192.168.0.221:8554/mjpeg/1
-#ifdef USE_MQTT_NETWORKING
-#else
+//! 8.16.25 MQTT
 //! if not MQTT then try the RTSPServer
+#ifdef TRY_RTSP_SERVER //TODO..
 #define ENABLE_RTSPSERVER
 #endif
 
@@ -21,11 +21,8 @@
 
 OV2640 _camera;
 
-#endif //ENABLE_RTSPSERVER
-
-
-#ifdef ENABLE_RTSPSERVER
 WiFiServer _rtspServer(8554);
+
 #endif  //ENABLE_RTSPSERVER
 
 
@@ -94,6 +91,7 @@ camera_config_t _cameraConfig;
 //! setup
 void setup_CameraModule()
 {
+    SerialDebug.println("setup_CameraModule");
     
     //! config of camera
     // camera_config_t cameraConfig;
@@ -124,7 +122,7 @@ void setup_CameraModule()
     
     if(psramFound())
     {
-        SerialTemp.println("psramFound");
+        //SerialTemp.println("psramFound");
         
         _cameraConfig.frame_size =  FRAMESIZE_UXGA; // FRAMESIZE_ + QVGA|CIF|VGA|SVGA|XGA|SXGA|UXGA
                                                     //QQVGA-UXGA Do not use sizes above QVGA when not JPEG
@@ -134,7 +132,7 @@ void setup_CameraModule()
     }
     else
     {
-        SerialTemp.println("psram NOT Found");
+        //SerialTemp.println("psram NOT Found");
         
         _cameraConfig.frame_size = FRAMESIZE_SVGA;
         _cameraConfig.jpeg_quality = 12;
@@ -160,10 +158,18 @@ void setup_CameraModule()
         //! done in MQTTNetworking.cpp
         WiFi.mode(WIFI_STA);
         WiFi.begin("SunnyWhiteriver", "sunny2021");
+        //! TODO: the MQTT isn't initialized yet .. so values are crap
+        //! NEEDS A CALLBACK registered when the internet is availabe ...
+        //SerialDebug.printf("SSID = %s, PASS= %s\n",get_WIFI_SSID(), get_WIFI_PASSWORD() );
+        //WiFi.begin(get_WIFI_SSID(), get_WIFI_PASSWORD());
+
+        int count = 0;
         while (WiFi.status() != WL_CONNECTED)
         {
             delay(500);
             SerialDebug.print(F("."));
+            if (count++ > 20)
+                return;
         }
         ip = WiFi.localIP();
         SerialDebug.println(F("WiFi connected"));
@@ -180,6 +186,14 @@ void setup_CameraModule()
 #endif
 }
 
+
+//! 8.17.25 add this for when SSID is set
+//!clean the SSID eprom (MQTT_CALLBACK_SSID_DETECTED)
+void ssidDetected_MessageCallback(char *message)
+{
+    SerialDebug.printf("TODO ssidDetected_MessageCallback %s\n", message);
+    //! call the code above to start the RTSP Server
+}
 
 //!! split this up..  Sure seems like the picture is taken right now!!
 void initCameraSensor()
@@ -306,10 +320,9 @@ void takePicture_CameraModule_internal(boolean publishBinary)
     //!turn off light
     digitalWrite(2, LOW);
     
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     if (publishBinary)
         publishBinaryFile((char*)"usersP/bark/images", cameraFB->buf, cameraFB->len, "jpg");
-#endif
     //!close it up
     esp_camera_fb_return(cameraFB);
     

@@ -17,17 +17,29 @@
 //! 5.18.25 45 years Mt St Hellens Eruption
 #include "L9110S_DCStepperClass.h"
 
-//! MAKE SURE THIS IS UPDATED...
-#define NUM_STEPPER_CLASS 5
+//! 8.13.25 Trying Stepper motor with HDriver (other was rather loud and grating)
+#include "ULN2003_StepperClass.h"
+
 
 //! instances of the PTStepeprClass
+//! 1
 DCMotorStepperClass* _DCMotorStepperClass;
+//! 2
 PTStepperClass* _PTStepperClass;
+//! 3
 HDriverStepperClass* _HDriverStepperClass;
+//! 4
 //! 3.31.25 try Servo ..
 SG90ServoStepperClass* _SG90ServoStepperClass;
+//! 5
 //! 5.18.25 45 years Mt St Hellens Eruption
 L9110S_DCStepperClass* _L9110S_DCStepperClass;
+//! 6
+//! 8.13.25 Trying Stepper motor with HDriver (other was rather loud and grating)
+ULN2003_StepperClass* _ULN2003_StepperClass;
+
+//! MAKE SURE THIS IS UPDATED...
+#define NUM_STEPPER_CLASS 6
 
 //! use this one...
 MotorStepperClassType *_whichMotorStepper;
@@ -58,7 +70,12 @@ void setup_StepperClasses()
     //! 5.18.25 45 years Mt St Hellens Eruption
     _L9110S_DCStepperClass = new L9110S_DCStepperClass((char*)"L9110S_DCStepperClass");
     _motorSteppers[whichStepperClasssIndex++] = _L9110S_DCStepperClass;
+    
+    //! 8.13.25 Trying Stepper motor with HDriver (other was rather loud and grating)
+    _ULN2003_StepperClass = new ULN2003_StepperClass((char*)"ULN2003_StepperClass");
+    _motorSteppers[whichStepperClasssIndex++] = _ULN2003_StepperClass;
 
+    //! just check if we haven't goofed with NUM_STEPPER_CLASS not being the actual number whichStepperClasssIndex
     if (whichStepperClasssIndex != NUM_STEPPER_CLASS)
     {
         SerialError.printf("stepperIndex %d not %d\n", whichStepperClasssIndex, NUM_STEPPER_CLASS);

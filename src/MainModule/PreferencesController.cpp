@@ -177,6 +177,11 @@ char _includeGroupsStringArray[NUMBER_GROUPS][STRING_MAX_SIZE];
 //! define the sensors (not sensorPlugs). MQTT:  set:sensor,  set:sensors
 #define EPROM_SENSORS_SETTING "52sensors"
 
+//!8.14.25 Dead Movie from 10.19.1974 tonight..
+//! issue #394 stepperRPM
+//! stepper RPM
+#define EPROM_STEPPER_RPM_SETTING "53sRPM"
+
 //!the EPROM is in preferences.h
 #include <Preferences.h>
 //!name of main prefs eprom
@@ -502,7 +507,7 @@ void savePreferenceFloat_mainModule(int preferenceID, float val)
 {
     //!convert to a string..
     char str[20];
-    sprintf(str,"%f",val);
+    sprintf(str,"%2f",val);
     savePreference_mainModule(preferenceID, str);
 }
 
@@ -755,7 +760,7 @@ void initPreferencesMainModule()
                 (char*) EPROM_STEPPER_ANGLE_FLOAT_SETTING;
 #ifdef ESP_M5
                 //! 5.2.25 default 0.5 SECONDS (not angle for the HDriver
-                _preferenceMainModuleLookupDefaults[i] = (char*)"0.25";
+                _preferenceMainModuleLookupDefaults[i] = (char*)"1.25";
 #else
                 _preferenceMainModuleLookupDefaults[i] = (char*)"22.5";
 #endif
@@ -1075,6 +1080,17 @@ void initPreferencesMainModule()
                 (char*)EPROM_SENSORS_SETTING;
                 _preferenceMainModuleLookupDefaults[i] = (char*)"BuzzerSensorClass,23,33,L9110S_DCStepperClass,21,25";
                 break;
+              
+                
+                //!8.14.25 Dead Movie from 10.19.1974 tonight..
+                //! issue #394 stepperRPM
+                //! stepper RPM
+            case PREFERENCE_STEPPER_RPM_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_STEPPER_RPM_SETTING;
+                _preferenceMainModuleLookupDefaults[i] = (char*)"15.0";
+                break;
+                
                 
             default:
                 SerialError.printf(" ** NO default for preference[%d]\n", i);
@@ -1156,6 +1172,11 @@ void printPreferenceValues_mainModule()
     //! 5.14.25
     SerialTemp.printf("PREFERENCE_SENSORS_SETTING: %s\n", getPreference_mainModule(PREFERENCE_SENSORS_SETTING));
 
+    //!8.14.25 Dead Movie from 10.19.1974 tonight..
+    //! issue #394 stepperRPM
+    //! stepper RPM
+    SerialTemp.printf("PREFERENCE_STEPPER_RPM_SETTING: %s\n", getPreference_mainModule(PREFERENCE_STEPPER_RPM_SETTING));
+
     
 #ifdef M5CORE2_MODULE
     SerialTemp.printf("PREFERENCE_M5Core2_SETTING:\n");
@@ -1179,12 +1200,21 @@ void printPreferenceValues_mainModule()
     //! show example JSON  (break up as getPreference re-uses same string...
     SerialTemp.printf("{\"set\":\"sensors\",\"val\":\"%s\"}", (char*)"BuzzerSensorClass,19,22,L9110S_DCStepperClass,21,25");
     SerialTemp.println();
+    SerialTemp.printf("{\"set\":\"sensors\",\"val\":\"%s\"}", (char*)"BuzzerSensorClass,21,25,ULN2003_StepperClass,23,33");
+    SerialTemp.println();
     SerialTemp.printf("{\"set\":\"sensorPlugs\",\"val\":\"L9110S_DCStepperClass\"}");
     SerialTemp.println();
     SerialTemp.printf("{\"set\":\"M5AtomKind\",\"val\":\"M5HDriver\"}");
     SerialTemp.println();
     SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"0.25\"}");
     SerialTemp.println();
+    SerialTemp.printf("{\"set\":\"stepperRPM\",\"val\":\"15.0\"}");
+    SerialTemp.println();
+    SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"2048.0\"}");
+    SerialTemp.println();
+    
+    SerialDebug.println("{\"ssid\":\"Bob\", \"ssidPassword\":\"scott\"}");
+
     
     //! 7.31.25 PIN USE
     SerialTemp.println(" *** PIN USE .. check for duplicated. Will do this for you later..");

@@ -15,7 +15,7 @@
  */
 //#include "../../Defines.h"
 #include "WIFI_APModule.h"
-#ifdef USE_WIFI_AP_MODULE
+//! 8.16.25 WIFI AP
 
 #define TRY_FEED_FROM_AP
 
@@ -187,11 +187,10 @@ void clean_SSID_WIFICredentials()
     _WIFI_ssid = "";
     _WIFIPreferences.putString(WIFI_SSID, _WIFI_ssid);
     _WIFIPreferences.end();
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     SerialDebug.println("call cleanMQTTpasswordsUpdateInEPROM");
     //! 9.18.23 LA (after Eagle Rock bike ride, Van Morrison tomorrow)
     cleanMQTTpasswordsUpdateInEPROM();
-#endif
 
     SerialDebug.println("cleaned EPROM WIFI ssid and MQTT passwords ** REBOOTING");
     //Restart MPU.  重启MPU
@@ -446,11 +445,10 @@ s += "<button onClick=\"window.location.reload();\">Refresh to re-discover WIFI 
             s += "\nVERSON = " + String(VERSION);
           //  s += "WIFI_CREDENTIAL_1:" +  getPreference_mainModule(PREFERENCE_WIFI_CREDENTIAL_1_SETTING)  + "\n";
             
-#ifdef USE_MQTT_NETWORKING
+            //! 8.16.25 MQTT
             //! 9.16.23 some debug information
             //! retrieve the Configuration JSON string in JSON format..
             s += "\nConfig (minus password) = \n" + getJSONConfigString();
-#endif
             //! retrieve the WIFIInfoString
             s += "\nLast AP reason = " + String(getPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING));
 
@@ -885,7 +883,3 @@ String getJavascriptString()
     return s;
 }
 
-/*
- 
- */
-#endif //USE_WIFI_AP_MODULE

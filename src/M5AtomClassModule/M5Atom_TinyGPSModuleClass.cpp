@@ -10,11 +10,17 @@
 #include "../TinyGPS/MultipleSatellite.h"
 
 //! 7.21.25 use the ATOM_SM processor for BLE feed
-#include "../ATOM_QRCode_Module/ATOM_SM.h"
+//#include "../ATOM_QRCode_Module/ATOM_SM.h"
+#include "../TinyGPS/TinyGPS.h"
 
 #ifdef USE_FAST_LED
 #include "../ATOM_LED_Module/M5Display.h"
 #endif
+
+//! 7.20.25 60outside. 6 month since Trump
+//! add time from @see https://github.com/PaulStoffregen/Time/blob/master/examples/TimeGPS/TimeGPS.ino
+//#include "../TimeModule/TimeLib.h"
+#include <TimeLib.h>
 
 
 //! TODO.. have only 1 of these included in build, but change the callback
@@ -25,10 +31,6 @@
 #include "../SensorClass/SensorClassType.h"
 #include "../SensorClass/KeyUnitSensorClass.h"
 
-//! 7.20.25 60outside. 6 month since Trump
-//! add time from @see https://github.com/PaulStoffregen/Time/blob/master/examples/TimeGPS/TimeGPS.ino
-//#include "../TimeModule/TimeLib.h"
-#include <TimeLib.h>
 
 //! keyUnitSensorClass object for the BUTTON
 KeyUnitSensorClass *_KeyUnitSensorClass_ATOMTinyGPSModule;
@@ -43,16 +45,6 @@ void M5AtomCallback_TinyGPS(char *parameter, boolean flag)
     
     //!send status after power on/off change..
     sendStatusMQTT_mainModule();
-
-#ifdef USE_FAST_LED
-    CRGB randomColor = getRandomColor();
-    fillpix(randomColor);
-    //fillpix(L_BLUE);
-#endif
-    
-    //! 7.21.25 flume with laura (cloudy)
-    //! also now do the FEED via the ATOM_SM 
-    ATOM_processSemanticMarker((char*)"https://SemanticMarker.org/bot/feed", (char*)"https://SemanticMarker.org/bot/feed");
   
 }
 #endif //KEY_UNIT_SENSOR_CLASS

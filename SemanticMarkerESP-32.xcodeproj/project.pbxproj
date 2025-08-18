@@ -84,10 +84,8 @@
 		D2E4309D2B02DC5900E2C80B /* MQTTNetworking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MQTTNetworking.h; sourceTree = "<group>"; };
 		D2E4309F2B02DC5900E2C80B /* BLEClientNetworking.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BLEClientNetworking.h; sourceTree = "<group>"; };
 		D2E430A02B02DC5900E2C80B /* BLEClientNetworking.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BLEClientNetworking.cpp; sourceTree = "<group>"; };
-		D2E430A32B02DC5900E2C80B /* ButtonModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ButtonModule.h; sourceTree = "<group>"; };
 		D2E430A42B02DC5900E2C80B /* ButtonProcessing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ButtonProcessing.h; sourceTree = "<group>"; };
 		D2E430A52B02DC5900E2C80B /* ButtonProcessing.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ButtonProcessing.cpp; sourceTree = "<group>"; };
-		D2E430A62B02DC5900E2C80B /* ButtonModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ButtonModule.cpp; sourceTree = "<group>"; };
 		D2E430A82B02DC5900E2C80B /* CameraModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CameraModule.h; sourceTree = "<group>"; };
 		D2E430A92B02DC5900E2C80B /* CameraModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CameraModule.cpp; sourceTree = "<group>"; };
 		D2E430AB2B02DC5900E2C80B /* PreferencesController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PreferencesController.cpp; sourceTree = "<group>"; };
@@ -312,10 +310,8 @@
 		D2E430A22B02DC5900E2C80B /* ButtonModule */ = {
 			isa = PBXGroup;
 			children = (
-				D2E430A32B02DC5900E2C80B /* ButtonModule.h */,
 				D2E430A42B02DC5900E2C80B /* ButtonProcessing.h */,
 				D2E430A52B02DC5900E2C80B /* ButtonProcessing.cpp */,
-				D2E430A62B02DC5900E2C80B /* ButtonModule.cpp */,
 			);
 			path = ButtonModule;
 			sourceTree = "<group>";

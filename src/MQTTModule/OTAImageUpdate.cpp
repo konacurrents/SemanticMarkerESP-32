@@ -11,7 +11,7 @@
 //!Code from AWS_S3_OTA_Update, it only uses HTTP (not https)
 //!https://www.tutorialspoint.com/esp32_for_iot/performing_the_over_the_air_update_of_esp32_firmware.htm
 #include "OTAImageUpdate.h"
-#ifdef USE_MQTT_NETWORKING
+//! 8.16.25 MQTT
 
 #ifdef USE_REST_MESSAGING
 #include <WiFiClientSecure.h>
@@ -65,10 +65,9 @@ void execOTA()
 {
   SerialDebug.println("Connecting to: " + String(_hostIP) + ", bin = " + String(_binName));
 #ifdef TRY_WITHOUT_THIS_MAYBE_OTHER_THREAD_GOOFS
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     //note needs # or won't send. the {device} is tacked on..
     sendMessageMQTT((char*)"#UPDATING_OTA");
-#endif
 #endif
 
     //try this..  still talking some time..
@@ -270,4 +269,3 @@ void performOTAUpdateSimple()
     execOTA();
 }
 
-#endif // use MQTT

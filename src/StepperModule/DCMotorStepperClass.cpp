@@ -42,7 +42,7 @@ int _pins_DCMotorStepperClass[NUM_PINS]{
 };
 /**
  This replaces the following, when clearPins() called
- #ifdef  USE_MOTOR
+ 
  pinMode(MOTOR_IN1, OUTPUT);
  pinMode(MOTOR_IN2, OUTPUT);
  pinMode(BUZZER_IN1, OUTPUT);
@@ -53,14 +53,6 @@ int _pins_DCMotorStepperClass[NUM_PINS]{
  digitalWrite(BUZZER_IN2, LOW);
  #endif
  */
-
-
-//Keeps track of the current direction
-//Relative to the face of the motor.
-//Clockwise (true) or Counterclockwise(false)
-//We'll default to clockwise
-bool _clockwise_DCMotorStepperClass = true;
-
 
 /************* Set all motor pins off which turns off the motor ************************************************/
 void clearPins_DCMotorStepper()
@@ -101,16 +93,13 @@ void DCMotorStepperClass::stop_MotorStepper()
 //!This will advance the stepper clockwise once by the angle specified in SetupStepper. Example 16 pockets in UNO is 22.5 degrees
 void DCMotorStepperClass::start_MotorStepper()
 {
-    //!call super
-    _clockwise_DCMotorStepperClass = this->isClockwiseDirection();
-
     SerialDebug.println("**************** DCMotorStepper::Starting DCMotorStepper *******************");
     
 #define NEW_CODE_HERE
     //Set the four pins to their proper state for the current step in the sequence,
     //and for the current direction
     
-    if (_clockwise_DCMotorStepperClass) {
+    if (this->isClockwiseDirection()) {
         digitalWrite(MOTOR_IN1, LOW);
         digitalWrite(MOTOR_IN2, HIGH);
     } else {

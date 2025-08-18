@@ -195,13 +195,7 @@ class BLEServerNetworkingCharacteristicCallbacks : public NimBLECharacteristicCa
             //!This is implemented by incrementScreenColor_mainModule() since it knows the MAX value of colors
             incrementScreenColor_displayModule();
    
-#ifdef ESP_M5_CAMERA
-#ifdef USE_CAMERA_MODULE
 
-            //!take a picture
-            takePicture_CameraModule();
-#endif
-#endif // camera
 #endif
 #ifdef NOT_NOW_MQTT_NETWORKING
             //This should be a 'register' command..
@@ -381,11 +375,8 @@ void setup_BLEServerNetworking(char *serviceName, char * deviceName, char *servi
     }
     else
     {
-#ifdef FORCE_USE_BLE_SERVER_DEVICE_NAME
-        if (true)
-#else
+        //! 8.16.25 (use the setting)
          if (getPreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING))
-#endif
         {
             sprintf(_serviceName_BLEServer, "%s:%s", serviceName, storedDeviceName);
         }

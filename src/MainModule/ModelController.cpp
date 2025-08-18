@@ -341,14 +341,13 @@ void invokeFeed_ModelController()
     ///feed always  (done after the code below..)
     main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
     
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     //!unfortunately, the incrementFeedCount() is AFTER the redrawSemanticMarker..
     /// This sets the semantic marker  .. which is current SM
     sprintf(_smMessage_ModelController,"{'cmd':'%s'}",charSMMode_mainModule(getCurrentSMMode_mainModule()));
     //   processJSONMessageMQTT(charSMMode_mainModule(getCurrentSMMode_mainModule()), TOPIC_TO_SEND);
     processJSONMessageMQTT(_smMessage_ModelController, TOPIC_TO_SEND);
     
-#endif
 }
 
 //! just unpair .. don't skip
@@ -372,9 +371,8 @@ void invokeUnpairNoName_ModelController()
     //!refactored base
     invokeUnpairNoNameBASE_ModelController();
     
-#ifdef USE_BLE_CLIENT_NETWORKING
+    //! 8.16.25 BLE CLIENT
     disconnect_BLEClientNetworking();
-#endif
 }
 
 //!performs the unpairing
@@ -383,10 +381,9 @@ void invokeUnpair_ModelController(char *nameOrAddress)
     //!refactored base
     invokeUnpairNoNameBASE_ModelController();
     
-#ifdef USE_BLE_CLIENT_NETWORKING
+    //! 8.16.25 BLE CLIENT
     skipNameOrAddress_BLEClientNetworking(nameOrAddress);
     disconnect_BLEClientNetworking();
-#endif
     
 }
 //!performs the pairing..  to whatever is currently connected, this means a message could make that happen
@@ -418,13 +415,12 @@ void invokePair_ModelController()
 //!performs skip
 void invokeSkip_ModelController(char *nameOrAddress)
 {
-#ifdef USE_BLE_CLIENT_NETWORKING
+    //! 8.16.25 BLE CLIENT
 
     skipNameOrAddress_BLEClientNetworking(nameOrAddress);
 
     //TODO: look to see if the Address can be used to not connect right away to same one...
     disconnect_BLEClientNetworking();
-#endif
 }
 
 //! toggles the GEN3 setting
@@ -460,11 +456,9 @@ void updateMenuState(ModelKindEnum modelKind)
             //!  the pairedName stored in EPROM can be an Address (eg. 03:34:23:33)
             //!
             //!show the BLE connected status at the bottom (G3 if gen3), WIFI, and AP if APmode
-#ifdef USE_BLE_CLIENT_NETWORKING
+            //! 8.16.25 BLE CLIENT
             boolean isConnectedBLE = isConnectedBLEClient();
-#else
-            boolean isConnectedBLE = false;
-#endif
+
             SerialLots.printf("\nPAIRED_DEVICE_MODEL\n");
             SerialLots.printf("isConnectedBLE(%d)\n", isConnectedBLE);
             
@@ -1062,14 +1056,12 @@ boolean invokeMenuState(ModelKindEnum modelKind)
                     main_dispatchAsyncCommand(ASYNC_BLANKSCREEN);
                     break;
                 case 3: // Uno
-#ifdef USE_BLE_CLIENT_NETWORKING
+                        //! 8.16.25 BLE CLIENT
                     sendCommandBLEClient_13orLess("u");
-#endif
                     break;
                 case 4: //FeedKindTumbler
-#ifdef USE_BLE_CLIENT_NETWORKING
+                        //! 8.16.25 BLE CLIENT
                     sendCommandBLEClient_13orLess("L");
-#endif
                     break;
                     
                 case 5: //color
@@ -1086,7 +1078,7 @@ boolean invokeMenuState(ModelKindEnum modelKind)
                     break;
                 case 8:
                     //send WIFI to all except this page.. but keep some state.
-#ifdef USE_MQTT_NETWORKING
+                    //! 8.16.25 MQTT
                     //eg: https://iDogWatch.com/bot/cmddevice/tao49@comcast.net/PASS/dev/sm1
                     //! BUT at the MQTT level not web page level
                     
@@ -1102,11 +1094,10 @@ boolean invokeMenuState(ModelKindEnum modelKind)
                     deviceState->currentPageState = (deviceState->currentPageState +1 ) % deviceState->maxPageState;
                 }
                     
-#endif // USE_MQTT_NETWORKING
                     break;
                 case 9:
                     // WIFI chage wave page
-#ifdef USE_MQTT_NETWORKING
+                    //! 8.16.25 MQTT
                     //eg: https://iDogWatch.com/bot/cmddevice/tao49@comcast.net/PASS/dev/sm1
                     //! BUT at the MQTT level not web page level
                     
@@ -1122,11 +1113,10 @@ boolean invokeMenuState(ModelKindEnum modelKind)
                     
                 }
                     
-#endif // USE_MQTT_NETWORKING
                     break;
                 case 10:
                     // WIFI change stream (1..3)
-#ifdef USE_MQTT_NETWORKING
+                    //! 8.16.25 MQTT
                     //eg: https://iDogWatch.com/bot/cmddevice/tao49@comcast.net/PASS/dev/sm1
                     //! BUT at the MQTT level not web page level
                     
@@ -1146,7 +1136,6 @@ boolean invokeMenuState(ModelKindEnum modelKind)
                     deviceState->currentStreamNum = (deviceState->currentStreamNum +1 ) % deviceState->maxStream;
                 }
                     
-#endif // USE_MQTT_NETWORKING
                     break;
                 case 11:
                     //! set transient look for PTClicker

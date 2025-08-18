@@ -323,9 +323,8 @@ void sendStrings_SPIFFModule(int numberOfLines)
     
     int len = len_SPIFFFile(SPIFFS, SPIFF_FILE_NAME);
     SerialDebug.printf("sendStrings_SPIFFModule (%d)\n", len);
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     publishSPIFFFile_MQTT((char*)"usersP/bark/images", SPIFF_FILE_NAME, len);
-#endif
     
 #ifdef OLD
     
@@ -336,7 +335,7 @@ void sendStrings_SPIFFModule(int numberOfLines)
     int linesMax = linesInFile_SPIFFModule(SPIFFS, SPIFF_FILE_NAME);
     SerialDebug.printf("linesMax = %d\n", linesMax);
     //somehow send over MQTT..
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
 //    if (numberOfLines > 120)
 //        numberOfLines = 120;
     // no limit
@@ -412,7 +411,6 @@ void sendStrings_SPIFFModule(int numberOfLines)
 #else
     sendMessageNoChangeMQTT((char*)"Sending Post Mortum Debug ..todo");
 
-#endif
 #endif
 #endif // OLD
 }

@@ -1118,11 +1118,9 @@ void drawSensorStatus(int screenType)
     boolean gatewayOn = getPreferenceBoolean_mainModule(PREFERENCE_MAIN_GATEWAY_VALUE);
     boolean inMinMenu = getPreferenceBoolean_mainModule(PREFERENCE_IS_MINIMAL_MENU_SETTING);
     boolean isConnectedBLE =
-#ifdef USE_BLE_CLIENT_NETWORKING
+    //! 8.16.25 BLE CLIENT
     isConnectedBLEClient();
-#else
-    false;
-#endif
+
     
     //!add the Gateway status.. Now, if the preference is only GEN3 and not connected, then show a Gx, but if connected then G3, and g if any kind but not connected
     String gStatus = "g";
@@ -1151,13 +1149,12 @@ void drawSensorStatus(int screenType)
             multilineScreenType = true;
             if (getPreferenceBoolean_mainModule(PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE))
             {
-#ifdef USE_MQTT_NETWORKING
+                //! 8.16.25 MQTT
 
                 if (isConnectedWIFI_MQTTState())
                     sprintf(infoString,"Swap WIFI");
                 else
                     sprintf(infoString,"Swap/Retry\nWIFI");
-#endif
             }
             else
             {
@@ -1167,11 +1164,10 @@ void drawSensorStatus(int screenType)
             break;
         case SCREEN_TYPE_AP:
             multilineScreenType = true;
-#ifdef USE_WIFI_AP_MODULE
+            //! 8.16.25 WIFI AP
             if (doneWIFI_APModule_Credentials)
                 sprintf(infoString,"Enter AP\n192.168.4.1");
             else
-#endif
                 sprintf(infoString,"In AP\n192.168.4.1");
             break;
         case SCREEN_TYPE_GUEST_PAGE:
@@ -1300,36 +1296,32 @@ void drawModuleStatus(char *modesDesired)
     }
     // would be nice to get the device name.. of our connected BLE..
     //!value of WIFI connected
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     if (containsMode(modesDesired,'W'))
         drawStatusText("W", isConnectedWIFI_MQTTState());
     if (containsMode(modesDesired,'M'))
         drawStatusText("M", isConnectedMQTT_MQTTState());
-#endif
-#ifdef USE_BLE_CLIENT_NETWORKING
+    //! 8.16.25 BLE CLIENT
     //!useBLECLient == it's linked in and running (vs not running)
     if (containsMode(modesDesired,'B'))
         drawStatusText("B", useBLEClient());
     //! connected == we are connected to another BLEServer
     if (containsMode(modesDesired,'C'))
         drawStatusText("C", isConnectedBLEClient());
-#endif
-#ifdef USE_WIFI_AP_MODULE
+    //! 8.16.25 WIFI AP
     //!not done is what we look for ..
     if (containsMode(modesDesired,'A'))
         drawStatusText("A", !doneWIFI_APModule_Credentials());
-#endif
     if (containsMode(modesDesired,'T'))
         drawStatusText("T", getPreferenceBoolean_mainModule(PREFERENCE_SENSOR_TILT_VALUE));
     
-#ifdef USE_BLE_SERVER_NETWORKING
+    //! 8.16.25 BLE SERVER
     if (containsMode(modesDesired,'S'))
     {
         //maybe only show if ON..
         if (getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE))
             drawStatusText("S",true);
     }
-#endif
     //Buzzer (but only sometimes)
     if (containsMode(modesDesired,'Z'))
         drawStatusText("Z",getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE));
@@ -1357,20 +1349,16 @@ void displaySimpleStatus()
 {
     //!show the BLE connected status at the bottom (G3 if gen3), WIFI, and AP if APmode
     boolean isConnectedBLE =
-#ifdef USE_BLE_CLIENT_NETWORKING
+    //! 8.16.25 BLE CLIENT
     isConnectedBLEClient();
-#else
-    false;
-#endif
+
     // whether the gateway is on.. this isn't using the Gx just BLE or GE3
     boolean gatewayOn = getPreferenceBoolean_mainModule(PREFERENCE_MAIN_GATEWAY_VALUE);
     //WIFI means the MQTT is working (not just WIFI)
     boolean isConnectedWIFI =
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     isConnectedWIFI_MQTTState();
-#else
-    false;
-#endif
+
     char label[30];
     String gStatus = "   ";  //3 characters
     if (isConnectedBLE && gatewayOn)
@@ -1382,10 +1370,9 @@ void displaySimpleStatus()
         gStatus = "BLE";
     }
    
-#ifdef USE_WIFI_AP_MODULE
+    //! 8.16.25 WIFI AP
     sprintf(label,"%s %s %s", gStatus, isConnectedWIFI?"WIFI":"    ",!doneWIFI_APModule_Credentials()?"AP":"  ");
     printTextAtTextPosition(label,_connectedStatusTextPositionZoomed);
-#endif
 }
 
 //!perform a zoom .. of the semantic marker - or it might be something else..
@@ -1749,12 +1736,8 @@ void redrawSemanticMarker_displayModule(boolean startNew)
         //!Please select the appropriate QR code version according to the number of characters.  请根据字符数量选择合适的二维码版本
         //try brightness
         setBrightness_displayModule(0);
-#ifdef USE_MQTT_NETWORKING
         M5.Lcd.qrcode(getLastDocFollowSemanticMarker_MQTTNetworking(),0,100,135, SEMANTIC_MARKER_QR_VERSION);
-#else
-        M5.Lcd.qrcode("https://SemanticMarker.org",0,100,135,SEMANTIC_MARKER_QR_VERSION);
 
-#endif
 #ifdef QRAVATAR
         //try to draw a character in the middle ...  (D, etc)
         printTextAtTextPosition("SM",_zoomedTextPositions[QRAVATAR_ACTION]);

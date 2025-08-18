@@ -15,7 +15,7 @@
 *******************************************************************************
 */
 #include "../../Defines.h"
-#ifdef USE_WIFI_AP_MODULE
+//! 8.16.25 WIFI AP
 //! 4.8.22. Called to do any state variables.
 //! a presetup() approach  ..
 //! THIS will make the doneWIFI call valid.. and has to be done before _done is looked at..
@@ -52,5 +52,3 @@ void WIFI_APModule_updateMQTTInfo(char *ssid, char *ssid_password, char *usernam
 
 #endif
 
-
-#endif // WIFI_AP_MODULE_h

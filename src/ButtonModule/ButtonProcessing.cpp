@@ -149,17 +149,14 @@ void toggleSM_Zoomed()
 void invokeCurrentSemanticMarker()
 {
     
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     //! Ths processJSONMessageMQTT( with cmd:smN } will trigger displaying the SemanticMarker for that page, etc.
     //!
     sprintf(_smMessage,"{'cmd':'%s'}",charSMMode_mainModule(getCurrentSMMode_mainModule()));
     //sends message internally in JSON format.. (same as if message came from MQTT via node-red,
     // which is where the SemanticMarkers are linked to .. the node-red backend (LinkAndSync)
     processJSONMessageMQTT(_smMessage, TOPIC_TO_SEND);
-#else
-    //display something
-    redrawSemanticMarker_displayModule(START_NEW);
-#endif
+
 }
 
 //!process the current command (from some button combination) This is the LONG press on the Big button A
@@ -227,15 +224,13 @@ void performProcessCurrentMode()
                 SerialCall.println("SM_home_simple_1");
 
                 togglePreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE);
-#ifdef USE_BLE_CLIENT_NETWORKING
-                //!optimized to not send the wrapper around the message
+                //! 8.16.25 BLE CLIENT                //!optimized to not send the wrapper around the message
                 // need to send B or b .. depending on result
                 if (getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE))
                     sendCommandBLEClient_13orLess("B");
                 else
                     sendCommandBLEClient_13orLess("b");
 
-#endif
                 invokeCurrentSemanticMarker();
             
                 //long press == buzz toggle..
@@ -265,11 +260,10 @@ void performProcessCurrentMode()
                 break;
                 //!home page, long pr3ess will be MQTT feed message
             case SM_smart_clicker_homepage:
-#ifdef USE_MQTT_NETWORKING
+                //! 8.16.25 MQTT
                 ///feed always  (done after the code below..)
 //                main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
                 sendMessageMQTT((char*)"#FEED");
-#endif
                 break;
 
                 //!guest page. Long press sends our WIFI credentials over BLE to the server (like a feeder)
@@ -287,11 +281,10 @@ void performProcessCurrentMode()
             case SM_guest_feed: //guest feed
                 //NO-OP in zoom mode, the SemanticMarker shows the guest feed ..
                 // or make it just feed?
-#ifdef USE_MQTT_NETWORKING
+                //! 8.16.25 MQTT
                 //!create a device name feeding message
                 //!send this as a message, not this tacks on the # in front and other after
                 sendMessageString_mainModule((char*)"FEED");
-#endif
                 break;
                 //guest feed and wifi ssid both change the credentials..
             case SM_WIFI_ssid:
@@ -299,14 +292,13 @@ void performProcessCurrentMode()
                 //NOTE: this might be where we toggle credentials?? TODO
                 //found other one..
                 char *credentials = main_nextJSONWIFICredential();
-#ifdef USE_MQTT_NETWORKING
+                //! 8.16.25 MQTT
 
                 //!These are the ASYNC_CALL_PARAMETERS_MAX
                 //!NO: just change our credentials ...
                 //send to 
                 //main_dispatchAsyncCommandWithString(ASYNC_CALL_BLE_CLIENT_PARAMETER, credentials);
                 processJSONMessageMQTT(credentials, TOPIC_TO_SEND);
-#endif
                 //redraw window..
                 invokeCurrentSemanticMarker();
 
@@ -316,12 +308,11 @@ void performProcessCurrentMode()
             case SM_pair_dev: //pair device
             {
                 char *pairDevice = getPreferenceString_mainModule(PREFERENCE_PAIRED_DEVICE_SETTING);
-#ifdef USE_MQTT_NETWORKING
+                //! 8.16.25 MQTT
                 //!create a device name feeding message
                 sprintf(_smMessage,"FEED {'deviceName':'%s'}",pairDevice);
                 //!send this as a message, not this tacks on the # in front and other after
                 sendMessageString_mainModule(_smMessage);
-#endif
             }
                 break;
             case SM_status: //status
@@ -329,10 +320,9 @@ void performProcessCurrentMode()
                 //send this onto the DOCFollow message
                 const char* sm = currentSemanticMarkerAddress_displayModule();
                 sendSemanticMarkerDocFollow_mainModule(sm);
-#ifdef USE_MQTT_NETWORKING
+                //! 8.16.25 MQTT
                 //!also send a #STATUS
                 sendMessageMQTT((char*)"#STATUS");
-#endif
 
             }
                 break;
@@ -453,14 +443,13 @@ void buttonA_ShortPress()
     ///feed always  (done after the code below..)
     main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
     
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     //!unfortunately, the incrementFeedCount() is AFTER the redrawSemanticMarker..
     /// This sets the semantic marker  .. which is current SM
     sprintf(_smMessage,"{'cmd':'%s'}",charSMMode_mainModule(getCurrentSMMode_mainModule()));
     //   processJSONMessageMQTT(charSMMode_mainModule(getCurrentSMMode_mainModule()), TOPIC_TO_SEND);
     processJSONMessageMQTT(_smMessage, TOPIC_TO_SEND);
     
-#endif
     //!redraws the Semantic Marker image..
     redrawSemanticMarker_displayModule(KEEP_SAME);
     
@@ -489,10 +478,9 @@ void buttonB_LongPress()
             break;
         case SM_home_simple_3:
             // send a STATUS message
-#ifdef USE_MQTT_NETWORKING
+            //! 8.16.25 MQTT
             //!also send a #STATUS
             sendMessageMQTT((char*)"#STATUS");
-#endif
             break;
         default:
             //long press

@@ -2,7 +2,6 @@
 #include "../../Defines.h"
 //#include "MainModule.h"
 
-
 #define USE_NEW_M5ATOMCLASS
 //! 5.6.25 use the M5Atom ClassType
 #ifdef USE_NEW_M5ATOMCLASS
@@ -16,13 +15,14 @@
 #include "../M5AtomClassModule/M5Atom_Core2ModuleClass.h"
 //! 7.17.25 - Adding GPS
 #include "../M5AtomClassModule/M5Atom_TinyGPSModuleClass.h"
+//! 8.16.25 bring in the CameraModule from 2022
+#include "../M5AtomClassModule/M5Atom_CameraModuleClass.h"
 
 //! 7.24.25 Hot Day, Ballon last night, Mt Out
 //! for the 'C' option of atom color
 #ifdef USE_FAST_LED
 #include "../ATOM_LED_Module/M5Display.h"
 #endif
-
 
 //! instances of the M5AtomClassType
 
@@ -37,8 +37,14 @@ M5Atom_Core2ModuleClass* _M5Atom_Core2ModuleClass;
 //! 7.17.25 - Adding GPS
 //! 5
 M5Atom_TinyGPSModuleClass* _M5Atom_TinyGPSModuleClass;
+//! 8.16.25 bring in the CameraModule from 2022
+//! 6
+M5Atom_CameraModuleClass* _M5Atom_CameraModuleClass;
+
 //! make sure this is updated.
-#define NUM_M5ATOM_CLASS 5
+//! 8.16.25 == 6
+#define NUM_M5ATOM_CLASS 6
+
 //! 3.31.25 create array of plugs
 M5AtomClassType* _M5AtomClassTypes[NUM_M5ATOM_CLASS];
 
@@ -104,8 +110,6 @@ void initSensorClassTypeArray()
     }
     SerialDebug.println("Finish initSensorClassTypeArray");
 }
-
-
 #endif
 
 //! 6.7.25 hot air balloons over house..
@@ -115,6 +119,7 @@ void stopMotor_mainModule()
     if (_whichM5AtomClassType)
         _whichM5AtomClassType->stop_M5AtomClassType();
 }
+
 //! gets if PTFeeder a surrogate for the M5Atom class
 boolean isPTFeeder_mainModule()
 {
@@ -199,10 +204,7 @@ void initGlobals_mainModule()
     main_setScannedDeviceName((char*)"");
     //! 1.7.24
     main_setScannedGroupName((char*)"");
-
-    
 }
-
 
 //THIS IS the setup() and loop() but using the "component" name, eg MQTTNetworking()
 //! called from the setup()
@@ -253,7 +255,6 @@ void setup_mainModule()
 #endif
         //! all ..
         savePreferenceBoolean_mainModule(PREFERENCE_FIRST_TIME_FEATURE_SETTING, false);
-
     }
     
 #define NEW_SENSORS
@@ -372,11 +373,11 @@ void incrementFeedCount_mainModule()
     if (_feedCount_mainModule >= feedCountMax_mainModule())
     {
         // send a message.
-#ifdef USE_MQTT_NETWORKING
+        //! 8.16.25 MQTT
         //note needs # or won't send..
         //!NOTE: don't send "feed" as it might trigger a FEED ...
         sendMessageMQTT((char*)"#count reached .. resetting");
-#endif
+
         _feedCount_mainModule = 0;
     }
     
@@ -401,15 +402,14 @@ bool containsSubstring(String message, String substring)
     return found;
 }
 
-#ifdef USE_MQTT_NETWORKING
+//! 8.16.25 MQTT
 #include "../MQTTModule/MQTTNetworking.h"
-#endif
-#ifdef USE_BLE_SERVER_NETWORKING
+
+//! 8.16.25 BLE SERVER
 #include "../BLEServerModule/BLEServerNetworking.h"
-#endif
-#ifdef USE_BLE_CLIENT_NETWORKING
+
+//! 8.16.25 BLE CLIENT
 #include "../BLEClientModule/BLEClientNetworking.h"
-#endif
 #ifdef USE_BUTTON_MODULE
 #include "../ButtonModule/ButtonProcessing.h"
 #endif
@@ -488,15 +488,12 @@ void initCallbacksMain()
             _callbacksFunctionsMAXS[i] = 0;
         }
         //! only place for #ifdef  (NOTE some can be 0 based on the #ifdef module not being included..
-#ifdef USE_MQTT_NETWORKING
+        //! 8.16.25 MQTT
         _callbacksFunctionsMAXS[CALLBACKS_MQTT] = CALLBACKS_MAX_MQTT;
-#endif
-#ifdef USE_BLE_SERVER_NETWORKING
+        //! 8.16.25 BLE SERVER
         _callbacksFunctionsMAXS[CALLBACKS_BLE_SERVER] = CALLBACKS_MAX_BLE_SERVER;
-#endif
-#ifdef USE_BLE_CLIENT_NETWORKING
+        //! 8.16.25 BLE CLIENT
         _callbacksFunctionsMAXS[CALLBACKS_BLE_CLIENT] = CALLBACKS_MAX_BLE_CLIENT;
-#endif
 #ifdef USE_BUTTON_MODULE
         _callbacksFunctionsMAXS[CALLBACKS_BUTTON_MODULE] = CALLBACKS_MAX_BUTTON_MODULE;
 #endif
@@ -514,6 +511,8 @@ void initCallbacksMain()
 //!register the callback based on the callbackType. use the callbacksModuleId for which one..
 void registerCallbackMain(int callbacksModuleId, int callbackType, void (*callback)(char*))
 {
+    SerialDebug.printf("registerCallbackMain %d, %d\n", callbacksModuleId, callbackType);
+    
     //init if not already..
     initCallbacksMain();
     int max = _callbacksFunctionsMAXS[callbacksModuleId];
@@ -564,8 +563,6 @@ void messageSetVal_mainModule(char *setName, char* valValue, boolean deviceNameS
     // THE IDEA WOULD be a callback is avaialble..
     //FOR now.. just ifdef
 #ifdef M5_ATOM
-#define USE_NEW_M5ATOMCLASS
-
     //! 5.6.25 use object version
     if (_whichM5AtomClassType)
         _whichM5AtomClassType->messageSetVal_M5AtomClassType(setName, valValue, deviceNameSpecified);
@@ -573,6 +570,7 @@ void messageSetVal_mainModule(char *setName, char* valValue, boolean deviceNameS
 #endif //M5_ATOM
     
 #ifdef M5CORE2_MODULE
+    //! TODO fix this
     messageSetVal_M5Core2Module(setName, valValue, deviceNameSpecified);
 #endif
 }
@@ -594,12 +592,12 @@ void messageSend_mainModule(char *sendValue, boolean deviceNameSpecified)
 #endif //M5_ATOM
     
 #ifdef M5CORE2_MODULE
+    //! TODO FIX THIS
     messageSend_M5Core2Module(sendValue);
-
 #endif
 }
 
-#ifdef USE_MQTT_NETWORKING
+//! 8.16.25 MQTT
 //!example callback: but the scope would have the pCharacteristic defined, etc..
 //!This is passed just before the setupMQTTNetworking() is called..
 void feedMessageCallback(char *message)
@@ -621,7 +619,7 @@ void feedMessageCallback(char *message)
     //! So the gatewayMode can be set (or in the EPROM) using {'cmd':'gatewayOn'}
     if (getPreferenceBoolean_mainModule(PREFERENCE_MAIN_GATEWAY_VALUE))
     {
-#ifdef USE_BLE_CLIENT_NETWORKING
+        //! 8.16.25 BLE CLIENT
 
         SerialTemp.print("Paired Device: ");
         SerialTemp.println(getPreference_mainModule(PREFERENCE_PAIRED_DEVICE_SETTING));
@@ -633,10 +631,8 @@ void feedMessageCallback(char *message)
             sendFeedCommandBLEClient();
         }
         SerialLots.println("after send feed via ble");
-#endif
     }
 }
-#endif //USE_MQTT_NETWORKING
 
 //!moved here 4.25.22 (entirely from ESP_IOT.ino)
 
@@ -646,9 +642,8 @@ void main_credentialsUpdated()
 {
     // set the done in the WI
     SerialDebug.println(" *** main_credentialsUpdated .. setDoneWIFI_APModuleFlag **");
-#ifdef USE_WIFI_AP_MODULE
+    //! 8.16.25 WIFI AP
     setDoneWIFI_APModuleFlag(true);
-#endif
 }
 //NOTE: #else not there so this won't link.. on purpose
 
@@ -724,7 +719,7 @@ void onWriteBLEServerCallbackFinish(char *message)
 
     }
     
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     //This should be a 'register' command..
     
     //!the MQTTNetwork.processJSONMessage()
@@ -732,9 +727,8 @@ void onWriteBLEServerCallbackFinish(char *message)
     if (processJSONMessageMQTT(message, NULL))
     {
         //!processed by the MQTTNetworking code..
-#ifdef USE_BLE_SERVER_NETWORKING
+        //! 8.16.25 BLE SERVER
         sendBLEMessageACKMessage();
-#endif
         //pCharacteristic->setValue(0x01);  //??  This is the acknowlege(ACK) back to client.  Later this should be contigent on a feed completed
     }
     else
@@ -750,14 +744,12 @@ void onWriteBLEServerCallbackFinish(char *message)
         //!look for ** sensor commands..
         processClientCommandChar_mainModule(cmd);
         
-#ifdef USE_BLE_SERVER_NETWORKING
+        //! 8.16.25 BLE SERVER
         sendBLEMessageACKMessage();
-#endif
         
     }
     SerialDebug.println("*********");
     
-#endif
 } //onWriteBLEServerCallback
 
 //! The callback for "onWrite" of the bluetooth "onWrite'
@@ -774,14 +766,6 @@ void onWriteBLEServerCallback(char *message)
     
     //! The callback for "onWrite" of the bluetooth "onWrite'
     onWriteBLEServerCallbackFinish(char *message);
-#endif
-}
-
-//!take a picture (calls the camera module).. what to do with picture??? TODO
-void takePicture_MainModule()
-{
-#ifdef USE_CAMERA_MODULE
-    takePicture_CameraModule();
 #endif
 }
 
@@ -900,13 +884,11 @@ void cleanEpromPreferences()
     //4.17.22
     cleanEPROM_mainModule();
     
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     cleanEPROM_MQTTNetworking();
-#endif
     
-#ifdef USE_WIFI_AP_MODULE
+    //! 8.16.25 WIFI AP
     cleanEPROM_WIFI_APModule();
-#endif
     //! 7.29.25 set the FIRST time ..
     savePreferenceBoolean_mainModule(PREFERENCE_FIRST_TIME_FEATURE_SETTING, true);
     
@@ -995,7 +977,6 @@ void main_cleanSavedWIFICredentials()
     }
 }
 
-
 //! 12.14.23
 char *_MQTT_Password = (char*)"";
 char *_MQTT_Username = (char*)"";
@@ -1008,11 +989,13 @@ char *main_getUsername()
 {
     return _MQTT_Username;
 }
+
 //! return password
 char *main_getPassword()
 {
     return _MQTT_Password;
 }
+
 //! return devicename
 char *main_getScannedDeviceName()
 {
@@ -1054,7 +1037,6 @@ char *main_getScannedGroupNameTopic()
     return NULL;
 }
 
-
 //! sets the WIFI and MQTT user/password. It's up to the code (below, maybe in future a register approach)  to decide who needs to know
 void main_updateMQTTInfo(char *ssid, char *ssid_password, char *username, char *password, char *guestPassword, char *deviceName, char * host, char * port, char *locationString)
 {
@@ -1069,9 +1051,8 @@ void main_updateMQTTInfo(char *ssid, char *ssid_password, char *username, char *
     //!store the JSON version of these credentials..
     main_saveWIFICredentials(ssid,ssid_password);
     
-#ifdef USE_WIFI_AP_MODULE
+    //! 8.16.25 WIFI AP
     WIFI_APModule_updateMQTTInfo(ssid, ssid_password, username, password, guestPassword, deviceName, host, port, locationString);
-#endif
 }
 
 //! 5.16.25 Fountainhead, Raining cold weekend
@@ -1116,7 +1097,6 @@ boolean _asyncCallFlags[ASYNC_CALL_MAX];
 //!array of async flags for the different ASYNC_CALl values
 boolean _asyncCallFlagsParameters[ASYNC_CALL_PARAMETERS_MAX];
 
-
 //!initialize the async call flags (with and without parameters)
 void initAsyncCallFlags()
 {
@@ -1131,8 +1111,6 @@ void initAsyncCallFlags()
 }
 
 // ******************* Async Dispatch Processing  ************
-
-
 
 //!checks if any async commands are in 'dispatch' mode, and if so, invokes them, and sets their flag to false
 
@@ -1182,7 +1160,6 @@ void main_dispatchAsyncCommandWithString(int asyncCallCommand, char *parameter)
             SerialDebug.println("SYNC_REBOOT");
             rebootDevice_mainModule();
         }
-        
     }
 }
 
@@ -1203,18 +1180,17 @@ void invokeAsyncCommands()
                 case ASYNC_CALL_BLE_CLIENT_PARAMETER:
                     SerialTemp.print("ASYNC_CALL_BLE_CLIENT_PARAMETER: ");
                     SerialTemp.println(_asyncParameter);
-#ifdef USE_BLE_CLIENT_NETWORKING
+                    //! 8.16.25 BLE CLIENT
                     if (strlen(_asyncParameter)<=13)
                         sendCommandBLEClient_13orLess(_asyncParameter);
                     else
                         sendCommandBLEClient(_asyncParameter);
-#endif
                     
                     break;
                 case ASYNC_CALL_OTA_FILE_UPDATE_PARAMETER:
                     SerialTemp.print("ASYNC_CALL_OTA_FILE_UPDATE_PARAMETER: ");
                     SerialTemp.println(_asyncParameter);
-#ifdef USE_MQTT_NETWORKING
+                    //! 8.16.25 MQTT
                 {
                     //look for the host:  http://<name>/
                     // httpAddress is everything after the /
@@ -1245,9 +1221,7 @@ void invokeAsyncCommands()
                     SerialTemp.print("  with httpAddress: ");
                     SerialTemp.println(httpAddress);
                     performOTAUpdate(hostname, httpAddress);
-                    
                 }
-#endif
                     break;
                 case ASYNC_JSON_MESSAGE_PARAMETER:
                 {
@@ -1286,8 +1260,6 @@ void invokeAsyncCommands()
 #ifdef USE_REST_MESSAGING
                     sendSecureRESTCall(_asyncParameter);
 #endif
-
-                    
                 }
                     break;
             }
@@ -1306,16 +1278,14 @@ void invokeAsyncCommands()
             {
                 case ASYNC_CALL_OTA_UPDATE:
                     SerialLots.println("ASYNC_CALL_OTA_UPDATE");
-#ifdef USE_MQTT_NETWORKING
+                    //! 8.16.25 MQTT
                     performOTAUpdateSimple();
-#endif
                     break;
                 case ASYNC_CALL_CLEAN_CREDENTIALS:
                     SerialTemp.println("ASYNC_CALL_CLEAN_CREDENTIALS");
-#ifdef USE_WIFI_AP_MODULE
+                    //! 8.16.25 WIFI AP
                     clean_SSID_WIFICredentials();
                     //this reboots ..
-#endif
                     break;
                 case ASYNC_CALL_CLEAN_EPROM:
                     SerialTemp.println("ASYNC_CALL_CLEAN_EPROM");
@@ -1324,23 +1294,18 @@ void invokeAsyncCommands()
                 case ASYNC_CALL_FEED_COMMAND:
                     SerialLots.println("ASYNC_CALL_FEED_COMMAND");
                     incrementFeedCount_mainModule();
-#ifdef USE_MQTT_NETWORKING
+                    //! 8.16.25 MQTT
                     //!register the 2 callbacks for now..
                     callCallbackMain(CALLBACKS_MQTT, MQTT_CALLBACK_FEED, (char *)"");
-                    
-#endif //USE_MQTT_NETWORKING
                     break;
-                    
-
                     //!this is a sending of the message
                 case ASYNC_SEND_MQTT_FEED_MESSAGE:
                     SerialTemp.println("ASYNC_SEND_MQTT_FEED_MESSAGE");
                     //incrementFeedCount_mainModule();
                     SerialCall.println("async_send_feed.1");
-                    
 
-#ifdef USE_MQTT_NETWORKING
-#ifdef USE_BLE_CLIENT_NETWORKING
+                    //! 8.16.25 MQTT
+                    //! 8.16.25 BLE CLIENT
                     //!9.30.22  IF SET .. send a feed but to all devices except ours and our pair (if any)
                     //! uses new wildcard syntax either  ! OUR NAME  [ & ! OUR_CONNECTED_NAME
                     if (getPreferenceBoolean_mainModule(PREFERENCE_SENDWIFI_WITH_BLE) && isConnectedBLEClient())
@@ -1363,27 +1328,23 @@ void invokeAsyncCommands()
                         //! if not paired, then feed everyone except out device...
                     }
                     //! if not BLE connected .. send wifi fee to all below...
-#endif //BLE
                     //SerialTemp.println("async_send_feed.3");
                     //TODO: 7.26.22 .. decide if this logic makes sense:
                     //NO BLECLient, and a message arrives for this device to #FEED. So previously it would sned that onto the network .. but I don't think that's right. (And we weren't in that mode yet).
                     //sendMessageMQTT((char *)"#FEED");
-#endif // USE_MQTT_NETWORKING
-#ifdef USE_BLE_CLIENT_NETWORKING
+                    //! 8.16.25 BLE CLIENT
                     //! returns whether connected over BLE as a client to a server(like a ESP feeder)
                     if (!isConnectedBLEClient())
                     {
                         //! If not connected over BLE -- then send the MQTT feed message.. ??? WHY??
-                        //#ifdef USE_MQTT_NETWORKING_NOT_NOW
-#ifdef USE_MQTT_NETWORKING
-                        
+                        //! 8.16.25 MQTT
+
                         //!only if not WIFI with BLE
                         //! 8.20.24 put back to MQTT feed to all .. for now..
                         //! SerialCall.println("async_send_feed.1");
                         sendMessageMQTT((char *)"#FEED");
                         SerialTemp.println(" *** NO BLE connected so send wifi ASYNC_SEND_MQTT_FEED_MESSAGE");
                         
-#endif //use_MQTT_not_now
                     }
                     else
                     {
@@ -1394,11 +1355,9 @@ void invokeAsyncCommands()
                         sendFeedCommandBLEClient();
                         
                         //!perform ACK too
-#ifdef USE_MQTT_NETWORKING
+                        //! 8.16.25 MQTT
                         //ack is sent by the caller of this message..??
                         sendMessageMQTT((char *)"#ackMe");
-                        
-#endif  //useMQTT
                     }
 #ifdef NOT_NOW
                     //! 8.24.22 (This will redraw the screen - and turn off the blank screen (but not let anyone know)
@@ -1407,9 +1366,7 @@ void invokeAsyncCommands()
                     //!redraws the Semantic Marker image..
                     redrawSemanticMarker_displayModule(KEEP_SAME);
 #endif //not_now
-#endif  //using BLE_CLIENT
                     break;
-
                     
                     //!this is a sending of the message
                     //!5.15.25 Sodbuster Rod plowing/disking in minutes with Mark and Bud
@@ -1439,33 +1396,30 @@ void invokeAsyncCommands()
                     //! if an M5 - then either send over BLE or MQTT
 #ifdef ESP_M5
                     //!send via BLE or MQTT ..
-#ifdef USE_BLE_CLIENT_NETWORKING
+                    //! 8.16.25 BLE CLIENT
                     //! returns whether connected over BLE as a client to a server(like a ESP feeder)
                     if (!isConnectedBLEClient())
                     {
                         SerialLots.println("async_call_buzz_on/off -- not BLE connected.. send MQTT");
                         //! If not connected over BLE -- then send the MQTT buzzon message..
-#ifdef USE_MQTT_NETWORKING
+                        //! 8.16.25 MQTT
                             sendMessageMQTT((char*)cmdToSend.c_str());
-#endif
                     }
                     else
                     {
                         //!send over BLE...
                             sendCommandBLEClient(cmdToSend);
                     }
-#endif //USE_BLE_CLIENT
 #else  //not M5
                     
-#ifdef USE_BLE_CLIENT_NETWORKING
+                    //! 8.16.25 BLE CLIENT
                     //! returns whether connected over BLE as a client to a server(like a ESP feeder)
                     if (!isConnectedBLEClient())
                     {
                         SerialLots.println("async_call_buzz_on -- not BLE connected.. send MQTT");
                         //! If not connected over BLE -- then send the MQTT buzzon message..
-#ifdef USE_MQTT_NETWORKING
+                        //! 8.16.25 MQTT
                         sendMessageMQTT((char *)cmdToSend.c_str());
-#endif
                     }
                     else
                     {
@@ -1473,12 +1427,7 @@ void invokeAsyncCommands()
                         processClientCommandChar_mainModule(isBuzzOn?'B':'b');
                         
                     }
-#else //(so we are a feeder.. or another bridge .. doit)
-                    //! we are not BLE_CLIENT .. so local
-                    SerialDebug.println("Local, doit");
-                    processClientCommandChar_mainModule(isBuzzOn?'B':'b');
 
-#endif //USE_BLE_CLIENT_NETWORKING
 #endif // ESP_M5
                 }
                     break;
@@ -1514,7 +1463,7 @@ void invokeAsyncCommands()
                     break;
                 case ASYNC_SEND_MQTT_STATUS_URL_MESSAGE:
                     //!sends the status from the main module URL
-#ifdef USE_MQTT_NETWORKING
+                    //! 8.16.25 MQTT
                 {
 #ifdef ESP_M5_CAMERA
                     char *statusURL = main_currentStatusURL(false);
@@ -1526,7 +1475,6 @@ void invokeAsyncCommands()
                     /// NO MORE: sendDocFollowMessageMQTT(statusURL);
                     sendStatusMessageMQTT(statusURL);
                 }
-#endif
 #ifdef M5BUTTON_MODULE
                     //! 1.23.24 call the status which re-evaluates the sensor ALIVE
                     //! this status will be called and let the ALIVE re-evaluate
@@ -1541,21 +1489,19 @@ void invokeAsyncCommands()
                     //NOTE: this might be where we toggle credentials?? TODO
                     //found other one..
                     char *credentials = main_nextJSONWIFICredential();
-#ifdef USE_MQTT_NETWORKING
-                    
+                    //! 8.16.25 MQTT
+
                     //!These are the ASYNC_CALL_PARAMETERS_MAX
                     //!NO: just change our credentials ...
                     //send to
                     //main_dispatchAsyncCommandWithString(ASYNC_CALL_BLE_CLIENT_PARAMETER, credentials);
                     processJSONMessageMQTT(credentials, TOPIC_TO_SEND);
-#endif
                 }
                     break;
                 case ASYNC_RESTART_WIFI_MQTT:
-#ifdef USE_MQTT_NETWORKING
+                    //! 8.16.25 MQTT
                     //!Restarts (or attempts) a restart of the WIFI using the existing credentials -- vs the 'n' command
                     restartWIFI_MQTTState();
-#endif
                     break;
                 default:
                     SerialLots.printf("NO COMMAND: %s", i);
@@ -1576,7 +1522,6 @@ void changeButtonColor_MainModule()
 uint32_t _chipID_MainModule = 0;
 //! string like: 10311304
 char _chipIdString_MainModule[15];
-
 
 //! 3.17.24 get the chip id
 uint32_t getChipId()
@@ -1688,11 +1633,10 @@ void cleanSSID_EPROM_MessageCallback(char *message)
 {
     //!call the already defined solid led
     //! defined in Dispense.cpp
-#ifdef USE_WIFI_AP_MODULE
+    //! 8.16.25 WIFI AP
     //!clean_SSID_WIFICredentials();
     //!now register an async call..
     main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_CREDENTIALS);
-#endif //USE_WIFI_AP_MODULE
     
 }
 
@@ -1700,26 +1644,13 @@ void cleanSSID_EPROM_MessageCallback(char *message)
 //!NOTE: with BLE_CLIENT_NETWORKING, the right button and top button send a BLE command for feeding..
 void singleClickTouched(char *whichButton)
 {
-#ifdef USE_WIFI_AP_MODULE
+    //! 8.16.25 WIFI AP
     //!for now, only send the FEED command via BLE_CLIENT if turned on. No reboot to AP mode yet..
-#ifdef USE_BLE_CLIENT_NETWORKING
+    //! 8.16.25 BLE CLIENT
     //!send the async FEED
     
     //! dispatches a call to the command specified. This is run on the next loop()
     main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
-    
-#else
-    //TODO.. if M5 do this differently..
-    clean_SSID_WIFICredentials();
-#endif
-#else  //not USE_WIFI_AP_MODULE // never sure of the #elsif syntax..
-#ifdef USE_BLE_CLIENT_NETWORKING
-    //send the async FEED
-    //! dispatches a call to the command specified. This is run on the next loop()
-    main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
-#endif
-#endif //USE_WIFI_AP_MODULE
-    
 }
 
 //! shows a FEED (or whatever) then blanks the screen after N seconds
@@ -1744,8 +1675,6 @@ void solidLightOnOff(boolean onOff)
 #endif
 }
 
-
-
 //!prints the module configuration by looking at #defines
 //! Eventually this might be an object returned letting the code
 //!know a capability is included for runtime (vs compile time) decisions
@@ -1753,6 +1682,9 @@ void main_printModuleConfiguration()
 {
     //!Module Configuration
     SerialDebug.println(" ** #define Module Configuration **");
+    SerialDebug.println(PARTITION_SCHEME);
+    SerialDebug.printf("M5Stack Version = %s\n", (char*)M5STACK_VERSION);
+    
     SerialDebug.println(" ** BUILDS **");
 
 #ifdef ESP_M5
@@ -1792,41 +1724,30 @@ void main_printModuleConfiguration()
 #endif
     
     SerialDebug.println(F(" ** MQTT BLE NETWORKING **"));
-
-#ifdef USE_MQTT_NETWORKING
+    
+    //! 8.16.25 MQTT
     //! [x] USE_MQTT_NETWORKING
     SerialMin.println("[x] USE_MQTT_NETWORKING");
-#else
-    SerialMin.println("[ ] USE_MQTT_NETWORKING");
-#endif
-#ifdef USE_BLE_SERVER_NETWORKING
+    
+    //! 8.16.25 BLE SERVER
     //! [x] USE_BLE_SERVER_NETWORKING
     SerialMin.println("[x] USE_BLE_SERVER_NETWORKING");
-#else
-    SerialMin.println("[ ] USE_BLE_SERVER_NETWORKING");
-#endif
-#ifdef USE_BLE_CLIENT_NETWORKING
+    
+    //! 8.16.25 BLE CLIENT
     //! [x] USE_BLE_CLIENT_NETWORKING
     SerialMin.println(F("[x] USE_BLE_CLIENT_NETWORKING"));
-#else
-    SerialMin.println(F("[ ] USE_BLE_CLIENT_NETWORKING"));
     
-#endif
-#ifdef USE_WIFI_AP_MODULE
+    //! 8.16.25 WIFI AP
     //! [x] USE_WIFI_AP_MODULE
     
     SerialMin.println(F("[x] USE_WIFI_AP_MODULE"));
-#else
-    SerialMin.println(F("[ ] USE_WIFI_AP_MODULE"));
-    
-#endif
+
     
 #ifdef USE_BUTTON_MODULE
     // [x] USE_BUTTON_MODULE
     SerialMin.println("[x] USE_BUTTON_MODULE");
 #else
     SerialMin.println("[ ] USE_BUTTON_MODULE");
-    
 #endif
     
 #ifdef M5BUTTON_MODULE
@@ -1905,7 +1826,6 @@ void main_printModuleConfiguration()
     printPreferenceValues_mainModule();
 }
 
-
 //!If nil it create one with just the null, so strlen = 0
 //!NOTE: the strdup() might be used later..
 char* createCopy(char * stringA)
@@ -1983,15 +1903,13 @@ float getBatPercentage_mainModule()
     return batPercentage;
 }
 
-
-
 //!adding a synchronous call to send a message over the network (assuming MQTT but not specified), this tacks on {device} and {t:time}
 void sendMessageString_mainModule(char *messageString)
 {
     sendMessageStringTopic_mainModule(messageString, TOPIC_TO_SEND);
 #ifdef REFACTOR
 
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     SerialDebug.printf("sendMessageString_mainModule(%s)\n", messageString);
     if (strlen(messageString) > 0 && messageString[0] == '{')
     {
@@ -2007,14 +1925,13 @@ void sendMessageString_mainModule(char *messageString)
         sendMessageMQTT(_messageStorage);
     }
 #endif
-#endif
 }
 
 
 //!adding a synchronous call to send a message over the network (assuming MQTT but not specified), this tacks on {device} and {t:time}
 void sendMessageStringTopic_mainModule(char *messageString, char*topicString)
 {
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     SerialDebug.printf("sendMessageStringTopic_mainModule(%s) - topic=%s\n", messageString, topicString);
     if (strlen(messageString) > 0 && messageString[0] == '{')
     {
@@ -2029,7 +1946,6 @@ void sendMessageStringTopic_mainModule(char *messageString, char*topicString)
         //!send this message over MQTT
         sendMessageMQTT_Topic(_messageStorage, topicString);
     }
-#endif
 }
 
 //!retrieves the temperature .
@@ -2053,11 +1969,10 @@ float getTemperature_mainModule()
         //! turn off the device after sending a message..
         //! let others know we are powering off..
         //! then poweroff
-#ifdef USE_MQTT_NETWORKING
+        //! 8.16.25 MQTT
         sprintf(_messageStorage,"#Temp %f too high > %d - powering off {%s}", temperature, maxtemp, getDeviceNameMQTT());
         //!send this message over MQTT
         sendMessageMQTT(_messageStorage);
-#endif
         //! now poweroff
         SerialTemp.println(" *** This would poweroff .. but you can send message");
         //!poweroff_mainModule();
@@ -2117,7 +2032,6 @@ char* main_currentStatusJSON()
     //! 5.6.25 use object version
     if (_whichM5AtomClassType)
         return _whichM5AtomClassType->currentStatusJSON_M5AtomClassType();
-
     
 #ifdef M5CORE2_MODULE
     //!returns a string in in JSON so:  status&battery=84'&buzzon='off'  } .. etc
@@ -2132,7 +2046,6 @@ char* main_currentStatusJSON()
 //!https://SemanticMarker.org/bot/sensor/scott@konacurrents.com/doggy/status?v=v2&dev=M5Ski&b=68&temp=66&c=0&t=8&W=on&M=on&B=on&C=on&A=off&T=on&S=on&Z=off&t=8
 //!not working just added Z=on/off  length = 157
 //! going to remove the username/password to shorten..
-
 
 //!adds a query string "&key=value"
 void addStatusStringFlag(const char *key, char * val)
@@ -2152,35 +2065,32 @@ void addStatusBooleanFlag(const char *key, boolean flag)
 void addMoreStatusQueryString()
 {
     //!value of WIFI connected
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     addStatusBooleanFlag("W",isConnectedWIFI_MQTTState());
     addStatusBooleanFlag("M",isConnectedMQTT_MQTTState());
-#endif
-#ifdef USE_BLE_CLIENT_NETWORKING
+    //! 8.16.25 BLE CLIENT
     //useBLECLient == it's linked in and running (vs not running)
     addStatusBooleanFlag("B",useBLEClient());
     //! connected == we are connected to another BLEServer
     addStatusBooleanFlag("C",isConnectedBLEClient());
     
-#endif
-#ifdef USE_WIFI_AP_MODULE
+    //! 8.16.25 WIFI AP
     //!not done is what we look for ..
     addStatusBooleanFlag("A",!doneWIFI_APModule_Credentials());
-#endif
+    
 #pragma mark reused
 #ifdef OVERLOADS_TIME_T
     //! 7.20.25 this breaks the T:<time> since there is a dublicate in the URL .. with no error
     addStatusBooleanFlag("T", getPreferenceBoolean_mainModule(PREFERENCE_SENSOR_TILT_VALUE));
 #endif
     
-#ifdef USE_BLE_SERVER_NETWORKING
+    //! 8.16.25 BLE SERVER
     addStatusBooleanFlag("S",getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE));
     {
         //! add a bleS=PTFeeder:name
         char *serverBLEName = getServiceName_BLEServerNetworking();
         addStatusStringFlag((char*)"bleS",serverBLEName);
     }
-#endif
     
     //!show Z for buZZ
     addStatusBooleanFlag("Z",getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE));
@@ -2224,29 +2134,21 @@ char* main_currentStatusURL(boolean fullStatus)
     int time = getTimeStamp_mainModule();
     if (fullStatus)
     {
-#ifdef USE_MQTT_NETWORKING
+        //! 8.16.25 MQTT
         char *deviceName = getDeviceNameMQTT();
         //!TODO: make sure no spaces ... unless escaped
       
         sprintf(_fullStatusString,"status?T=%d&v=%s&dev=%s&b=%02.0f&temp=%02.0f&c=%0d&t=%0d",time, VERSION_SHORT, deviceName, getBatPercentage_mainModule(), getTemperature_mainModule(), getFeedCount_mainModule(), getLoopTimer_displayModule());
         
-#else
-        //!TODO: make sure no spaces ... unless escaped
-        sprintf(_fullStatusString,"status?v=%s&b=%02.0f&temp=%02.0f&c=%0d&t=%0d",VERSION_SHORT, getBatPercentage_mainModule(), getTemperature_mainModule(), getFeedCount_mainModule(), getLoopTimer_displayModule());
-#endif
     }
     else
     {
         //_fullStatusString[0] = '\0';
-#ifdef USE_MQTT_NETWORKING
+        //! 8.16.25 MQTT
         char *deviceName = getDeviceNameMQTT();
         //!TODO: make sure no spaces ... unless escaped
         sprintf(_fullStatusString,"status?T=%d&v=%s&dev=%s",time, VERSION_SHORT, deviceName);
         
-#else
-        //!TODO: make sure no spaces ... unless escaped
-        sprintf(_fullStatusString,"status?v=%s",VERSION_SHORT);
-#endif
     }
 #pragma mark USE_NEW_M5ATOMCLASS
     //! 5.6.25 use object version
@@ -2290,20 +2192,18 @@ void setSemanticMarkerDocFollow_mainModule(char* SMDocFollowAddress)
     if (!_lastSemanticMarkerDocFollow)
         _lastSemanticMarkerDocFollow = NULL;
 }
+
 //!gets the semanticAddress SemanticMarker&trade;
 char* getSemanticMarkerDocFollow_mainModule()
 {
     return _lastSemanticMarkerDocFollow;
 }
 
-
 //!sends the SM on the DOCFOLLOW channel (publish it..)
 void sendSemanticMarkerDocFollow_mainModule(const char* SMDocFollowAddress)
 {
-#ifdef USE_MQTT_NETWORKING
+    //! 8.16.25 MQTT
     sendDocFollowMessageMQTT(SMDocFollowAddress);
-#endif
-
 }
 
 //! 8.18.24 setting this will check for the factory setting..
@@ -2336,9 +2236,7 @@ void setClockwiseMotorDirection_mainModule(boolean isClockwiseFlag)
     }
     //! set to what it thinks it is...
     savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING, isClockwiseFlag);
-
 }
-
 
 //!Keep ProcessClientCmd short to let the callback run. instead change the feeder state flag
 //! processes a message that might save in the EPROM.. the cmd is still passed onto other (like the stepper module)
@@ -2388,11 +2286,11 @@ void processClientCommandChar_mainModule(char cmd)
         } break;
         case 'u':
         {
-            SerialLots.println("Setting feederType = UNO");
+            SerialDebug.println("Setting feederType = UNO");
             savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_UNO);
             
             //!Issue #332 8.17.2024
-            savePreferenceInt_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 45);
+            savePreferenceInt_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 22.5);
             //! set autoRotoate as well..
             savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, false);
             //! default to  clockwise == 0
@@ -2401,23 +2299,27 @@ void processClientCommandChar_mainModule(char cmd)
         } break;
         case 'm':
         {
-            SerialLots.println("Setting feederType = MINI");
+            SerialDebug.println("Setting feederType = MINI");
             //save preference
             savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_MINI);
+            //!Issue #332 8.17.2024
+            savePreferenceInt_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 45.0);
             // turn clockwise..
             //! 8.18.24 setting this will check for the factory setting..
             setClockwiseMotorDirection_mainModule(true);
         } break;
         case 'L':
         {
-            SerialLots.println("Setting feederType = Tumbler");
+            SerialDebug.println("Setting feederType = Tumbler");
             //save preference
             savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
             //!Issue #332 8.17.2024
-            savePreferenceInt_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 200);
+            savePreferenceInt_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 200.0);
+            //! set autoRotoate as well..
+            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
             //! set autoRotoate as well..
             //! 8.18.24 setting this will check for the factory setting..
-            setClockwiseMotorDirection_mainModule(true);
+            //setClockwiseMotorDirection_mainModule(true);
         } break;
         case 'B':
         {
@@ -2445,7 +2347,7 @@ void processClientCommandChar_mainModule(char cmd)
         } break;
         case 'R':
         {
-            SerialLots.println("Clean Credentials");
+            SerialDebug.println("Clean Credentials");
             //! dispatches a call to the command specified. This is run on the next loop()
             main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_CREDENTIALS);
         } break;
@@ -2453,7 +2355,7 @@ void processClientCommandChar_mainModule(char cmd)
 #ifdef NOT_SUPPORTED_RIGHT_NOW
         case 'O':
         {
-            SerialLots.println("OTA Update.. ");
+            SerialDebug.println("OTA Update.. ");
             //! dispatches a call to the command specified. This is run on the next loop()
             main_dispatchAsyncCommand(ASYNC_CALL_OTA_UPDATE);
         } break;
@@ -2470,10 +2372,9 @@ void processClientCommandChar_mainModule(char cmd)
             char cleanWIFI[100];
             strcpy(cleanWIFI,"{'ssid':'','ssidPassword':''}");
             SerialDebug.println(cleanWIFI);
-#ifdef USE_MQTT_NETWORKING
+            //! 8.16.25 MQTT
             //! send to ourself
             sendMessageNoChangeMQTT((char*)cleanWIFI);
-#endif
                         
         } break;
             
@@ -2491,7 +2392,7 @@ void processClientCommandChar_mainModule(char cmd)
         case '_':
         {
             //This is from the handshake like "_BLEClient_ESP_M5"
-            SerialLots.println("unused cmd '_'");
+            SerialDebug.println("unused cmd '_'");
         } break;
 #ifdef OLD_FOR_M5_DISPLAY
         case 'Z':
@@ -2666,7 +2567,7 @@ void processClientCommandChar_mainModule(char cmd)
         case '1':
         {
             //! poweroff
-            SerialDebug.println("Default Sensors");
+            SerialDebug.println("Default L9110S_DCStepperClass");
             //resetSensorToDefault_mainModule();
             //! 7.30.25 changing to the HDriver's board
             setSensorsString_mainModule((char*)"BuzzerSensorClass,19,22,L9110S_DCStepperClass,21,25");
@@ -2676,6 +2577,13 @@ void processClientCommandChar_mainModule(char cmd)
             savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "L9110S_DCStepperClass");
             //! 1 second motor (overloads "angle" field)
             savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 1.0);
+            //! set tumbler
+            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 1.0);
+            //! set autoRotoate as well..
+            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
+            //! tumbler
+            savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
+
             //! reboot .. so the sensors are set..
             rebootDevice_mainModule();
         } break;
@@ -2683,19 +2591,55 @@ void processClientCommandChar_mainModule(char cmd)
             //!  2 == default for SMART Button
         case '2':
         {
+            /*
+             #define IN1 22
+             #define IN2 19
+             #define IN3 23
+             #define IN4 33
+             */
             //! poweroff
-            SerialDebug.println("Default for SMART Button");
-            setSensorsString_mainModule((char*)"");
-            
+            SerialDebug.println("Default ULN2003_StepperClass");
+            //resetSensorToDefault_mainModule();
+            //! 7.30.25 changing to the HDriver's board
+            setSensorsString_mainModule((char*)"BuzzerSensorClass,21,25,ULN2003_StepperClass,23,33");
+            //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
+            savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5HDriver");
+            //! also specify the sensor plug
+            savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "ULN2003_StepperClass");
+            //! 1 second motor (overloads "angle" field)
+            //! This is the RPM speed
+            savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 2048.0);
+            //! @see #390 this is the RPM of the stepper
+            savePreferenceFloat_mainModule(PREFERENCE_STEPPER_RPM_SETTING, 15.0);
+            //! set autoRotoate as well..
+            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
+            //! tumbler
+            savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
+
             //! reboot .. so the sensors are set..
             rebootDevice_mainModule();
         } break;
             //! 7.19.25 add Clear Sensors
         case '3':
         {
+            
             //! poweroff
-            SerialDebug.println("No Sensors");
-            setSensorsString_mainModule((char*)"");
+            SerialDebug.println("Default PTStepperClass");
+            //resetSensorToDefault_mainModule();
+            //! 7.30.25 changing to the HDriver's board
+            setSensorsString_mainModule((char*)"BuzzerSensorClass,21,25,PTStepperClass,23,33");
+            //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
+            savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5HDriver");
+            //! also specify the sensor plug
+            savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "PTStepperClass");
+            //! for Tumbler .. use 200
+            savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 200.0);
+            //! @see #390 this is the RPM of the stepper
+            //savePreferenceFloat_mainModule(PREFERENCE_STEPPER_RPM_SETTING, 15.0);
+            //! set autoRotoate as well..
+            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
+            //! tumbler
+            savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
             
             //! reboot .. so the sensors are set..
             rebootDevice_mainModule();
@@ -2703,12 +2647,16 @@ void processClientCommandChar_mainModule(char cmd)
             //! 7.19.25 BLE Client ON
         case '4':
         {
-            boolean val = getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE);
-            val = !val;
             //! poweroff
-            SerialDebug.printf("BLE Client %s\n", val?"ON":"OFF");
-            savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE, val);
-            
+            SerialDebug.println("Default M5AtomCamera");
+            //resetSensorToDefault_mainModule();
+            //! 7.30.25 changing to the HDriver's board
+            setSensorsString_mainModule((char*)"");
+            //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
+            savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5AtomCamera");
+            //! also specify the sensor plug
+            savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "");
+           
             //! reboot .. so the sensors are set..
             rebootDevice_mainModule();
         } break;
@@ -2716,27 +2664,24 @@ void processClientCommandChar_mainModule(char cmd)
         case '5':
         {
             SerialDebug.println(" *** performing m5atom OTA Update");
-#ifdef USE_MQTT_NETWORKING
+            //! 8.16.25 MQTT
             //!retrieves from constant location
             performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5Atom/ESP_IOT.ino.m5stick_c_plus.bin");
-#endif
         } break;
             //! 7.9.25 grabbed from BOOTSTRAP let someone update the atom to the recent OTA
         case '6':
         {
             SerialDebug.println(" *** performing m5atom OTA Update - DAILY");
-#ifdef USE_MQTT_NETWORKING
+            //! 8.16.25 MQTT
             //!retrieves from constant location
             performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5Atom/daily/ESP_IOT.ino.m5stick_c_plus.bin");
-#endif
         } break;
         case '7':
         {
             SerialDebug.println(" *** performing m5atom OTA Update - BOOTSTRAP");
-#ifdef USE_MQTT_NETWORKING
+            //! 8.16.25 MQTT
             //!retrieves from constant location
             performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/Bootstrap/ESP_M5_BOOTSTRAP.ino.m5stack_stickc_plus.bin");
-#endif
         } break;
             
         case 'C':
@@ -2747,6 +2692,17 @@ void processClientCommandChar_mainModule(char cmd)
             fillpix(randomColor);
             delay(50);
 #endif
+        }
+            break;
+        case 'i':
+        {
+            char sendCapture[100];
+            strcpy(sendCapture,"{'send':'capture'}");
+            SerialDebug.println(sendCapture);
+            //! 8.16.25 MQTT
+            //! send to ourself
+            sendMessageNoChangeMQTT((char*)sendCapture);
+            
         }
             break;
         case '.':
@@ -2789,7 +2745,9 @@ void processClientCommandChar_mainModule(char cmd)
             SerialMin.println("         n == next WIFI Credential");
             SerialMin.println("         W == retry WIFI");
             SerialMin.println("         w == swap WIFI");
-            
+            SerialMin.println("         C == change m5 atom to random color");
+            SerialMin.println("         i == take pic, {send:capture}");
+
             SerialMin.println("    SPIFF internal memory ");
 #ifndef OLD_FOR_M5_DISPLAY
             SerialMin.println("         Z == clean SPIFF file");
@@ -2806,19 +2764,21 @@ void processClientCommandChar_mainModule(char cmd)
             SerialMin.println("         Z == Setting SM Zoom = zoomed");
             SerialMin.println("         z == Setting SM Zoom = full SM");
 #endif
+            SerialMin.println("    Configurations of M5Atom  ");
+
             SerialMin.println("         0 == no sensors");
-            SerialMin.println("         1 == Default SENSOR for new feeder");
-            SerialMin.println("         2 == Default SENSOR for SMART Button");
-            SerialMin.println("         3 == Clear Sensors");
-            SerialMin.printf ("         4 == Turn BLE Client %s (will look for PTFeeder)\n", val?"OFF":"ON");
+            SerialMin.println("         1 == L9100S_DCStepper (current main)");
+            SerialMin.println("         2 == ULN2002 Stepper (new test 8.13.25)");
+            SerialMin.println("         3 == *** PTStepperClass (original code - with M5");
+            SerialMin.printf ("         4 == M5AtomCamera\n");
             
 #ifdef NOT_SUPPORTED_RIGHT_NOW
             SerialMin.println("         O == OTA update");
 #else
+            SerialMin.println("    OTA Updates of M5Atom  ");
             SerialMin.println("         5 == m5atom DEV OTA update");
             SerialMin.println("         6 == m5atom DAILY TEST DEV OTA update");
             SerialMin.println("         7 == go back to m5atom BOOTSTRAP");
-            SerialMin.println("         C == change m5 atom to random color");
 
 #endif
             SerialMin.println();
@@ -2934,7 +2894,6 @@ int maxMenuModes_mainModule()
         return MAX_SM_MIN_MODES;
     else
         return MAX_SM_EXPANDED_MODES;
-    
 }
 
 //!the saved SMMode
@@ -2980,16 +2939,13 @@ void decrementSMMode_mainModule()
     }
 }
 
-
 //!full: ""Name: PTFeeder:HowieFeeder, Address: 7c:9e:bd:48:af:92, serviceUUID: 0xdead"
 char *getFullBLEDeviceName_mainModule()
 {
-#ifdef USE_BLE_CLIENT_NETWORKING
-
+    //! 8.16.25 BLE CLIENT
     if (isConnectedBLEClient())
         return _fullBLEDeviceName;
     else
-#endif
     {
         return (char*)"";
     }
@@ -3104,7 +3060,7 @@ char* connectedBLEDeviceName_mainModule()
     else
         nameToUse = (char*)"";
    
-#ifdef USE_BLE_CLIENT_NETWORKING
+    //! 8.16.25 BLE CLIENT
 
     //! if connected, return the connected name, otherwise return empty string
     if (isConnectedBLEClient())
@@ -3112,7 +3068,6 @@ char* connectedBLEDeviceName_mainModule()
         return nameToUse;
     }
     else
-#endif
     {
         return (char*)"";
     }
@@ -3121,7 +3076,7 @@ char* connectedBLEDeviceName_mainModule()
 //!returns address part of name.
 char *connectedBLEDeviceNameAddress_mainModule()
 {
-#ifdef USE_BLE_CLIENT_NETWORKING
+    //! 8.16.25 BLE CLIENT
 
     //! if connected, return the connected name, otherwise return empty string
     if (isConnectedBLEClient())
@@ -3129,7 +3084,6 @@ char *connectedBLEDeviceNameAddress_mainModule()
         return _connectedBLEDeviceAddress;
     }
     else
-#endif
     {
         return (char*)"";
     }
@@ -3169,8 +3123,6 @@ void loop_Sensors_mainModule()
 
     // end atom
     
-#elif defined(USE_CAMERA_MODULE)
-    loop_CameraModule();
 #elif defined(M5BUTTON_MODULE)
     loop_M5ButtonModule();
 #endif
@@ -3190,9 +3142,10 @@ void setup_Sensors_mainModule()
 #endif
 #ifdef M5CORE2_MODULE
     setup_M5Core2Module();
-#elif defined(M5_ATOM)
-  
+#endif
     
+#ifdef M5_ATOM
+  
     //! 5.6.25 use the M5Atom ClassType
 #ifdef USE_NEW_M5ATOMCLASS
     //! @see https://www.cs.fsu.edu/~myers/cop3330/notes/dma.html
@@ -3201,6 +3154,8 @@ void setup_Sensors_mainModule()
     _M5Atom_HDriverModuleClass = new M5Atom_HDriverModuleClass((char*)"M5HDriver");
     //! 7.17.25
     _M5Atom_TinyGPSModuleClass = new M5Atom_TinyGPSModuleClass((char*)"M5AtomTinyGPS");
+    //! 8.16.25 bring in the Camera
+    _M5Atom_CameraModuleClass = new M5Atom_CameraModuleClass((char*)"M5AtomCamera");
 
     int whichM5AtomIndex = 0;
     SerialDebug.println("setup_M5Atoms");
@@ -3211,6 +3166,8 @@ void setup_Sensors_mainModule()
     _M5AtomClassTypes[whichM5AtomIndex++] = _M5Atom_HDriverModuleClass;
     //! 7.17.25
     _M5AtomClassTypes[whichM5AtomIndex++] = _M5Atom_TinyGPSModuleClass;
+    //! 8.16.25 bring in the Camera
+    _M5AtomClassTypes[whichM5AtomIndex++] = _M5Atom_CameraModuleClass;
 
     //! add check..
     if (whichM5AtomIndex > NUM_M5ATOM_CLASS)
@@ -3263,9 +3220,7 @@ void setup_Sensors_mainModule()
         _whichM5AtomClassType->setup_M5AtomClassType();
     
     // end atom
-#elif defined(USE_CAMERA_MODULE)
-    //! let ESP_IOT.ino call this .. since it needs the WIFI running..
-    //setup_CameraModule();
+
 #elif defined(M5BUTTON_MODULE)
     setup_M5ButtonModule();
 #endif
@@ -3285,9 +3240,6 @@ void buttonA_ShortPress_mainModule()
     if (_whichM5AtomClassType)
         _whichM5AtomClassType->buttonA_ShortPress_M5AtomClassType();
 
-// end atom
-#elif defined(USE_CAMERA_MODULE)
-    buttonA_ShortPress_CameraModule();
 #elif defined(M5BUTTON_MODULE)
     buttonA_ShortPress_M5ButtonModule();
 #endif
@@ -3309,8 +3261,7 @@ void buttonA_LongPress_mainModule()
     if (_whichM5AtomClassType)
         _whichM5AtomClassType->buttonA_LongPress_M5AtomClassType();
     
-#elif defined(USE_CAMERA_MODULE)
-    buttonA_LongPress_CameraModule();
+
 #elif defined(M5BUTTON_MODULE)
     buttonA_LongPress_M5ButtonModule();
 #endif
@@ -3356,7 +3307,6 @@ void sendStatusMQTT_mainModule()
     // This is async (next loop) since sending 2 MQTT messages can be hard to do in a row ..
     main_dispatchAsyncCommand(ASYNC_SEND_MQTT_STATUS_URL_MESSAGE);
 }
-
 
 //! 3.23.25 rainy weekend
 //! create a JSON string from the SemanticMarker

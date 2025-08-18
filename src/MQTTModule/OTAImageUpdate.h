@@ -9,7 +9,7 @@
 #define OTAImageUpdate_h
 #include "../../Defines.h"
 
-#ifdef USE_MQTT_NETWORKING
+//! 8.16.25 MQTT
 
 //!connects to host and grabs the http file and tries to update the binary (OTA)
 void performOTAUpdate(char *hostname, char *httpAddress);
@@ -17,6 +17,5 @@ void performOTAUpdate(char *hostname, char *httpAddress);
 //!retrieves from constant location
 void performOTAUpdateSimple();
 
-#endif
 
 #endif /* OTAImageUpdate_h */
