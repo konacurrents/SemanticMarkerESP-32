@@ -136,7 +136,7 @@
 #else
 //! ***** THIS IS MAIN "ATOM" *****   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom
 //!
-#define VERSION "v8_17_25(5.12d)-ATOM_UNL2003_REFACTOR_CAMERA_TOO"
+#define VERSION "v8_18_25(5.13a)-ATOM_UNL2003_REFACTOR_NO_CAMERA"
 
 #endif //ESP_M5_ATOM_S3
 
@@ -144,7 +144,7 @@
 #define M5_ATOM
 
 //! 8.17.25 mix in the CAMERA .. 73%
-#define USE_CAMERA_MODULE
+//#define USE_CAMERA_MODULE
 
 
 //#define USE_BUTTON_MODULE  ... ATOMQButtons.cpp

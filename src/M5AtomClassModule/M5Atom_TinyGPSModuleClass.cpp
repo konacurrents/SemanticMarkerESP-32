@@ -161,6 +161,7 @@ void M5Atom_TinyGPSModuleClass::loop_M5AtomClassType()
 //! called to update the _lat, _lon, _alt values
 void M5Atom_TinyGPSModuleClass::updateLocation_TinyGPS()
 {
+    SerialDebug.println("M5Atom_TinyGPSModuleClass");
     gps.updateGPS();
     if (gps.location.isUpdated())
     {
@@ -180,7 +181,7 @@ void M5Atom_TinyGPSModuleClass::updateLocation_TinyGPS()
         //! TODO: use that RTC Server to get time...
         //SerialDebug.printf("T = %ld\n", timestamp);
         
-#ifdef USE_SPIFF_MODULE
+#ifdef USE_SPIFF_MODULE_off_for_now
         //! add SPIFF output
         char spiffBuffer[100];
         //sprintf(spiffBuffer, "T=%d, (%d,%d,%d)", timestamp, this->_lat, this->_lon, this->_alt);
@@ -189,6 +190,10 @@ void M5Atom_TinyGPSModuleClass::updateLocation_TinyGPS()
         //! now send to SPIFF append
         println_SPIFFModule(spiffBuffer);
 #endif
+    }
+    else
+    {
+        SerialDebug.print(F("INVALID\n"));
     }
 }
 
@@ -217,7 +222,7 @@ void M5Atom_TinyGPSModuleClass::displayInfo_TinyGPS()
     }
     else
     {
-       // SerialDebug.print(F("INVALID\n"));
+        SerialDebug.print(F("INVALID\n"));
     }
 
     if (gps.date.isUpdated())

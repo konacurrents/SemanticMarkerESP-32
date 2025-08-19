@@ -2683,7 +2683,30 @@ void processClientCommandChar_mainModule(char cmd)
             //!retrieves from constant location
             performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/Bootstrap/ESP_M5_BOOTSTRAP.ino.m5stack_stickc_plus.bin");
         } break;
+            //! 8.18.25
+        case '8':
+        {
+            //!
+            SerialDebug.println("Default M5AtomTinyGPS");
+            //resetSensorToDefault_mainModule();
+            //! 7.30.25 changing to the HDriver's board
+            setSensorsString_mainModule((char*)"");
+            //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
+            savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5AtomTinyGPS");
+            //! also specify the sensor plug
+            savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "");
             
+            //! reboot .. so the sensors are set..
+            rebootDevice_mainModule();
+        } break;
+        case '9':
+        {
+            //! 8.18.25 M5Clicker
+            SerialDebug.println(" *** performing m5atom OTA Update - M5Clicker");
+            //! 8.16.25 MQTT
+            //!retrieves from constant location
+            performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/Bootstrap/ESP_M5_BOOTSTRAP.ino.m5stack_stickc_plus.bin");
+        } break;
         case 'C':
         {
             SerialDebug.println("'C' change color touched");
@@ -2771,7 +2794,8 @@ void processClientCommandChar_mainModule(char cmd)
             SerialMin.println("         2 == ULN2002 Stepper (new test 8.13.25)");
             SerialMin.println("         3 == *** PTStepperClass (original code - with M5");
             SerialMin.printf ("         4 == M5AtomCamera\n");
-            
+            SerialMin.println("         8 == M5TinyGPS");
+
 #ifdef NOT_SUPPORTED_RIGHT_NOW
             SerialMin.println("         O == OTA update");
 #else
@@ -3323,7 +3347,7 @@ char *semanticMarkerToJSON_mainModule(char* semanticMarker)
 /**
 #define PIN_USE_MAX 10
 struct pinUseStruct {
-    int pineUseCount;
+    int pinUseCount;
     char *pinUseArray[PIN_USE_MAX];
 } _pinUseStruct;
 */
@@ -3351,9 +3375,16 @@ void registerPinUse_mainModule(long pin, String pinName, String moduleName, bool
     char *pinUse = (char*)calloc(strlen(pinUseSample)+1, sizeof(char));
     strcpy(pinUse, pinUseSample);
     //!store globally
-    _pinUseStruct.pinUseArray[_pinUseStruct.pineUseCount] = pinUse;
+    _pinUseStruct.pinUseArray[_pinUseStruct.pinUseCount] = pinUse;
     //! increment
-    _pinUseStruct.pineUseCount++;
+    _pinUseStruct.pinUseCount++;
+    
+    if (_pinUseStruct.pinUseCount >= PIN_USE_MAX)
+    {
+        SerialError.printf("*** ERROR .. too many PINS defined ***");
+        _pinUseStruct.pinUseCount=0;
+
+    }
     
     SerialDebug.printf("** PIN_USE: %s = %d, module=%s %s\n", pinName.c_str(), pin, moduleName.c_str(), isI2C?"(I2C)":"");
 }

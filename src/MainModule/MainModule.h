@@ -490,9 +490,10 @@ char *semanticMarkerToJSON_mainModule(char* semanticMarker);
 void registerPinUse_mainModule(long pin, String pinName, String moduleName, boolean isI2C);
 
 //! note these are the sets of pin use
-#define PIN_USE_MAX 10
+//! 8.18.25 OUCH>.. 10 .. now 20 max
+#define PIN_USE_MAX 20
 typedef struct  {
-    int pineUseCount;
+    int pinUseCount;
     char *pinUseArray[PIN_USE_MAX];
 } PinUseStruct;
 //! get the pin use array

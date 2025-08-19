@@ -3225,7 +3225,7 @@ void invokeCurrentSMModePage(char *topic)
 //! note: The strcasecmp() function shall compare, while ignoring differences in case, the string pointed to by s1 to the string pointed to by s2.
 boolean processJSONMessageMQTT(char *ascii, char *topic)
 {
-    SerialLots.println(" *** processJSONMessageMQTT ***");
+    SerialTemp.println(" *** processJSONMessageMQTT ***");
     
     //! 6.16.25 Nice out, yellow field
     //! set below when looking at whether a command was found

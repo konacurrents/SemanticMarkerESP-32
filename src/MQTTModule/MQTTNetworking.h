@@ -37,10 +37,11 @@
 //NEW 4.1.22  (what to do if no MQTT??)
 #define MQTT_CALLBACK_TILT_MOTION_DETECTED 5
 #define MQTT_CALLBACK_PIR_DETECTED 6
-#define MQTT_CALLBACK_SSID_DETECTED 7
+//! 8.18.25 take out until test ...
+//#define MQTT_CALLBACK_SSID_DETECTED 7
 
 //! MAX must be updated to 1 more than last item..
-#define MQTT_MAX_CALLBACKS 8
+#define MQTT_MAX_CALLBACKS 7
 
 //!THIS IS the setup() and loop() but using the "component" name, eg MQTTNetworking()
 //! called from the setup()

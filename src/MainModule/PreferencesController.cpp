@@ -1217,13 +1217,15 @@ void printPreferenceValues_mainModule()
 
     
     //! 7.31.25 PIN USE
-    SerialTemp.println(" *** PIN USE .. check for duplicated. Will do this for you later..");
     PinUseStruct pinUseStruct = getPinUseStruct_mainModule();
-    for (int i=0; i< pinUseStruct.pineUseCount; i++)
+    SerialTemp.printf(" *** PIN USE (%d) .. check for duplicated. Will do this for you later..\n", pinUseStruct.pinUseCount);
+
+    for (int i=0; i< pinUseStruct.pinUseCount; i++)
     {
         SerialTemp.println(pinUseStruct.pinUseArray[i]);
     }
-    
+    SerialTemp.printf(" *** PIN Count = %d\n", pinUseStruct.pinUseCount);
+
 #endif
 }
 
