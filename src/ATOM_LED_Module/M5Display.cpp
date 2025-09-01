@@ -21,6 +21,22 @@ void setup_M5Display()
     
 }
 
+char *colorName(CRGB Color)
+{
+    if (Color == L_RED)
+        return (char*)"L_RED";
+    else if (Color == L_GREEN)
+        return (char*)"L_GREEN";
+    else if (Color == L_BLUE)
+        return (char*)"L_BLUE";
+    else if (Color == L_WHITE)
+        return (char*)"L_WHITE";
+    else if (Color == L_YELLOW)
+        return (char*)"L_YELLOW";
+    else
+        return (char*)"UNKNOWN";
+}
+
 void animation(uint8_t *buffptr, uint8_t amspeed, uint8_t ammode, int64_t amcount )
 {
     _dis.animation(buffptr, amspeed, ammode, amcount);
@@ -39,27 +55,13 @@ void drawpix(uint8_t xpos, uint8_t ypos, CRGB Color)
 }
 void drawpix(uint8_t Number, CRGB Color)
 {
+    SerialDebug.printf("drawpix(%s)\n", colorName(Color));
     _dis.drawpix(Number, Color);
 }
 void clear()
 {
     if (_M5DisplaySetup)
         _dis.clear();
-}
-char *colorName(CRGB Color)
-{
-    if (Color == L_RED)
-        return (char*)"L_RED";
-    else if (Color == L_GREEN)
-        return (char*)"L_GREEN";
-    else if (Color == L_BLUE)
-        return (char*)"L_BLUE";
-    else if (Color == L_WHITE)
-        return (char*)"L_WHITE";
-    else if (Color == L_YELLOW)
-        return (char*)"L_YELLOW";
-    else
-        return (char*)"UNKNOWN";
 }
 
 void fillpix(CRGB Color)

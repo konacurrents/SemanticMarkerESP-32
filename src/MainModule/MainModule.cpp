@@ -263,6 +263,15 @@ void setup_mainModule()
     //! then we get which ones the user wants (the SENSORS_SETTING)
     //! then we instantiate, and provide ping, etc.
     initSensorClassTypeArray();
+    
+#define TRY_DUPLICATES_works
+#ifdef  TRY_DUPLICATES
+    {
+        //! 8.32.25 added a test .. the '.' needs to run.. to see the error
+        registerPinUse_mainModule(22, "TestPin22", "MainModule", false);
+        registerPinUse_mainModule(27, "TestPin27", "MainModule", false);
+    }
+#endif
 }
 
 #if defined(ESP_M5_CAMERA) || defined(ESP_32)
@@ -2622,43 +2631,11 @@ void processClientCommandChar_mainModule(char cmd)
             //! 7.19.25 add Clear Sensors
         case '3':
         {
-            
-            //! poweroff
-            SerialDebug.println("Default PTStepperClass");
-            //resetSensorToDefault_mainModule();
-            //! 7.30.25 changing to the HDriver's board
-            setSensorsString_mainModule((char*)"BuzzerSensorClass,21,25,PTStepperClass,23,33");
-            //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
-            savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5HDriver");
-            //! also specify the sensor plug
-            savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "PTStepperClass");
-            //! for Tumbler .. use 200
-            savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 200.0);
-            //! @see #390 this is the RPM of the stepper
-            //savePreferenceFloat_mainModule(PREFERENCE_STEPPER_RPM_SETTING, 15.0);
-            //! set autoRotoate as well..
-            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
-            //! tumbler
-            savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
-            
-            //! reboot .. so the sensors are set..
-            rebootDevice_mainModule();
+            setConfiguration_mainModule((char*)"PTStepper");
         } break;
-            //! 7.19.25 BLE Client ON
         case '4':
         {
-            //! poweroff
-            SerialDebug.println("Default M5AtomCamera");
-            //resetSensorToDefault_mainModule();
-            //! 7.30.25 changing to the HDriver's board
-            setSensorsString_mainModule((char*)"");
-            //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
-            savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5AtomCamera");
-            //! also specify the sensor plug
-            savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "");
-           
-            //! reboot .. so the sensors are set..
-            rebootDevice_mainModule();
+            setConfiguration_mainModule((char*)"M5AtomCamera");
         } break;
             //! 7.9.25 grabbed from BOOTSTRAP let someone update the atom to the recent OTA
         case '5':
@@ -2827,6 +2804,59 @@ void processClientCommandChar_mainModule(char cmd)
         stepperModule_ProcessClientCmdFinal(cmd);
     }
 #endif
+}
+
+//! 8.20.25 Horses grazing if field first time for Mark and Bud
+//! add set/config
+//! PTStepper
+//! M5AtomCamera
+void setConfiguration_mainModule(char* configurationName)
+{
+    SerialDebug.printf("setConfiguration: %s\n", configurationName);
+    
+    if (strcmp(configurationName, "PTStepper")==0)
+    {
+        //! poweroff
+        SerialDebug.println("Default PTStepperClass");
+        //resetSensorToDefault_mainModule();
+        //! 7.30.25 changing to the HDriver's board
+        //!     savePreference_mainModule(PREFERENCE_SENSORS_SETTING, _sensorsEPROM);
+        setSensorsString_mainModule((char*)"BuzzerSensorClass,21,25,PTStepperClass,23,33");
+        //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
+        savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5HDriver");
+        //! also specify the sensor plug
+        savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "PTStepperClass");
+        //! for Tumbler .. use 200
+        savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 200.0);
+        //! @see #390 this is the RPM of the stepper
+        //savePreferenceFloat_mainModule(PREFERENCE_STEPPER_RPM_SETTING, 15.0);
+        //! set autoRotoate as well..
+        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
+        //! tumbler
+        savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
+        
+        //! reboot .. so the sensors are set..
+        rebootDevice_mainModule();
+    }
+    else if (strcmp(configurationName, "M5AtomCamera")==0)
+    {
+        //! poweroff
+        SerialDebug.println("Default M5AtomCamera");
+        //resetSensorToDefault_mainModule();
+        //! 7.30.25 changing to the HDriver's board
+        setSensorsString_mainModule((char*)"");
+        //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
+        savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5AtomCamera");
+        //! also specify the sensor plug
+        savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "");
+        
+        //! reboot .. so the sensors are set..
+        rebootDevice_mainModule();
+    }
+    else
+    {
+        SerialDebug.printf(" **** Unknown Configuration: %s\n", configurationName);
+    }
 }
 
 
@@ -3348,7 +3378,10 @@ char *semanticMarkerToJSON_mainModule(char* semanticMarker)
 #define PIN_USE_MAX 10
 struct pinUseStruct {
     int pinUseCount;
-    char *pinUseArray[PIN_USE_MAX];
+     //! string describing the module, etc
+     char *pinUseArray[PIN_USE_MAX];
+     //! each pin
+     long pinNumArray[PIN_USE_MAX];
 } _pinUseStruct;
 */
 
@@ -3359,6 +3392,7 @@ PinUseStruct getPinUseStruct_mainModule()
 {
     return _pinUseStruct;
 }
+
 
 //! 7.31.25 store this information.. for STATUS
 //! 5.3.25 add a central clearing house for defining PIN use
@@ -3376,6 +3410,9 @@ void registerPinUse_mainModule(long pin, String pinName, String moduleName, bool
     strcpy(pinUse, pinUseSample);
     //!store globally
     _pinUseStruct.pinUseArray[_pinUseStruct.pinUseCount] = pinUse;
+    //! 8.30.25 add the pin
+    _pinUseStruct.pinNumArray[_pinUseStruct.pinUseCount] = pin;
+
     //! increment
     _pinUseStruct.pinUseCount++;
     

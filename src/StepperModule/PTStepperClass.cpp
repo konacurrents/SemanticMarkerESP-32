@@ -7,6 +7,13 @@
 
 #include "PTStepperClass.h"
 
+
+//! 8.30.25 LA Warm, Zuma Beach - end scene of Planet of Apes
+#ifdef USE_FAST_LED
+#include "../ATOM_LED_Module/M5Display.h"
+#endif
+
+
 //! for now .. use the PTStepper.h
 //#include "PTStepper.h"
 
@@ -238,7 +245,10 @@ void PTStepperClass::start_MotorStepper() {
         SerialDebug.println(getFeederType_mainModule());
     }
     SerialDebug.println("**************** PTStepperClass::Starting Stepper *******************");
-    
+    //! 8.30.25 LA Warm, Zuma Beach - end scene of Planet of Apes
+#ifdef USE_FAST_LED
+    fillpix(L_RED);
+#endif
     //! 5.15.25 try the async CLICK
     //! click call
     //! click call  5.26.25 SYNC version
@@ -268,7 +278,10 @@ void PTStepperClass::start_MotorStepper() {
         SerialDebug.println("**************** PTStepperClass::Ending Return ***********");
         
     }
-    
+    //! 8.30.25 LA Warm, Zuma Beach - end scene of Planet of Apes
+#ifdef USE_FAST_LED
+    fillpix(L_BLUE);
+#endif
 }
 //! stops motor
 void PTStepperClass::stop_MotorStepper()

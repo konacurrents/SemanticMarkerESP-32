@@ -494,9 +494,18 @@ void registerPinUse_mainModule(long pin, String pinName, String moduleName, bool
 #define PIN_USE_MAX 20
 typedef struct  {
     int pinUseCount;
+    //! string describing the module, etc
     char *pinUseArray[PIN_USE_MAX];
+    //! each pin
+    long pinNumArray[PIN_USE_MAX];
 } PinUseStruct;
 //! get the pin use array
 PinUseStruct getPinUseStruct_mainModule();
+
+//! 8.20.25 Horses grazing if field first time for Mark and Bud
+//! add set/config
+//! PTStepper
+//! M5AtomCamera
+void setConfiguration_mainModule(char* configurationName);
 
 #endif /* MainModule_h */

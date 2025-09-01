@@ -4122,7 +4122,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 //!for now just reboot which will use this perference
                 rebootDevice_mainModule();
             }
-#endif
+#endif //use without device name
             
 #pragma mark Device Name and Not Group
             else if (deviceNameSpecified && !isGroupTopic())
@@ -4143,6 +4143,13 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 else if (strcasecmp(setCmdString,"autoMotorDirection")==0)
                 {
                     savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, flag);
+                }
+                //! 8.20.25 configuration,
+                //! {"set":"config","val":"PTStepper"}
+                else if (strcasecmp(setCmdString,"config")==0)
+                {
+                    //! 8.20.25 Horses in field last night Beautiful..
+                    setConfiguration_mainModule(valCmdString);
                 }
                 
                 //! 8.2.24 add includeGroups

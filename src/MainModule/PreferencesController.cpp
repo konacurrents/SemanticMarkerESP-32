@@ -1218,14 +1218,35 @@ void printPreferenceValues_mainModule()
     
     //! 7.31.25 PIN USE
     PinUseStruct pinUseStruct = getPinUseStruct_mainModule();
-    SerialTemp.printf(" *** PIN USE (%d) .. check for duplicated. Will do this for you later..\n", pinUseStruct.pinUseCount);
+    SerialTemp.printf(" *** PIN USE (%d) .. check for duplicated done next .. look for ERROR \n", pinUseStruct.pinUseCount);
 
     for (int i=0; i< pinUseStruct.pinUseCount; i++)
     {
         SerialTemp.println(pinUseStruct.pinUseArray[i]);
     }
     SerialTemp.printf(" *** PIN Count = %d\n", pinUseStruct.pinUseCount);
-
+    
+    //! this needs to have a long pin in the array as well
+    //! 8.30.25 check if duplicates
+    //! @see https://stackoverflow.com/questions/8199403/how-to-check-if-an-array-has-any-duplicates
+    int count = pinUseStruct.pinUseCount;
+    boolean duplicatePins = false;
+    
+    for (int i = 0; i < count - 1; i++)
+    {
+        for (int j = i + 1; j < count; j++)
+        {
+            long pin1 = pinUseStruct.pinNumArray[i];
+            long pin2 = pinUseStruct.pinNumArray[j];
+            if (pin1 == pin2)
+            {
+                // do whatever you do in case of a duplicate
+                duplicatePins = true;
+                SerialDebug.printf("*** ERROR: DUPLICATE PIN: %d, (%s) == (%s)\n",pin1, pinUseStruct.pinUseArray[i], pinUseStruct.pinUseArray[j]);
+            }
+        }
+    }
+    
 #endif
 }
 

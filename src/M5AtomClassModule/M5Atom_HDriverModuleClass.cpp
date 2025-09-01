@@ -7,6 +7,11 @@
 
 #include "M5Atom_HDriverModuleClass.h"
 
+//! 8.30.25 LA Warm, Zuma Beach - end scene of Planet of Apes
+#ifdef USE_FAST_LED
+#include "../ATOM_LED_Module/M5Display.h"
+#endif
+
 //! Currently the HDriver only processes the BUZZER .. so the setup works..
 M5Atom_HDriverModuleClass::M5Atom_HDriverModuleClass(char *config) : M5AtomClassType(config)
 {
@@ -34,6 +39,13 @@ void M5Atom_HDriverModuleClass::start_M5AtomClassType()
 void M5Atom_HDriverModuleClass::setup_M5AtomClassType()
 {
     SerialDebug.printf("M5Atom_HDriverModuleClass::setup_M5AtomClassType\n");
+#ifdef USE_FAST_LED
+        //!NOTE: this could probably be done by ESP_IOT.ino .. but for now keep here (and in the other ATOM code..)
+    setup_M5Display();
+    //  fillpix(L_GREEN);
+    fillpix(L_BLUE);
+    
+#endif
 
 }
 

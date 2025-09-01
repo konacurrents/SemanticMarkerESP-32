@@ -43,8 +43,8 @@
 // NOW: 8.17.25 use M5StickCPlus - sadly no.. it compiles, but cannot create the pics ..
 // BUT the M5Atom works (it seems)
 //#define ESP_M5_CAMERA
-//#define PARTITION_SCHEME (char*)"Board=M5StickCPlus,P=1.9 Minimal SPIFFS with OTA"
-//#define PARTITION_SCHEME (char*)"Board=M5TinyCam,P=1.9MB App Minimal SPIFFS with OTA"
+//#define PARTITION_SCHEME_NOT_WORKING (char*)"Board=M5StickCPlus,P=1.9 Minimal SPIFFS with OTA"
+//#define PARTITION_SCHEME (char*)"Board=M5TimerCam,P=1.9MB App Minimal SPIFFS with OTA"
 
 //  ******** M5Core2 the White one with display ***
 //! 6. M5Core2
@@ -136,7 +136,7 @@
 #else
 //! ***** THIS IS MAIN "ATOM" *****   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom
 //!
-#define VERSION "v8_18_25(5.13a)-ATOM_UNL2003_REFACTOR_NO_CAMERA"
+#define VERSION "v8_30_25(5.14)-ATOM_COLOR_UNL2003_REFACTOR_NO_CAMERA"
 
 #endif //ESP_M5_ATOM_S3
 
