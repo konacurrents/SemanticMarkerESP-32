@@ -2835,6 +2835,9 @@ void setConfiguration_mainModule(char* configurationName)
         //! tumbler
         savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
         
+        //! 9.5.25 set the 2step OFF for now
+        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_2FEED_SETTING, false);
+
         //! reboot .. so the sensors are set..
         rebootDevice_mainModule();
     }

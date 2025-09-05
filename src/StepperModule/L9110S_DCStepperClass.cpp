@@ -32,7 +32,16 @@ L9110S_DCStepperClass::L9110S_DCStepperClass(char *config) : MotorStepperClassTy
 const int IN1_PIN = 21;  //IN1 on the ULN2003 Board, BLUE end of the Blue/Yellow motor coil
 const int IN2_PIN = 25;  //IN2 on the ULN2003 Board, PINK end of the Pink/Orange motor coil
 
-
+#ifdef NOT_WORKING
+//! 9.4.25
+//! delay amount after a start_MotorStepper
+//! defaults = 0
+int L9110S_DCStepperClass::delayAmountBetweenMotor()
+{
+    SerialDebug.println("L9110S_DCStepperClass::delayAmountBetweenMotor = 600");
+    return 600;
+}
+#endif
 //https://randomnerdtutorials.com/esp32-pwm-arduino-ide/
 
 /************* Set all motor pins off which turns off the motor ************************************************/

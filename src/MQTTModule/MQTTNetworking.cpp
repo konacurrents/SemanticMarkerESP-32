@@ -4086,6 +4086,16 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 foundCommand = true;
             }
             
+            //! 9.3.25 back from LA, Horses out. Tyler on lap. Europe next week
+            //! sets the 2feed option (go back and forth)
+            else if (strcasecmp(setCmdString,"2feed")==0)
+            {
+                SerialDebug.printf("2feed: %d\n", flag);
+                //!set the 2feed flag.
+                savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_2FEED_SETTING, flag);
+                foundCommand = true;
+            }
+            
             //! issue #338 sensor definition (in work)
             //! This will be a string in JSON format with various PIN and BUS information
             else if  (strcasecmp(setCmdString,"sensorPlugs")==0)
@@ -4200,7 +4210,14 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     //!set the stepperangle.
                     savePreference_mainModule(PREFERENCE_STEPPER_RPM_SETTING, valCmdString);
                 }
-                
+                //! 9.3.25 back from LA, Horses out. Tyler on lap. Europe next week
+                //! sets the 2feed option (go back and forth)
+                else if (strcasecmp(setCmdString,"2feed")==0)
+                {
+                    SerialDebug.printf("2feed: %d\n", flag);
+                    //!set the stepperangle.
+                    savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_2FEED_SETTING, flag);
+                }
                 else if (strcasecmp(setCmdString,"noclick")==0)
                 {
                     //!set the timeout from no click to poweroff

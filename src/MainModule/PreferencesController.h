@@ -158,8 +158,13 @@
 //! stepper RPM
 #define PREFERENCE_STEPPER_RPM_SETTING 53
 
+//! 9.3.25 back from LA, Horses out. Tyler on lap. Europe next week
+//! sets the 2feed option (go back and forth)
+#define PREFERENCE_STEPPER_2FEED_SETTING 54
+
+#pragma mark MAX_PREFERENCE Set here
 //! *******  1 greater than last value **** IMPORTANT *** and no gaps..
-#define MAX_MAIN_PREFERENCES 54
+#define MAX_MAIN_PREFERENCES 55
 
 //! 8.2.24 retrieve the includeGroup
 //! really ask a topic if it's in the include group

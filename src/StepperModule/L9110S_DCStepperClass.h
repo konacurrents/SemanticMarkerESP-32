@@ -37,6 +37,17 @@ public:
     //!loop the PTStepper (so timer can run)
     void loop_MotorStepper();
     
+#ifdef NOT_WORKING
+    //! not working as the motor is running by itself .. needs a delay another way
+    //! or somehow to run the start_Motor again (but only 1 time)
+    //! the StepperModule cannot make that call..  .. unless calling start_Motorl was passed a
+    //! number like 1 or 2 ??
+
+    //! 9.4.25
+    //! delay amount after a start_MotorStepper
+    //! defaults = 0
+    int delayAmountBetweenMotor();
+#endif
 };
 
 

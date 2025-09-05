@@ -136,7 +136,9 @@
 #else
 //! ***** THIS IS MAIN "ATOM" *****   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom
 //!
-#define VERSION "v8_30_25(5.14)-ATOM_COLOR_UNL2003_REFACTOR_NO_CAMERA"
+#define VERSION "v9_5_25(5.15)-ATOM_COLOR_2FEED_UNL2003_REFACTOR_NO_CAMERA"
+
+//! ***** THIS IS MAIN "ATOM" *****   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom
 
 #endif //ESP_M5_ATOM_S3
 

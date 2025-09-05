@@ -254,30 +254,62 @@ void loop_StepperModule()
 #ifdef USE_UI_MODULE
             blinkLED_UIModule();
 #endif
-            SerialDebug.println("SINGLE Feed"); //this should write a 0x01 for feed ack
-
-            if (_whichMotorStepper)
-                _whichMotorStepper->start_MotorStepper();
-
-            _feedState = FEED_STOPPED; //this will cancel Continous feed if it is set
             
-            //! 5.3.24 Issue #332 if TUMBLER .. reverse direction
-            if (getFeederType_mainModule() == STEPPER_IS_TUMBLER)
+#pragma mark USE 2FEED FLAG
+            //! 9.2.25 back from LA, Nice here. Sunday off to Europe
+            //! try 2 feeds right now...
+            //! 9.3.25 Dead movie..
+            //! get the preference
+            boolean feed2times = getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_2FEED_SETTING);
+            int numFeeds = 1;
+            if (feed2times)
+                numFeeds = 2;
+            for (int i=0; i< numFeeds; i++)
             {
-                //! 8.2.24 have the auto a mode as well.. for older Tumblers. Default is ON (so we can change the old ones),
-                //! message: {"set":"autoMotorDirection","val":"true"}
-                boolean autoMotorDirection = getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING);
-                if (autoMotorDirection)
+                SerialDebug.printf("SINGLE Feed %d of %d\n", i+1,numFeeds); //this should write a 0x01 for feed ack
+                
+                if (!_whichMotorStepper)
+                    continue;
+                
+                //! uses current motor class instance
+                _whichMotorStepper->start_MotorStepper();
+                
+                //! 9.4.25 seems the DCMotor is still running when it get's here.. and the next loop doesn't do anything...
+                //! so maybe a delay (if a DCMotor) -- if this works, it would be a class-wide function (get delay amount?)
+                
+                //! cancel the feed..
+                _feedState = FEED_STOPPED; //this will cancel Continous feed if it is set
+                
+                //! 5.3.24 Issue #332 if TUMBLER .. reverse direction
+                if (getFeederType_mainModule() == STEPPER_IS_TUMBLER)
                 {
-                    // reverse direction, the Q command
-                    //! note: reboot not needed as the next time a feed happens, it reads this value
-                    // motor direction ==  (reverse)
-                    boolean  currentDirection = getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING);
-                    currentDirection = !currentDirection;
-                    savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING,currentDirection);
+                    //! 8.2.24 have the auto a mode as well.. for older Tumblers. Default is ON (so we can change the old ones),
+                    //! message: {"set":"autoMotorDirection","val":"true"}
+                    boolean autoMotorDirection = getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING);
+                    if (autoMotorDirection)
+                    {
+                        // reverse direction, the Q command
+                        //! note: reboot not needed as the next time a feed happens, it reads this value
+                        // motor direction ==  (reverse)
+                        boolean  currentDirection = getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING);
+                        currentDirection = !currentDirection;
+                        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING,currentDirection);
+                    }
                 }
+#ifdef NOT_WORKING
+                //! 9.4.25
+                //! NOTE: THis isn't working .. since the delay is already running ..
+                //! we need to get ahold of the stop_MotorStepper..
+                //! try the delay, mainly for the DCMotor
+                int delayAmount = _whichMotorStepper->delayAmountBetweenMotor();
+                //SerialTemp.printf("delayAmount = %d\n", delayAmount);
+                if (i > 0 && delayAmount > 0)
+                {
+                    SerialDebug.printf("Delay %d\n", delayAmount);
+                    delay(delayAmount);
+                }
+#endif
             }
-
             break;
         }
 

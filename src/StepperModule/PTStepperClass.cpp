@@ -236,6 +236,14 @@ void cycle_PTStepperClass()
     delay(2);
 }
 
+//! 9.4.25
+//! delay amount after a start_MotorStepper
+//! defaults = 0
+int delayAmount_MotorStepper()
+{
+    return 0;
+}
+
 //This will advance the stepper clockwise once by the angle specified in SetupStepper. Example 16 pockets in UNO is 22.5 degrees
 void PTStepperClass::start_MotorStepper() {
     if (_ourSteps_PTStepperClass == 0 || getFeederType_mainModule() != _lastType_PTStepperClass)

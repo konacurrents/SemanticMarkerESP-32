@@ -32,6 +32,12 @@ public:
     //!starts the PTStepper
     virtual void start_MotorStepper() = 0;
     
+    
+    //! 9.4.25
+    //! delay amount after a start_MotorStepper
+    //! defaults = 0
+    virtual int delayAmountBetweenMotor();
+    
     //!setup the PTStepper
     virtual void setup_MotorStepper() = 0;
     

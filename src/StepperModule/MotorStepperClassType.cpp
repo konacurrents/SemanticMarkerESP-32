@@ -29,6 +29,14 @@ MotorStepperClassType::MotorStepperClassType(char *config)
 
 }
 
+//! 9.4.25
+//! delay amount after a start_MotorStepper
+//! defaults = 0
+int MotorStepperClassType::delayAmountBetweenMotor()
+{
+    return 0;
+}
+
 MotorStepperClassType::~MotorStepperClassType()
 {
     SerialDebug.printf("MotorStepperClassType destroy\n");

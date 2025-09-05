@@ -182,6 +182,10 @@ char _includeGroupsStringArray[NUMBER_GROUPS][STRING_MAX_SIZE];
 //! stepper RPM
 #define EPROM_STEPPER_RPM_SETTING "53sRPM"
 
+//! 9.3.25 back from LA, Horses out. Tyler on lap. Europe next week
+//! sets the 2feed option (go back and forth)
+#define EPROM_STEPPER_2FEED_SETTING "542feed"
+
 //!the EPROM is in preferences.h
 #include <Preferences.h>
 //!name of main prefs eprom
@@ -307,10 +311,10 @@ void setIncludeGroups(char *groups)
 //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
 void savePreference_mainModule(int preferenceID, String preferenceValue)
 {
-#ifdef NOT_NOW
+//#ifdef NOT_NOW
     if (preferenceID != PREFERENCE_DEBUG_INFO_SETTING)
         SerialTemp.printf("savePreference .. %d = '%s'\n", preferenceID, preferenceValue.c_str());
-#endif
+//#endif
     // cannot invoke the preference, as this would be an infinite loop back to here..
     
     //save in EPROM
@@ -565,6 +569,7 @@ void readPreferences_mainModule()
         if (preferenceValue && preferenceValue.length() > 0)
         {
             // already set
+            SerialLots.printf(" *** alreadySet %s\n",_preferenceMainModuleLookupEPROMNames[preferenceID] );
         }
         else
         {
@@ -578,11 +583,12 @@ void readPreferences_mainModule()
         //! check some of the boolean ones to cache .. so don't have to go to the EPROM everytime..
         switch (i)
         {
+                //! 9.4.25 STRANGE: the BOOLEAN aren't working too good
+                //! so removing CLOCKWISE and STEPPER_2FEED
                 //!**** NOTE: THis is where whether things are cached or not is set! Eventually all boolean and int could be cached..
                 //! CACHE SETTINGS (boolean)
             case PREFERENCE_SUPPORT_GROUPS_SETTING:
             case PREFERENCE_SENDWIFI_WITH_BLE:
-            case PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING:
             case PREFERENCE_IS_MINIMAL_MENU_SETTING:
             case PREFERENCE_ONLY_GEN3_CONNECT_SETTING:
             case PREFERENCE_MAIN_BLE_SERVER_VALUE:
@@ -592,6 +598,9 @@ void readPreferences_mainModule()
             case PREFERENCE_DEV_ONLY_SM_SETTING:
                 //!8.2.24
             case PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING:
+                //! 9.3.25 strange wasn't working ... if in cache..
+           // case PREFERENCE_STEPPER_2FEED_SETTING:
+           // case PREFERENCE_STEPPER_CLOCKWISE_MOTOR_DIRECTION_SETTING:
 
                 //SerialLots.printf("setting Cached[%d] = %s\n", i, preferenceValue);
                 _isCachedPreferenceBoolean[i] = true;
@@ -656,6 +665,7 @@ void initPreferencesMainModule()
     strcpy(_preferenceBufferString,(char*)"");
     strcpy(_preferenceBuffer,(char*)"");
     
+    //! 9.4.25 NOTE: tese are in case the EPROM wasn't set. So the EPROM is used over these values..
     for (int i = 0; i < MAX_MAIN_PREFERENCES; i++)
     {
         switch (i)
@@ -684,7 +694,7 @@ void initPreferencesMainModule()
                 //!default off for the M5 (but it can be turned on later..)
                 _preferenceMainModuleLookupDefaults[i] = (char*)"1";
 #endif //ESP_M5
-                SerialTemp.printf(" **** setting PREFERENCE_MAIN_BLE_SERVER_VALUE[%d]: %s\n", i,_preferenceMainModuleLookupDefaults[i]);
+                SerialLots.printf(" **** setting PREFERENCE_MAIN_BLE_SERVER_VALUE[%d]: %s\n", i,_preferenceMainModuleLookupDefaults[i]);
                 break;
             case PREFERENCE_MAIN_BLE_CLIENT_VALUE:
                 _preferenceMainModuleLookupEPROMNames[i] = (char*) EPROM_MAIN_BLE_CLIENT_VALUE;
@@ -1090,11 +1100,21 @@ void initPreferencesMainModule()
                 (char*)EPROM_STEPPER_RPM_SETTING;
                 _preferenceMainModuleLookupDefaults[i] = (char*)"15.0";
                 break;
+                                
+                //!9.3.25 Dead Movie.. let it grow
+                //!
+            case PREFERENCE_STEPPER_2FEED_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_STEPPER_2FEED_SETTING;
+                _preferenceMainModuleLookupDefaults[i] = (char*)"0";
+                SerialLots.println(" ** setting PREFERENCE_STEPPER_2FEED_SETTING = 0");
+                break;
                 
                 
             default:
                 SerialError.printf(" ** NO default for preference[%d]\n", i);
         }
+        SerialLots.printf("** setting [%d] = %s\n", i, _preferenceMainModuleLookupDefaults[i]);
     }
 }
 
@@ -1177,6 +1197,10 @@ void printPreferenceValues_mainModule()
     //! stepper RPM
     SerialTemp.printf("PREFERENCE_STEPPER_RPM_SETTING: %s\n", getPreference_mainModule(PREFERENCE_STEPPER_RPM_SETTING));
 
+    //! 9.3.25 back from LA, Horses out. Tyler on lap. Europe next week
+    //! sets the 2feed option (go back and forth)
+    SerialTemp.printf("PREFERENCE_STEPPER_2FEED_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_2FEED_SETTING));
+
     
 #ifdef M5CORE2_MODULE
     SerialTemp.printf("PREFERENCE_M5Core2_SETTING:\n");
@@ -1206,19 +1230,23 @@ void printPreferenceValues_mainModule()
     SerialTemp.println();
     SerialTemp.printf("{\"set\":\"M5AtomKind\",\"val\":\"M5HDriver\"}");
     SerialTemp.println();
-    SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"0.25\"}");
+    SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"0.25\"} ");
     SerialTemp.println();
     SerialTemp.printf("{\"set\":\"stepperRPM\",\"val\":\"15.0\"}");
     SerialTemp.println();
     SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"2048.0\"}");
     SerialTemp.println();
+    SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"150\"}  --new Feeder");
+    SerialTemp.println();
+
     
     SerialDebug.println("{\"ssid\":\"Bob\", \"ssidPassword\":\"scott\"}");
+    SerialDebug.println("{\"set\":\"2feed\", \"val\":\"1\"}");
 
     
     //! 7.31.25 PIN USE
     PinUseStruct pinUseStruct = getPinUseStruct_mainModule();
-    SerialTemp.printf(" *** PIN USE (%d) .. check for duplicated done next .. look for ERROR \n", pinUseStruct.pinUseCount);
+    SerialTemp.printf(" *** PIN USE (%d) .. check for duplicated done next .. look for 'ERROR' \n", pinUseStruct.pinUseCount);
 
     for (int i=0; i< pinUseStruct.pinUseCount; i++)
     {
