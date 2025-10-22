@@ -24,6 +24,15 @@
 #include "../ATOM_LED_Module/M5Display.h"
 #endif
 
+#pragma mark BUTTON Processing of M5
+//! 10.16.25 add buttons
+boolean _shortPress_MainModule = false;
+boolean _longPress_MainModule = false;
+boolean _longLongPress_MainModule = false;
+//!big button on front of M5StickC Plus
+void checkButtonA_MainModule();
+void checkButtonB_MainModule();
+
 //! instances of the M5AtomClassType
 
 //1
@@ -139,6 +148,16 @@ boolean isPTFeeder_mainModule()
      */
 }
 
+//! 10.10.25 #405 #406
+//! see if the device is a PTClicker if the M5Atom class is one..
+//! return the service name:  PTClicker or PTFeeder
+char *getServerServiceName_mainModule()
+{
+    if (isPTFeeder_mainModule())
+        return MAIN_BLE_SERVER_SERVICE_NAME_PTFeeder;
+    else
+        return MAIN_BLE_SERVER_SERVICE_NAME_PTClicker;
+}
 //! reads the preferences. Save is everytime the savePreference is called
 void readPreferences_mainModule();
 //!testing..
@@ -288,6 +307,8 @@ void loop_mainModule()
 {
     //no op..
     
+  
+    
 #if defined(ESP_M5_CAMERA) || defined(ESP_32)
     //!only do this menu update if there is no DisplayModule running the MVC loop
     
@@ -337,6 +358,32 @@ void loop_mainModule()
             callCallbackMain(CALLBACKS_BLE_SERVER, BLE_SERVER_CALLBACK_ONWRITE, _serialBuffer);
         }
     }
+    
+#pragma mark button processing
+#ifdef USE_BUTTON_MODULE
+#else
+    //! 10.16.25 add the M5.update here...
+    M5.update();
+    
+    //! 10.16.25 Mt out .. looks like storm comming
+    //! implement the buttonA here..
+    //!big button on front of M5StickC Plus
+    checkButtonA_MainModule();
+    //! 10.16.25 seems the big button on M5ATOM is Button B ..
+    checkButtonB_MainModule();
+    if (_shortPress_MainModule)
+    {
+        buttonA_ShortPress_mainModule();
+    }
+    else if (_longPress_MainModule)
+    {
+        buttonA_LongPress_mainModule();
+    }
+    else if (_longLongPress_MainModule)
+    {
+        buttonA_LongPress_mainModule();
+    }
+#endif
 }
 
 
@@ -946,7 +993,7 @@ char* main_nextJSONWIFICredential()
 void main_saveWIFICredentials(char *ssid, char *ssid_password)
 {
     //!store the JSON version of these credentials..
-    sprintf(_JSONStringForWIFICredentials, "{'ssid':'%s','ssidPassword':'%s'}", ssid?ssid:"NULL", ssid_password?ssid_password:"NULL");
+    sprintf(_JSONStringForWIFICredentials, "{'ssid':'%s','ssidPassword':'%s'}", ssid?ssid:"NULL", ssid_password?ssid_password:"");
     SerialMin.print("main_saveWIFICredentials");
     SerialMin.println(_JSONStringForWIFICredentials);
 
@@ -1049,7 +1096,7 @@ char *main_getScannedGroupNameTopic()
 //! sets the WIFI and MQTT user/password. It's up to the code (below, maybe in future a register approach)  to decide who needs to know
 void main_updateMQTTInfo(char *ssid, char *ssid_password, char *username, char *password, char *guestPassword, char *deviceName, char * host, char * port, char *locationString)
 {
-    SerialMin.printf("main_updateMQTTInfo(%s,%s,%s,%s,%s, %s, d=%s)\n", ssid?ssid:"NULL", ssid_password?ssid_password:"NULL", username?username:"NULL", password?password:"NULL", guestPassword?guestPassword:"NULL", locationString?locationString:"NULL", deviceName?deviceName:"NULL");
+    SerialMin.printf("main_updateMQTTInfo(%s,%s,%s,%s,%s, %s, d=%s)\n", ssid?ssid:"NULL", ssid_password?ssid_password:"", username?username:"NULL", password?password:"NULL", guestPassword?guestPassword:"NULL", locationString?locationString:"NULL", deviceName?deviceName:"NULL");
     
     _MQTT_Password = password;
     _MQTT_Username = username;
@@ -3295,7 +3342,10 @@ void buttonA_ShortPress_mainModule()
 #pragma mark USE_NEW_M5ATOMCLASS
     //! 5.6.25 use object version
     if (_whichM5AtomClassType)
+    {
+        SerialDebug.println("buttonA_ShortPress_mainModule");
         _whichM5AtomClassType->buttonA_ShortPress_M5AtomClassType();
+    }
 
 #elif defined(M5BUTTON_MODULE)
     buttonA_ShortPress_M5ButtonModule();
@@ -3316,8 +3366,10 @@ void buttonA_LongPress_mainModule()
 #pragma mark USE_NEW_M5ATOMCLASS
     //! 5.6.25 use object version
     if (_whichM5AtomClassType)
+    {
+        SerialDebug.println("buttonA_LongPress_mainModule");
         _whichM5AtomClassType->buttonA_LongPress_M5AtomClassType();
-    
+    }
 
 #elif defined(M5BUTTON_MODULE)
     buttonA_LongPress_M5ButtonModule();
@@ -3348,7 +3400,70 @@ void buttonB_ShortPress_mainModule()
     buttonB_ShortPress_M5ButtonModule();
 #endif
 }
+#pragma mark BUTTON Processing of M5
 
+//!big button on front of M5StickC Plus
+void checkButtonA_MainModule()
+{
+    _shortPress_MainModule = false;
+    _longPress_MainModule = false;
+    _longLongPress_MainModule = false;
+#ifdef ESP_M5
+
+    //!NOTE: ths issue is the timer is interruped by the scanner.. so make long-long very long..
+    //was 1000  (from 500)
+    if (M5.BtnA.wasReleasefor(3500))
+    {
+        //        buttonA_longPress_MainModule();
+        SerialDebug.println("MainModule **** LONG LONG PRESS ***");
+        _longLongPress_MainModule = true;
+    }
+    else if (M5.BtnA.wasReleasefor(1000))
+    {
+        //        buttonA_longPress_MainModule();
+        SerialDebug.println("MainModule **** LONG PRESS ***");
+        _longPress_MainModule = true;
+    }
+    else if (M5.BtnA.wasReleased())
+    {
+        //        buttonA_shortPress_MainModule();
+        SerialDebug.println("MainModule **** SHORT PRESS ***");
+        _shortPress_MainModule = true;
+    }
+#endif
+}
+//!big button on front of M5StickC Plus
+void checkButtonB_MainModule()
+{
+    _shortPress_MainModule = false;
+    _longPress_MainModule = false;
+    _longLongPress_MainModule = false;
+#ifdef ESP_M5
+    
+    //!NOTE: ths issue is the timer is interruped by the scanner.. so make long-long very long..
+    //was 1000  (from 500)
+    if (M5.BtnB.wasReleasefor(3500))
+    {
+        //        buttonA_longPress_MainModule();
+        SerialDebug.println("MainModule **** LONG LONG PRESS ***");
+        _longLongPress_MainModule = true;
+    }
+    else if (M5.BtnB.wasReleasefor(1000))
+    {
+        //        buttonA_longPress_MainModule();
+        SerialDebug.println("MainModule **** LONG PRESS ***");
+        _longPress_MainModule = true;
+    }
+    else if (M5.BtnB.wasReleased())
+    {
+        //        buttonA_shortPress_MainModule();
+        SerialDebug.println("MainModule **** SHORT PRESS ***");
+        _shortPress_MainModule = true;
+    }
+#endif
+}
+
+#pragma mark Models
 //!restarts all the menu states to the first one .. useful for getting a clean start. This doesn't care if the menu is being shown
 void restartAllMenuStates_mainModule()
 {

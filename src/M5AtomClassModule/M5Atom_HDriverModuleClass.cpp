@@ -24,6 +24,8 @@ M5Atom_HDriverModuleClass::M5Atom_HDriverModuleClass(char *config) : M5AtomClass
 //!default 'false' to PTClicker.   The Bluetooth will use this
 boolean M5Atom_HDriverModuleClass::isPTFeeder_M5AtomClassType()
 {
+    SerialDebug.printf("M5Atom_HDriverModuleClass isPTFeeder = TRUE\n");
+
     return true;
 }
 
@@ -86,12 +88,27 @@ void M5Atom_HDriverModuleClass::messageSend_M5AtomClassType(char *sendValue, boo
 //!short press on buttonA (top button)
 void M5Atom_HDriverModuleClass::buttonA_ShortPress_M5AtomClassType()
 {
+    SerialDebug.println("M5Atom::buttonA_ShortPress_M5AtomClassType");
+    //! feed
+    SerialDebug.printf("Feed BLE\n");
+    // send the _lastSemanticMarker again ...
+    //!send this as a DOCFOLLOW message
+    //sendSemanticMarkerDocFollow_mainModule(_lastSemanticMarker);
+    //        strcpy(_lastSemanticMarker,"https://iDogWatch.com/bot/feed/test/test");
     
+    ///feed always  (done after the code below..)
+    main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
 }
 //!long press on buttonA (top button)
 void M5Atom_HDriverModuleClass::buttonA_LongPress_M5AtomClassType()
 {
     
+    SerialDebug.println("M5Atom_HDriverModuleClass::buttonA_LongPress_M5AtomClassType");
+    //
+    SerialDebug.printf("CLEAN CREDENTIALS and reboot to AP mode\n");
+    
+    //! dispatches a call to the command specified. This is run on the next loop()
+    main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_CREDENTIALS);
 }
 
 //!returns a string in in URL so:  status&battery=84'&buzzon='off'  } .. etc

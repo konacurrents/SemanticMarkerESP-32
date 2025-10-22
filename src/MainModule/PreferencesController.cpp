@@ -1160,6 +1160,14 @@ void printPreferenceValues_mainModule()
 
     SerialTemp.printf("PREFERENCE_MAIN_BLE_CLIENT_VALUE: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE));
     SerialTemp.printf("PREFERENCE_MAIN_BLE_SERVER_VALUE: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE));
+    
+#ifdef TOO_SOON
+    //! DARN: the class hasn't been instantiated yet ...
+    //! 10.10.25 #405 #406
+    //! see if the device is a PTClicker if the M5Atom class is one..
+    //! return the service name:  PTClicker or PTFeeder
+    SerialTemp.printf("PREFERENCE_BLE_SERVER_NAME: %s:%s\n", getServerServiceName_mainModule(),getPreference_mainModule(PREFERENCE_DEVICE_NAME_SETTING));
+#endif
     SerialTemp.printf("PREFERENCE_FIRST_TIME_FEATURE_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_FIRST_TIME_FEATURE_SETTING));
     SerialTemp.printf("PREFERENCE_SCREEN_COLOR_SETTING: %d\n", getPreferenceInt_mainModule(PREFERENCE_SCREEN_COLOR_SETTING));
     
@@ -1242,6 +1250,7 @@ void printPreferenceValues_mainModule()
     
     SerialDebug.println("{\"ssid\":\"Bob\", \"ssidPassword\":\"scott\"}");
     SerialDebug.println("{\"set\":\"2feed\", \"val\":\"1\"}");
+    SerialDebug.println("{\"set\":\"BLEUseDeviceName\", \"val\":\"off\"}");
 
     
     //! 7.31.25 PIN USE

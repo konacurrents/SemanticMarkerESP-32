@@ -38,8 +38,11 @@ char *getServiceName_BLEServerNetworking()
     return _serviceName_BLEServer;
 }
 
+#ifdef NOT_HERE_USE_MAIN
+//! 10.13.25 Nice day. Snow in Hills. Mt out, Tom and Marjarie
+//! call this now.. from main
 //!NOT CALLED...
-//!sets the device name in the advertising  
+//!sets the device name in the advertising
 void setBLEServerDeviceName(char *deviceName)
 {
     _pCharacteristic->setValue(deviceName);
@@ -47,6 +50,7 @@ void setBLEServerDeviceName(char *deviceName)
     //save the deviceName
     _deviceName_BLEServer = deviceName;
 }
+#endif
 
 /**  None of these are required as they will be handled by the library with defaults. **
  **                       Remove as you see fit for your needs                        */
@@ -368,6 +372,20 @@ void setup_BLEServerNetworking(char *serviceName, char * deviceName, char *servi
     char *storedDeviceName = deviceName_mainModule();
     SerialTemp.print("Stored DeviceName = ");
     SerialTemp.println(storedDeviceName);
+#define CALCULATE_BLE_NAME
+#ifdef  CALCULATE_BLE_NAME
+    //! 10.13.25 copy here..
+    //! 8.16.25 (use the setting)
+    if (getPreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING))
+    {
+        sprintf(_serviceName_BLEServer, "%s:%s", serviceName, storedDeviceName);
+    }
+    else
+    {
+        strcpy(_serviceName_BLEServer, serviceName);
+    }
+#else
+
     if (strcmp(serviceName, "PTClicker")==0)
     {
         //! currently not using the option, just doing it...
@@ -375,6 +393,9 @@ void setup_BLEServerNetworking(char *serviceName, char * deviceName, char *servi
     }
     else
     {
+        //! 10.13.25 the service name was calaulated in MAIN already..
+        strcpy(_serviceName_BLEServer, serviceName);
+
         //! 8.16.25 (use the setting)
          if (getPreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING))
         {
@@ -385,6 +406,8 @@ void setup_BLEServerNetworking(char *serviceName, char * deviceName, char *servi
             strcpy(_serviceName_BLEServer, serviceName);
         }
     }
+#endif
+
     
     SerialMin.print("Setting BLE serviceName: ");
     SerialMin.println(_serviceName_BLEServer);

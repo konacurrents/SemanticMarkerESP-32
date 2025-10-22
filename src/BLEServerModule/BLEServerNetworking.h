@@ -28,14 +28,17 @@ void loop_BLEServerNetworking();
 #define BLE_SERVER_CALLBACK_STATUS_MESSAGE 2
 #define BLE_SERVER_MAX_CALLBACKS 3
 
-
+#ifdef NOT_HERE_USE_MAIN
+//! 10.13.25 Nice dayl . New snow in hills. Mt looking nice
+//! don't store service name here .. 
 //!sets the device name
 void setBLEServerDeviceName(char *deviceName);
-
-//!send something over bluetooth, this right now is 0x01 
-void sendBLEMessageACKMessage();
+#endif //! NOT HERE
 
 //! retrieve the service name (PTFEEDER, PTFeeder:Name, PTClicker:Name, etc)
 char *getServiceName_BLEServerNetworking();
+       //!
+//!send something over bluetooth, this right now is 0x01
+void sendBLEMessageACKMessage();
 
 #endif /* BLEServerNetworking_hpp */

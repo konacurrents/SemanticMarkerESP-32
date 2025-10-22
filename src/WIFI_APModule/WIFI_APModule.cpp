@@ -213,7 +213,7 @@ void WIFI_APModule_updateMQTTInfo(char *ssid, char *ssid_password, char *usernam
     SerialDebug.printf("wifi_apModule.updateMQTTInfo(%s, %s, %s,%s, %s, %s, %s)\n", ssid?ssid:"NULL", ssid_password?ssid_password:"NULL", username?username:"NULL", password?password:"NULL", guestPassword?guestPassword:"NULL", locationString?locationString:"NULL", deviceName?deviceName:"NULL");
     _WIFIPreferences.begin(AP_EPROM_NAME, false);  //readwrite..
     _WIFIPreferences.putString(WIFI_SSID, ssid);
-    _WIFIPreferences.putString(WIFI_PASSWORD, ssid_password);
+    _WIFIPreferences.putString(WIFI_PASSWORD, ssid_password?ssid_password:"");
 
     _WIFIPreferences.putString(MQTT_PORT, port);
     _WIFIPreferences.putString(MQTT_SERVER, host);

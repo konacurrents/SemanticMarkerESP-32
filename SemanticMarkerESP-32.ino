@@ -185,10 +185,15 @@ void setup()
         registerCallbackMain(CALLBACKS_BLE_SERVER, BLE_SERVER_CALLBACK_STATUS_MESSAGE, &onStatusMessageBLEServerCallback);
         registerCallbackMain(CALLBACKS_BLE_SERVER, BLE_SERVER_CALLBACK_STATUS_MESSAGE, &onStatusMessageBLEServerCallback);
         
-        //strdup() get away from the
-        setup_BLEServerNetworking(MAIN_BLE_SERVER_SERVICE_NAME, getDeviceNameMQTT(), strdup(PT_SERVICE_UUID), strdup(PT_CHARACTERISTIC_UUID));
-        
-        SerialDebug.println("done setupBLEServerNetworking");
+        {
+            //! 10.10.25 #405 #406
+            //! see if the device is a PTClicker if the M5Atom class is one..
+            char *serverServiceName = getServerServiceName_mainModule();
+            
+            //strdup() get away from the
+            setup_BLEServerNetworking(serverServiceName, getDeviceNameMQTT(), strdup(PT_SERVICE_UUID), strdup(PT_CHARACTERISTIC_UUID));
+            SerialDebug.printf("done setupBLEServerNetworking: %s\n", serverServiceName);
+          }
     }
     
     //BLE Client --

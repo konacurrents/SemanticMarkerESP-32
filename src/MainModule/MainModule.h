@@ -29,6 +29,10 @@ void stopMotor_mainModule();
 //! gets if PTFeeder a surrogate for the M5Atom class
 boolean isPTFeeder_mainModule();
 #endif
+//! 10.10.25 #405 #406
+//! see if the device is a PTClicker if the M5Atom class is one..
+//! return the service name:  PTClicker or PTFeeder
+char *getServerServiceName_mainModule();
 
 //!THIS IS the setup() and loop() but using the "component" name, eg MQTTNetworking()
 //!This will perform preference initializtion as well

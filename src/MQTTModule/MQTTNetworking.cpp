@@ -1299,12 +1299,12 @@ void setupWIFI(char * arg_ssid, char * arg_password)
     //SerialTemp.printf("setupWIFI(%d)\n", _WIFI_MQTTState);
 
     // We start by connecting to a WiFi network
-    SerialDebug.printf("1. Connecting to '%s' password = '%s'\n", arg_ssid?arg_ssid:"NULL", arg_password?arg_password:"NULL");
+    SerialDebug.printf("1. Connecting to '%s' password = '%s'\n", arg_ssid?arg_ssid:"NULL", arg_password?arg_password:"");
 
     //!save some reason we are in the AP mode
     appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, " *** WIFI attempt:");
     appendPreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, arg_ssid?arg_ssid:"No SSID");
-    storePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, arg_password);
+    storePreference_mainModule(PREFERENCE_DEBUG_INFO_SETTING, arg_password?arg_password:"");
 
     //! 4.4.24 format as JSON
     //!print a time too..
@@ -1338,7 +1338,7 @@ void setupWIFI(char * arg_ssid, char * arg_password)
 #endif
     //!start the WIFI mode and begin
     WiFi.mode(WIFI_STA);
-    WiFi.begin(arg_ssid, arg_password);
+    WiFi.begin(arg_ssid, arg_password?arg_password:"");
     
     SerialDebug.println("WIF_STA mode..");
     
@@ -4132,6 +4132,19 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 //!for now just reboot which will use this perference
                 rebootDevice_mainModule();
             }
+            //! sets the BLEUseDeviceName  flag == the BLEServer will add the name, eg PTFeeder:ScoobyDoo
+            else if (strcasecmp(setCmdString,"BLEUseDeviceName")==0)
+            {
+                
+                //! sets the bleusedevicename flag
+                savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING, flag);
+                
+                foundCommand = true;
+
+                //!for now just reboot which will use this perference and re-create the service name..
+                rebootDevice_mainModule();                
+            }
+            //!NOTE:   foundCommand has to be set if the above worked.. without the DEV
 #endif //use without device name
             
 #pragma mark Device Name and Not Group

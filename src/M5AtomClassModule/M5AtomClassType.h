@@ -80,7 +80,7 @@ public:
     //!6.6.24 D-Day 81 years
     //!return true or false if this should be a PTFeeder or PTClicker
     //!default 'false' to PTClicker.   The Bluetooth will use this
-    boolean isPTFeeder_M5AtomClassType();
+    virtual boolean isPTFeeder_M5AtomClassType();
     
 private:
     //! 5.3.25 create storage here. This will create dynamic memory
