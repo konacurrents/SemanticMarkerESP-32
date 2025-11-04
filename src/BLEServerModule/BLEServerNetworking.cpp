@@ -370,8 +370,7 @@ void setup_BLEServerNetworking(char *serviceName, char * deviceName, char *servi
     SerialMin.printf("setup_BLEServerNetworking(%s,%s,%s,%s)\n", serviceName?serviceName:"NULL", deviceName?deviceName:"NULL", serviceUUID?serviceUUID:"NULL", characteristicUUID?characteristicUUID:"NULL");
 
     char *storedDeviceName = deviceName_mainModule();
-    SerialTemp.print("Stored DeviceName = ");
-    SerialTemp.println(storedDeviceName);
+    SerialTemp.printf("Stored DeviceName = '%s'\n", storedDeviceName);
 #define CALCULATE_BLE_NAME
 #ifdef  CALCULATE_BLE_NAME
     //! 10.13.25 copy here..
@@ -409,8 +408,7 @@ void setup_BLEServerNetworking(char *serviceName, char * deviceName, char *servi
 #endif
 
     
-    SerialMin.print("Setting BLE serviceName: ");
-    SerialMin.println(_serviceName_BLEServer);
+    SerialMin.printf("Setting BLE serviceName: '%s'\n", _serviceName_BLEServer);
    // SerialMin.printf("LEN = %d\n", strlen(_serviceName_BLEServer));
   
     
@@ -423,8 +421,7 @@ void setup_BLEServerNetworking(char *serviceName, char * deviceName, char *servi
     if (len > 29)
     {
         _serviceName_BLEServer[28] = 0;
-        SerialMin.println(_serviceName_BLEServer);
-
+        SerialMin.printf("Name was over 29 characters, so shirking: '%s'\n", _serviceName_BLEServer);
     }
     
     

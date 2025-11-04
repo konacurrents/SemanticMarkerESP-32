@@ -17,6 +17,9 @@
 #include "../M5AtomClassModule/M5Atom_TinyGPSModuleClass.h"
 //! 8.16.25 bring in the CameraModule from 2022
 #include "../M5AtomClassModule/M5Atom_CameraModuleClass.h"
+//! 10.26.25 Power Out .. Wind Storm. Generator Running
+//! add a NoModule class
+#include "../M5AtomClassModule/M5Atom_NoModuleClass.h"
 
 //! 7.24.25 Hot Day, Ballon last night, Mt Out
 //! for the 'C' option of atom color
@@ -49,10 +52,14 @@ M5Atom_TinyGPSModuleClass* _M5Atom_TinyGPSModuleClass;
 //! 8.16.25 bring in the CameraModule from 2022
 //! 6
 M5Atom_CameraModuleClass* _M5Atom_CameraModuleClass;
+//! 10.26.25 Power Out .. Wind Storm. Generator Running
+//! add a NoModule class
+M5Atom_NoModuleClass* _M5Atom_NoModuleClass;
 
 //! make sure this is updated.
 //! 8.16.25 == 6
-#define NUM_M5ATOM_CLASS 6
+//! 10.26.25 == 7
+#define NUM_M5ATOM_CLASS 7
 
 //! 3.31.25 create array of plugs
 M5AtomClassType* _M5AtomClassTypes[NUM_M5ATOM_CLASS];
@@ -567,7 +574,7 @@ void initCallbacksMain()
 //!register the callback based on the callbackType. use the callbacksModuleId for which one..
 void registerCallbackMain(int callbacksModuleId, int callbackType, void (*callback)(char*))
 {
-    SerialDebug.printf("registerCallbackMain %d, %d\n", callbacksModuleId, callbackType);
+    SerialLots.printf("registerCallbackMain %d, %d\n", callbacksModuleId, callbackType);
     
     //init if not already..
     initCallbacksMain();
@@ -2609,7 +2616,7 @@ void processClientCommandChar_mainModule(char cmd)
         } break;
             //! 7.12.25
             //!  0 == Clear SENSOR definitions
-        case '0':
+        case 'k':
         {
             //! poweroff
             SerialDebug.println("Clearing Sensors");
@@ -2622,58 +2629,13 @@ void processClientCommandChar_mainModule(char cmd)
             //!  1 == Init SENSOR definitions
         case '1':
         {
-            //! poweroff
-            SerialDebug.println("Default L9110S_DCStepperClass");
-            //resetSensorToDefault_mainModule();
-            //! 7.30.25 changing to the HDriver's board
-            setSensorsString_mainModule((char*)"BuzzerSensorClass,19,22,L9110S_DCStepperClass,21,25");
-            //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
-            savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5HDriver");
-             //! also specify the sensor plug
-            savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "L9110S_DCStepperClass");
-            //! 1 second motor (overloads "angle" field)
-            savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 1.0);
-            //! set tumbler
-            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 1.0);
-            //! set autoRotoate as well..
-            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
-            //! tumbler
-            savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
-
-            //! reboot .. so the sensors are set..
-            rebootDevice_mainModule();
+            setConfiguration_mainModule((char*)"L9110S_DCStepperClass");
         } break;
             //! 7.12.25
             //!  2 == default for SMART Button
         case '2':
         {
-            /*
-             #define IN1 22
-             #define IN2 19
-             #define IN3 23
-             #define IN4 33
-             */
-            //! poweroff
-            SerialDebug.println("Default ULN2003_StepperClass");
-            //resetSensorToDefault_mainModule();
-            //! 7.30.25 changing to the HDriver's board
-            setSensorsString_mainModule((char*)"BuzzerSensorClass,21,25,ULN2003_StepperClass,23,33");
-            //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
-            savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5HDriver");
-            //! also specify the sensor plug
-            savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "ULN2003_StepperClass");
-            //! 1 second motor (overloads "angle" field)
-            //! This is the RPM speed
-            savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 2048.0);
-            //! @see #390 this is the RPM of the stepper
-            savePreferenceFloat_mainModule(PREFERENCE_STEPPER_RPM_SETTING, 15.0);
-            //! set autoRotoate as well..
-            savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
-            //! tumbler
-            savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
-
-            //! reboot .. so the sensors are set..
-            rebootDevice_mainModule();
+            setConfiguration_mainModule((char*)"ULN2003_StepperClass");
         } break;
             //! 7.19.25 add Clear Sensors
         case '3':
@@ -2710,19 +2672,17 @@ void processClientCommandChar_mainModule(char cmd)
             //! 8.18.25
         case '8':
         {
-            //!
-            SerialDebug.println("Default M5AtomTinyGPS");
-            //resetSensorToDefault_mainModule();
-            //! 7.30.25 changing to the HDriver's board
-            setSensorsString_mainModule((char*)"");
-            //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
-            savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5AtomTinyGPS");
-            //! also specify the sensor plug
-            savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "");
-            
-            //! reboot .. so the sensors are set..
-            rebootDevice_mainModule();
+            setConfiguration_mainModule((char*)"M5NoModule");
         } break;
+        case '9':
+        {
+            setConfiguration_mainModule((char*)"M5TinyGPS");
+        } break;
+        case '0': //m5atom_qrode
+        {
+            setConfiguration_mainModule((char*)"M5AtomScanner");
+        } break;
+#ifdef USE_6
         case '9':
         {
             //! 8.18.25 M5Clicker
@@ -2731,6 +2691,7 @@ void processClientCommandChar_mainModule(char cmd)
             //!retrieves from constant location
             performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/Bootstrap/ESP_M5_BOOTSTRAP.ino.m5stack_stickc_plus.bin");
         } break;
+#endif
         case 'C':
         {
             SerialDebug.println("'C' change color touched");
@@ -2813,12 +2774,16 @@ void processClientCommandChar_mainModule(char cmd)
 #endif
             SerialMin.println("    Configurations of M5Atom  ");
 
-            SerialMin.println("         0 == no sensors");
+            SerialMin.println("         k == no sensors");
             SerialMin.println("         1 == L9100S_DCStepper (current main)");
             SerialMin.println("         2 == ULN2002 Stepper (new test 8.13.25)");
             SerialMin.println("         3 == *** PTStepperClass (original code - with M5");
             SerialMin.printf ("         4 == M5AtomCamera\n");
-            SerialMin.println("         8 == M5TinyGPS");
+            SerialMin.println("         8 == SMART Button, Clicker");
+            SerialMin.println("         9 == M5TinyGPS, Clicker");
+            SerialMin.println("         0 == M5AtomScanner, Clicker");
+
+
 
 #ifdef NOT_SUPPORTED_RIGHT_NOW
             SerialMin.println("         O == OTA update");
@@ -2885,6 +2850,73 @@ void setConfiguration_mainModule(char* configurationName)
         //! 9.5.25 set the 2step OFF for now
         savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_2FEED_SETTING, false);
 
+        //! 10.24.25 also set BLE client and serve on,
+        //! RAIN .. atosmopheric river
+        //savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE, true);
+        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE, true);
+        
+        //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
+        savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
+
+        //! reboot .. so the sensors are set..
+        rebootDevice_mainModule();
+    }
+    else if (strcmp(configurationName, "L9110S_DCStepperClass")==0)
+    {
+        //! poweroff
+        SerialDebug.println("Default L9110S_DCStepperClass");
+        //resetSensorToDefault_mainModule();
+        //! 7.30.25 changing to the HDriver's board
+        setSensorsString_mainModule((char*)"BuzzerSensorClass,19,22,L9110S_DCStepperClass,21,25");
+        //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
+        savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5HDriver");
+        //! also specify the sensor plug
+        savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "L9110S_DCStepperClass");
+        //! 1 second motor (overloads "angle" field)
+        savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 1.0);
+        //! set tumbler
+        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 1.0);
+        //! set autoRotoate as well..
+        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
+        //! tumbler
+        savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
+        
+        //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
+        savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
+        
+        //! reboot .. so the sensors are set..
+        rebootDevice_mainModule();
+    }
+    else if (strcmp(configurationName, "ULN2003_StepperClass")==0)
+    {
+        /*
+         #define IN1 22
+         #define IN2 19
+         #define IN3 23
+         #define IN4 33
+         */
+        //! poweroff
+        SerialDebug.println("Default ULN2003_StepperClass");
+        //resetSensorToDefault_mainModule();
+        //! 7.30.25 changing to the HDriver's board
+        setSensorsString_mainModule((char*)"BuzzerSensorClass,21,25,ULN2003_StepperClass,23,33");
+        //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
+        savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5HDriver");
+        //! also specify the sensor plug
+        savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "ULN2003_StepperClass");
+        //! 1 second motor (overloads "angle" field)
+        //! This is the RPM speed
+        savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 2048.0);
+        //! @see #390 this is the RPM of the stepper
+        savePreferenceFloat_mainModule(PREFERENCE_STEPPER_RPM_SETTING, 15.0);
+        //! set autoRotoate as well..
+        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
+        //! tumbler
+        savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
+        
+        //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
+        savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
+        
         //! reboot .. so the sensors are set..
         rebootDevice_mainModule();
     }
@@ -2899,6 +2931,83 @@ void setConfiguration_mainModule(char* configurationName)
         savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5AtomCamera");
         //! also specify the sensor plug
         savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "");
+        
+        //! 10.24.25 also set BLE client and serve on,
+        //! RAIN .. atosmopheric river
+        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE, true);
+        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE, true);
+        
+        //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
+        savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
+        
+        //! reboot .. so the sensors are set..
+        rebootDevice_mainModule();
+    }
+    else if (strcmp(configurationName, "M5TinyGPS")==0)
+    {
+        //!
+        SerialDebug.println("Default M5AtomTinyGPS");
+        //resetSensorToDefault_mainModule();
+        //! 7.30.25 changing to the HDriver's board
+        setSensorsString_mainModule((char*)"");
+        //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
+        savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5AtomTinyGPS");
+        //! also specify the sensor plug (non for now..
+        savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "");
+        
+        //! 10.24.25 also set BLE client and serve on,
+        //! RAIN .. atosmopheric river
+        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE, true);
+        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE, true);
+        
+        //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
+        savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
+        
+        //! reboot .. so the sensors are set..
+        rebootDevice_mainModule();
+    }
+    else if (strcmp(configurationName, "M5AtomScanner")==0)
+    {
+        //!
+        SerialDebug.println("Default M5AtomScanner");
+        //resetSensorToDefault_mainModule();
+        //! 7.30.25 changing to the HDriver's board
+        setSensorsString_mainModule((char*)"");
+        //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
+        savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5AtomScanner");
+        //! also specify the sensor plug (non for now..
+        savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "");
+        
+        //! 10.24.25 also set BLE client and serve on,
+        //! RAIN .. atosmopheric river
+        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE, true);
+        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE, true);
+        
+        //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
+        savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
+        
+        //! reboot .. so the sensors are set..
+        rebootDevice_mainModule();
+    }
+    else if (strcmp(configurationName, "M5NoModule")==0)
+    {
+        //!
+        SerialDebug.println("Default M5AtomNoModule");
+        //resetSensorToDefault_mainModule();
+        //! 7.30.25 changing to the HDriver's board
+        setSensorsString_mainModule((char*)"");
+        //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
+        savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5AtomNoModule");
+        //! also specify the sensor plug (non for now..
+        savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "");
+        
+        //! 10.24.25 also set BLE client and serve on,
+        //! RAIN .. atosmopheric river
+        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE, true);
+        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE, true);
+        
+        //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
+        savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
         
         //! reboot .. so the sensors are set..
         rebootDevice_mainModule();
@@ -3260,6 +3369,9 @@ void setup_Sensors_mainModule()
     _M5Atom_TinyGPSModuleClass = new M5Atom_TinyGPSModuleClass((char*)"M5AtomTinyGPS");
     //! 8.16.25 bring in the Camera
     _M5Atom_CameraModuleClass = new M5Atom_CameraModuleClass((char*)"M5AtomCamera");
+    //! 10.26.25 Power Out .. Wind Storm. Generator Running
+    //! add a NoModule class
+    _M5Atom_NoModuleClass = new M5Atom_NoModuleClass((char*)"M5AtomNoModule");
 
     int whichM5AtomIndex = 0;
     SerialDebug.println("setup_M5Atoms");
@@ -3272,7 +3384,10 @@ void setup_Sensors_mainModule()
     _M5AtomClassTypes[whichM5AtomIndex++] = _M5Atom_TinyGPSModuleClass;
     //! 8.16.25 bring in the Camera
     _M5AtomClassTypes[whichM5AtomIndex++] = _M5Atom_CameraModuleClass;
-
+    //! 10.26.25 Power Out .. Wind Storm. Generator Running
+    //! add a NoModule class
+    _M5AtomClassTypes[whichM5AtomIndex++] = _M5Atom_NoModuleClass;
+    
     //! add check..
     if (whichM5AtomIndex > NUM_M5ATOM_CLASS)
     {

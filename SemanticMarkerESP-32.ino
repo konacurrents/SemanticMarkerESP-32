@@ -84,6 +84,7 @@ void setup()
     
     //!4.17.22
     //! MainModule does all the preferences, etc..
+    //! ***** MUST BE CALLED BEFORE CODE BELOW..
     setup_mainModule();
     
     main_printModuleConfiguration();
@@ -192,7 +193,7 @@ void setup()
             
             //strdup() get away from the
             setup_BLEServerNetworking(serverServiceName, getDeviceNameMQTT(), strdup(PT_SERVICE_UUID), strdup(PT_CHARACTERISTIC_UUID));
-            SerialDebug.printf("done setupBLEServerNetworking: %s\n", serverServiceName);
+            SerialDebug.printf("done setupBLEServerNetworking: %s:%s\n", serverServiceName, getDeviceNameMQTT());
           }
     }
     

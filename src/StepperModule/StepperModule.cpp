@@ -167,7 +167,9 @@ void setup_StepperModule()
         //_whichMotorStepper = _HDriverStepperClass;
         
         //! 7.31.25 use default..
-        _whichMotorStepper = _L9110S_DCStepperClass;
+        //! 10.26.25 No Power day .. wind storm
+        //! if NULL then do't have a default..
+        //_whichMotorStepper = _L9110S_DCStepperClass;
 #endif
     }
 
@@ -268,11 +270,9 @@ void loop_StepperModule()
             {
                 SerialDebug.printf("SINGLE Feed %d of %d\n", i+1,numFeeds); //this should write a 0x01 for feed ack
                 
-                if (!_whichMotorStepper)
-                    continue;
-                
                 //! uses current motor class instance
-                _whichMotorStepper->start_MotorStepper();
+                if (_whichMotorStepper)
+                    _whichMotorStepper->start_MotorStepper();
                 
                 //! 9.4.25 seems the DCMotor is still running when it get's here.. and the next loop doesn't do anything...
                 //! so maybe a delay (if a DCMotor) -- if this works, it would be a class-wide function (get delay amount?)

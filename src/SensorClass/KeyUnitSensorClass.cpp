@@ -112,7 +112,7 @@ void KeyUnitSensorClass::setupKeyUnit()
     
     //! 5.3.25 register our PIN use
     registerPinUse_mainModule(getKEY_PIN(), "KEY_PIN", "KeyUnitSensorClass", false);
-    registerPinUse_mainModule(getDATA_PIN(), "DATA_PIN", "KeyUnitSensorClass", false);
+    //26 -- fastLED .. registerPinUse_mainModule(getDATA_PIN(), "DATA_PIN", "KeyUnitSensorClass", false);
 
 #ifdef USE_LED
     getDATA_PIN();

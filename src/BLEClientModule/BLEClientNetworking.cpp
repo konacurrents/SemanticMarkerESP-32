@@ -202,18 +202,20 @@ class AdvertisedDeviceCallbacks : public NimBLEAdvertisedDeviceCallbacks {
         //The found service, see if its our service..
         String deviceInfo = advertisedDevice->toString().c_str();
         
-        SerialLots.print("Device advertised: ");
-        SerialLots.println(advertisedDevice->getName().c_str());
-        SerialLots.print("Device URI: ");
-        SerialLots.println(advertisedDevice->getURI().c_str());
+        
         //!if the only-connect-to-GEN3 is turned on .. then wait until a GEN3 is found before connecting.
         boolean foundGEN3 = false;
         //temp:
         boolean requireGEN3 = getPreferenceBoolean_mainModule(PREFERENCE_ONLY_GEN3_CONNECT_SETTING);
         if (advertisedDevice->isAdvertisingService(NimBLEUUID("DEAD"))) //this was the original code service called UUID "DEAD"
         {
+            SerialMin.print("Device advertised: ");
+            SerialMin.println(advertisedDevice->getName().c_str());
+            SerialLots.print("Device URI: ");
+            SerialLots.println(advertisedDevice->getURI().c_str());
+            
             //SerialDebug.println(" **** Found a DEAD service .. meaning it's not a GEN3");
-           // if (strcmp(advertisedDevice->getName().c_str(), MAIN_BLE_CLIENT_SERVICE)!= 0)
+            // if (strcmp(advertisedDevice->getName().c_str(), MAIN_BLE_CLIENT_SERVICE)!= 0)
             if (getDiscoverM5PTClicker() && (strncmp(advertisedDevice->getName().c_str(), M5_BLE_CLIENT_SERVICE, strlen(M5_BLE_CLIENT_SERVICE)) == 0))
             {
                 SerialDebug.printf("** DiscoverM5PTClicker && Found a PTCLICKER .. go for it.. %w\n",advertisedDevice->getName().c_str() );
@@ -412,7 +414,7 @@ bool connectToServer_BLEClient()
                 SerialLots.println("Reconnect failed");
                 return false;
             }
-            SerialLots.println("Reconnected pClient");
+            SerialDebug.println("Reconnected pClient");
         }
         /** We don't already have a client that knows this device,
          *  we will check for a client that is disconnected that we can use.

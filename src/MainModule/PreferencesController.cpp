@@ -311,10 +311,10 @@ void setIncludeGroups(char *groups)
 //! called to set a preference (which will be an identifier and a string, which can be converted to a number or boolean)
 void savePreference_mainModule(int preferenceID, String preferenceValue)
 {
-//#ifdef NOT_NOW
+#ifdef NOT_NOW
     if (preferenceID != PREFERENCE_DEBUG_INFO_SETTING)
         SerialTemp.printf("savePreference .. %d = '%s'\n", preferenceID, preferenceValue.c_str());
-//#endif
+#endif
     // cannot invoke the preference, as this would be an infinite loop back to here..
     
     //save in EPROM
@@ -1377,38 +1377,38 @@ int getM5ATOMKind_MainModule()
 //! 5.14.25 Hanging with Tyler,
 //! Dead Montana 5.14.74 great stuff
 //! add the Sensors Preference .. first the parsing
+//! 10.26.25 Power Out, Wind Storm, Tyler handing ..
+//! remove the PRINT
 
-
-#define PRINT SerialDebug.printf
-
+//! the memory for the sensorsEPROM
 char _sensorsEPROM[500];
 
 //! array of sensorStruct
 SensorsStruct *_sensorsStructs_mainModule = NULL;
 
-//! array
+//! return array of SensorsStruct after parsing string syntax:   {SENSOR,pin1,pin2}
 SensorsStruct* parseSensorString_mainModule(char *str);
 
 //! print sensor
 void printSensor_mainModule(SensorStruct* sensor)
 {
     if (sensor)
-        PRINT("SENSOR: %s,%d,%d\n", sensor->sensorName, sensor->pin1, sensor->pin2);
+        SerialDebug.printf("SENSOR: %s,%d,%d\n", sensor->sensorName, sensor->pin1, sensor->pin2);
     else
-        PRINT("SENSOR: **** Null sensor ***\n");
+        SerialDebug.printf("SENSOR: **** Null sensor ***\n");
 }
 
 
 //! print sensors, passing in a struct
 void printSensors_mainModule(SensorsStruct* sensors)
 {
-    PRINT("SENSORS ******** \n");
+    SerialDebug.printf("SENSORS ******** \n");
     int count = sensors->count;
     for (int i=0; i< count; i++)
     {
         printSensor_mainModule(&sensors->sensors[i]);
     }
-    PRINT(" ******** \n");
+    SerialDebug.printf(" ******** \n");
 }
 
 //! return the sensors defined
@@ -1437,7 +1437,7 @@ SensorStruct* getSensor_mainModule(char *sensorName)
         }
     }
 //    if (!sensor)
-//        PRINT("*** No sensor: %s\n", sensorName);
+//        SerialDebug.printf("*** No sensor: %s\n", sensorName);
     return sensor;
 }
 
@@ -1450,7 +1450,7 @@ void setSensorsString_mainModule(char *sensorsString)
     //! 5.17.25
     strcpy(_sensorsEPROM, "");
 
-    PRINT("setSensorsString_mainModule(%s)\n", sensorsString);
+    SerialDebug.printf("setSensorsString_mainModule(%s)\n", sensorsString);
     //! init EPROM
     if (!sensorsString || strlen(sensorsString)==0)
         strcpy(_sensorsEPROM, "");
@@ -1501,7 +1501,7 @@ SensorsStruct *parseSensorString_mainModule(char* sensorsString)
     sensors->sensors = NULL;
     
     //! syntax:  sensor,pin1,pin2
-    PRINT("*** parseSensorString_mainModule: %s\n", sensorsString);
+    SerialDebug.printf("*** parseSensorString_mainModule: %s\n", sensorsString);
     
     if (!sensorsString || strlen(sensorsString)==0)
     {
@@ -1534,7 +1534,7 @@ SensorsStruct *parseSensorString_mainModule(char* sensorsString)
         {
             numSensors = arrayIndex / max;
             strcpy(str,strCopy);
-            PRINT(" ** Create sensors %d\n", numSensors);
+            SerialDebug.printf(" ** Create sensors %d\n", numSensors);
             sensorItems= (SensorStruct*) calloc(numSensors,sizeof(SensorStruct));
         }
         
@@ -1548,7 +1548,7 @@ SensorsStruct *parseSensorString_mainModule(char* sensorsString)
         {
             int indexInSensor = arrayIndex / max;
             int indexInArray = arrayIndex % max;
-            //PRINT("%d Token[%d] = %s\n",indexInArray, indexInSensor,  token);
+            //SerialDebug.printf("%d Token[%d] = %s\n",indexInArray, indexInSensor,  token);
             
             //! which of the max is this..
             switch (indexInArray)
@@ -1557,7 +1557,7 @@ SensorsStruct *parseSensorString_mainModule(char* sensorsString)
                 {
                     if (secondPass)
                     {
-                        //PRINT("Sensor = %s\n", token);
+                        //SerialDebug.printf("Sensor = %s\n", token);
                         sensorItems[indexInSensor].sensorName = copyString_mainModule(token);
                         
                         //! empty the class
@@ -1577,7 +1577,7 @@ SensorsStruct *parseSensorString_mainModule(char* sensorsString)
                             SerialDebug.printf("*** BAD PIN: %d, setting to 22 ***\n", pin);
                             pin = 22;
                         }
-                        //PRINT("Pin1= %d\n", pin);
+                        //SerialDebug.printf("Pin1= %d\n", pin);
                         sensorItems[indexInSensor].pin1= pin;
                     }
                     break;
@@ -1592,7 +1592,7 @@ SensorsStruct *parseSensorString_mainModule(char* sensorsString)
                             SerialDebug.printf("*** BAD PIN: %d, setting to 22 ***\n", pin);
                             pin = 22;
                         }
-                        //PRINT("Pin2= %d\n", pin);
+                        //SerialDebug.printf("Pin2= %d\n", pin);
                         sensorItems[indexInSensor].pin2= pin;
                     }
                     break;

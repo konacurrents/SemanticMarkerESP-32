@@ -17,7 +17,7 @@
 #include "../ATOM_LED_Module/M5Display.h"
 #endif
 
-//! 7.20.25 60outside. 6 month since Trump
+//! 7.20.25 60outside. 6 month since T
 //! add time from @see https://github.com/PaulStoffregen/Time/blob/master/examples/TimeGPS/TimeGPS.ino
 //#include "../TimeModule/TimeLib.h"
 #include <TimeLib.h>
