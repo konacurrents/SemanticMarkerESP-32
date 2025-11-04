@@ -46,25 +46,17 @@ We are using [kttp://KnowledgeShark.org](http://KnowledgeShark.org) for this.
 # Plug an play
 
 ```objc
-#ifdef USE_MQTT_NETWORKING
 #include "src/MQTTModule/MQTTNetworking.h"
-#endif
-
-#ifdef USE_BLE_SERVER_NETWORKING
 #include "src/BLEServerModule/BLEServerNetworking.h"
-#endif
-
-#ifdef USE_BLE_CLIENT_NETWORKING
 #include "src/BLEClientModule/BLEClientNetworking.h"
-#endif
+
+//! 8.16.25 WIFI AP
+#include "src/WIFI_APModule/WIFI_APModule.h"
 
 #ifdef USE_BUTTON_MODULE
 #include "src/ButtonModule/ButtonModule.h"
 #endif
 
-#ifdef USE_WIFI_AP_MODULE
-#include "src/WIFI_APModule/WIFI_APModule.h"
-#endif
 
 
 //!functions to call, like blinkBlueLight..
