@@ -8,14 +8,21 @@ help:
 	echo uploadFlashM5CameraTEST
 	echo uploadFlashM5AtomTEST
 
+showLilbs:
+	arduino-cli lib list
+
+bootstrap:
+	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_M5_ATOM_LITE:PartitionScheme=min_spiff --fqbn esp32:esp32:m5stick-c | tee output
+
+
 #upload (after compiling) a script for the ESP32
 #NOTE: FQBN stands for 'Fully Qualified Board Name'. When compiling or uploading code, this error will occur if no board is selected, or if the board 
 
 compileM5Core2:
-	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_M5CORE2_MODULE --fqbn esp32:esp32:m5stick-c | tee output
+	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_M5CORE2_MODULE --fqbn esp32:esp32:m5stick-c:PartitionScheme=min_spiff | tee output
 
 compileM5Atom:
-	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_M5_ATOM_LITE --fqbn esp32:esp32:m5stick-c | tee output
+	/opt/homebrew/bin/arduino-cli compile --build-property compiler.cpp.extra_flags=-DESP_M5_ATOM_LITE --fqbn esp32:esp32:m5stick-c:PartitionScheme=min_spiffs | tee output
 
 
 # with board
@@ -146,3 +153,13 @@ releaseFull: compileM5  compileBoard
 
 release: 
 	tar cvfz releases.tar.gz ESP_IOT.ino.esp32.bin ESP_IOT.ino.m5stick_c_plus.bin ESP_IOT.ino.m5stack_timer_cam.bin
+
+################ copy to SemanticMarkerESP-32
+semanticMarkerSync:
+	cp -p README.md /Users/scott/Documents/GitHub/SemanticMarkerESP-32
+	cp -p makefile  /Users/scott/Documents/GitHub/SemanticMarkerESP-32
+	cp -p *.h /Users/scott/Documents/GitHub/SemanticMarkerESP-32
+	cp -p ESP_IOT.ino /Users/scott/Documents/GitHub/SemanticMarkerESP-32/SemanticMarkerESP-32.ino
+	cp -Rp src /Users/scott/Documents/GitHub/SemanticMarkerESP-32
+
+
