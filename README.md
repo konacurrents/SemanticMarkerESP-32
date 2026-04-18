@@ -1,4 +1,4 @@
-k # ESP_IOT Framework v2.0
+# ESP_IOT Framework v2.0
 
 The goal of ESP_IOT is to have a set of modules that can be included in the loop and setup. Adding them will add and manipulate
 various IoT capabilities, while using the ESP_IOT framework to connect the various devices. The ESP-32 devices support bluetooth and 
