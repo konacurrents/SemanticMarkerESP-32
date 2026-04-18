@@ -154,14 +154,43 @@ void KeyUnitSensorClass::loopKeyUnit()
 #ifdef USE_LED
         changeLedColor();  // Change LED color.  更换LED呼吸灯颜色.
 #endif
+        long startTime = micros();
+
         //! THERE should be a time limit on the button .. say 10 or so..
         while (!digitalRead(getKEY_PIN()))
             // Hold until the key released.  在松开按键前保持状态.
             ;
-        SerialDebug.println("KU.Key Released");
-        
-        //!call the callback
-        callCallback((char*)"keyPressed",true);
+        long endTime = micros();
+        double diffTime = endTime - startTime;
+        //microseconds
+        double seconds = diffTime / 1000000;
+        SerialDebug.printf("KU.Key Released: %f\n", seconds);
+
+        if (seconds > 2.0)
+        {
+            SerialDebug.printf("KU.Long Press: %f\n", seconds);
+
+#define USE_OPTION_1
+#ifdef USE_OPTION_1
+            //! 11.26.25
+            //! as per issue #412 option 1 is to store locally,
+            togglePreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE);
+            //! 8.16.25 BLE CLIENT                //!optimized to not send the wrapper around the message
+            // need to send B or b .. depending on result
+            if (getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE))
+                sendCommandBLEClient_13orLess("B");
+            else
+                sendCommandBLEClient_13orLess("b");
+#else
+            //! call their  (on the other side of this BLE) toggle the buzzer...
+            processClientCommandChar_mainModule('f');
+#endif
+        }
+        else
+        {
+            //!call the callback
+            callCallback((char*)"keyPressed",true);
+        }
         
     }
 }

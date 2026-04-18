@@ -174,6 +174,8 @@ void setup_StepperModule()
     }
 
 #define SETUP_FIRST_TIME
+    //!TODO:   task on the pins .. to the definition
+    //!and make it work backward compatible..
 #ifdef  SETUP_FIRST_TIME
     if (_whichMotorStepper)
         _whichMotorStepper->setup_MotorStepper();

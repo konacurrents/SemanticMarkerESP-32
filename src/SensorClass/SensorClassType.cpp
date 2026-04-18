@@ -2,11 +2,31 @@
 #include "SensorClassType.h"
 #include "../../Defines.h"
 #ifdef ESP_M5
+
+SensorClassType::SensorClassType(char* config)
+{
+    SerialDebug.printf("SensorClassType init %s\n", config);
+    //! 5.3.25 create storage here
+    _identityString = (char*)calloc(strlen(config)+1, sizeof(char));
+    strcpy(_identityString, config);
+}
+
 //! destructor
 SensorClassType::~SensorClassType()
 {
     SerialDebug.printf("SensorClassType destroy\n");
 }
+
+
+//! returns the identity .. actaully the config
+//! This can be used to see if this class instance matches
+//! a known name (like DCMotorStepper, etc)
+char *SensorClassType::classIdentity()
+{
+    SerialDebug.printf("SensorClassType::classIdentity = %s\n", _identityString);
+    return _identityString;
+}
+
 
 //! the callback when events in the sensorClass occur
 //! This is provided on instantiation

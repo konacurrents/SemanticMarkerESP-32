@@ -104,11 +104,14 @@ void M5Atom_HDriverModuleClass::buttonA_LongPress_M5AtomClassType()
 {
     
     SerialDebug.println("M5Atom_HDriverModuleClass::buttonA_LongPress_M5AtomClassType");
-    //
+#ifdef REFACTORED_TO_BASE
+
     SerialDebug.printf("CLEAN CREDENTIALS and reboot to AP mode\n");
     
     //! dispatches a call to the command specified. This is run on the next loop()
     main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_CREDENTIALS);
+#endif
+
 }
 
 //!returns a string in in URL so:  status&battery=84'&buzzon='off'  } .. etc

@@ -38,6 +38,12 @@ public:
     //! for the cmd
     void messageCmd_SensorClassType(char *cmdValue);
 #endif
+private:
+    bool checkPIR_ButtonProcessing();
+    
+    unsigned long _PrevSampleTime_PIRSensorClass    = 0;
+    unsigned long _PrevTriggerTime_PIRSensorClass    = 0;
+    unsigned long _InactivityTimeOut_PIRSensorClass = 0;
 };
 #endif
 

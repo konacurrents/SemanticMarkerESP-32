@@ -231,7 +231,7 @@ boolean _MQTTRunning = false;
 //1235178  64980   1024
 #endif //ESP_M5
 #endif
-#define MAX_MESSAGE_DOCFOLLOW 300
+#define MAX_MESSAGE_DOCFOLLOW 500
 //!message received on subscription
 char _fullMessageIn[MAX_MESSAGE];
 //! message to send out
@@ -1650,7 +1650,7 @@ void callbackMQTTHandler(char* topic, byte* payload, unsigned int length)
     
     //! too many printouts which actully slows things down.. start with actMe   (or collect a count of #actme and report that??)
     if (!skipMessageProcessing())
-       SerialDebug.printf("MessageArrived: '%s', onTopic=%s\n", _fullMessageIn,  topic);
+       SerialDebug.printf("1.MessageArrived: '%s', onTopic=%s\n", _fullMessageIn,  topic);
     
     //!classify the topic type
     classifyTopic(topic);
@@ -1683,7 +1683,7 @@ void callbackMQTTHandler(char* topic, byte* payload, unsigned int length)
 #ifdef TRY_MORE_ASYNC_PROCESSING
     _topic = topic;
     _newMQTTMessageArrived = true;
-    SerialLots.printf("MessageArrived: '%s', onTopic=%s\n", _fullMessageIn,  topic);
+    SerialLots.printf("2.MessageArrived: '%s', onTopic=%s\n", _fullMessageIn,  topic);
 
 #else
     //!save some part of this message for later display by SemanticMarker 8.4.22
@@ -1842,6 +1842,14 @@ void reconnectMQTT_loop()
             publishMQTTMessage(_mqttTopicString, _fullMessageOut);
 #else
             _mqttClient.publish(_mqttTopicString, _fullMessageOut);
+#endif
+#ifdef DONT_SEND_FROM_HERE
+            //! 2.14.26 only request when triggered, DOCOLLOR, or startup
+         //!TODO: see if this is TOO MUCH ... every time we publish a message we check if SMARTButtons defined?
+            //! 2.9.26 let others know we have connected
+            //! 2.9.26 Superbowl Win, Vonn, B1b flyover.. Eagles
+            //! when connected .. let others get a chance to send messages out...
+            requestChainSMARTButtons();
 #endif
             
 #ifdef NOT_NOW_ONLY_DOCFOLLOW
@@ -2017,13 +2025,53 @@ void checkMQTTMessages_loop()
         if (!skipMessageProcessing())
         {
             //process this message (We don't recognize just a JSON config yet..) That arrives on bluetooth
+            //! 11.26.25 now via BLE, WIFI or Serial Monitor
             processBarkletMessage(_fullMessageIn, _topic);
             
             //send to the Display .. but truncate
             //! 11.7.22  if it's an #actMe .. don't show
             addToTextMessages_displayModule(_fullMessageIn);
         }
-#endif
+#define COLLECT_SENSOR_STATUS_turn_off_for_now
+#ifdef COLLECT_SENSOR_STATUS
+        //! 11.26.25 Birds in flume, Rainier sticking out with clouds around it
+        //! look for the #remoteMe syntax that is for our paired device
+        {
+            char *connectedBLEDeviceName = connectedBLEDeviceName_mainModule()?connectedBLEDeviceName_mainModule():NULL;
+            //! see if message has our device, et {DEVICE} {AVM=" ... B=on B=off
+            //! #remoteMe {M5Atom} {AVM=status?T=1764196423&v=v1&dev=M5Atom&b=100&temp=00&c=0&t=0&k=HD&W=on&M=on&B=on&C=on&A=off&S=on&bleS=PTClicker:M5Atom&Z=on&G=off&sm=300}
+
+            //! 11.28.25 after nice flume, Eagles:
+            //! this has to search for "{"<name"}" because the paired like Pair:Atom .. will show up (with B changing ..)
+            if (connectedBLEDeviceName && containsSubstring(_fullMessageIn, "AVM="))
+            {
+                char nameCurly[50];
+                sprintf(nameCurly, "{%s}", connectedBLEDeviceName);
+                if (containsSubstring(_fullMessageIn, nameCurly) )
+                {
+                    //! candidate look for AVM. "B" but not 'b' as that's different.
+                    boolean buzzerOn = containsSubstring(_fullMessageIn, "&B=on");
+                    SerialDebug.println(_fullMessageIn);
+                    //! should send this to the current "plugin" stored like B=on or B=off
+                    //! but only if their identity() == our connected device ??
+                    //! NO: the identity is our device - not the BLE connected device
+                    //! CANNOT send the same syntax or we would be back here again..
+                    sprintf(_fullMessageOut,"#%s Buzzer=%s", connectedBLEDeviceName, buzzerOn?"on":"off");
+                    
+                    //! save the buzzer state ..
+                    savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE, buzzerOn);
+                    
+                    SerialDebug.println(_fullMessageOut);
+                    //! CANNOT seem to send the status .. as someone else is doing that... l #actMe {dev}
+                    //! 8.16.25 MQTT
+                    //!also send a #STATUS  (not working)
+                    // sendMessageMQTT(_fullMessageOut);
+                }
+            }
+        }
+#endif //COLLECT_SENSOR_STATUS
+#endif //TRY_MORE_ASYNC_PROCESSING
+
         _newMQTTMessageArrived = false;
     }
     else
@@ -2480,8 +2528,12 @@ void processBarkletMessage(String message, String topic)
             }
             strcat(_lastDocFollowSemanticMarker, "\0");
 
-            SerialDebug.printf("SemanticMarker: %s\n", _lastDocFollowSemanticMarker);
+            SerialDebug.printf("1.SemanticMarker: %s\n", _lastDocFollowSemanticMarker);
             //setLastDocFollowSemanticMarker(_lastDocFollowSemanticMarker);
+            
+            //! 2.11.26 Nice day, Mountain Out, puppies gone..
+            //! send a setval with semantic marker as the 'set'
+            messageSetVal_mainModule((char*)"SemanticMarker", _lastDocFollowSemanticMarker, false);
             
             //!parse the #followMe {AVM=<url>}
             sprintf(_fullMessageOut,"#ACK {%s} {doc_follow=%s}", _deviceNameString, _lastDocFollowSemanticMarker);
@@ -3225,7 +3277,7 @@ void invokeCurrentSMModePage(char *topic)
 //! note: The strcasecmp() function shall compare, while ignoring differences in case, the string pointed to by s1 to the string pointed to by s2.
 boolean processJSONMessageMQTT(char *ascii, char *topic)
 {
-    SerialTemp.println(" *** processJSONMessageMQTT ***");
+    SerialLots.println(" *** processJSONMessageMQTT ***");
     
     //! 6.16.25 Nice out, yellow field
     //! set below when looking at whether a command was found
@@ -3276,7 +3328,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
         return false;
     }
     
-    SerialDebug.printf("processJSONMessageMQTT: '%s'\n", ascii);
+    SerialLots.printf("processJSONMessageMQTT: '%s'\n", ascii);
 
     // Deserialize the JSON document, then store the ascii in the EPROM (if it parses..)
     
@@ -3292,8 +3344,11 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
 #endif //ESP_M5
 #endif
 
+    //! serialize into the myObject from the ascii string
     deserializeJson(myObject, ascii);
+#if SERIAL_DEBUG_LOTS
     serializeJsonPretty(myObject, Serial);
+#endif
 
     //NOTE: the ascii is now corrupted...
     SerialDebug.print("\nJSON parsed = ");
@@ -3698,17 +3753,23 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
             else
 #endif //ESP_M5 display
                 if (strcasecmp(cmd,"ota")==0 && !isGroupTopic())
-            {
-                SerialDebug.println("OTA via BLE");
-                //!calls the OTA update method (this doesn't return as device is rebooted...)
-                performOTAUpdateMethod();
-            }
+                {
+                    SerialDebug.println("OTA via BLE");
+                    //!calls the OTA update method (this doesn't return as device is rebooted...)
+                    performOTAUpdateMethod();
+                }
             //! add click  to any device, and to a group
             //! 5.14.25 (Dead 5.14.74 3rd wall of sound)
-            else if (strcasecmp(cmd,"click")==0)
+                else if (strcasecmp(cmd,"click")==0)
                 {
                     //! click call
                     main_dispatchAsyncCommand(ASYNC_CLICK_SOUND);
+                }
+            //! 1.2.26 add blink
+                else if (strcasecmp(cmd,"blink")==0)
+                {
+                    //! click call
+                    blinkBlueLightMQTT();
                 }
             else if (strcasecmp(cmd,"clean")==0 && !isGroupTopic())
             {
@@ -4064,6 +4125,10 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
              {"set":"M5AtomKind","val":"M5HDriver"}
              {"set":"stepperAngle","val":"0.25"}
              {"ssid":"Bob", "ssidPassword":"scott"}
+             
+             //! 1.22.26 new year, defint eh ChainButton objects
+             {"set":"sensors","val":"BuzzerSensorClass,19,22,L9110S_DCStepperClass,21,25"}
+
              */
 #ifdef  USE_WITHOUT_DEVICE_NAME
             //! 7.31.25 make this without DEV to make it easier..
@@ -4158,6 +4223,40 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                     //set ble+wifi transient state..
                     savePreferenceBoolean_mainModule(PREFERENCE_DEV_ONLY_SM_SETTING, flag);
                 }
+                
+                //! 11.21.25 Beautiful Sunrise on Rainier
+                //! add a 'toggle' of various boolean values
+                //!  11.21.25 - toggle a boolean value - since you might not know the value (like 2 light switches for same light)
+                //!  "toggle" <booleanCommand>
+                //!  booleanCommand ::= "buzzer" | "socket" | "useGroups"
+                else if (strcasecmp(setCmdString,"toggle")==0)
+                {
+                    //! 11.25.25 this is a bridge like 'feed' to the BLE connected device
+                    if (strcasecmp(valCmdString, "buzzer")==0)
+                    {
+                        //! see if connected to a BLE device..
+                        char *connectedBLEDeviceName = connectedBLEDeviceName_mainModule()?connectedBLEDeviceName_mainModule():NULL;
+                        SerialDebug.printf("connectedBLEDeviceName = %s\n", connectedBLEDeviceName);
+                        
+                        SerialDebug.printf("Call Toggle Buzzer via BLE: 'F' - dev=%s\n", connectedBLEDeviceName);
+                        if (connectedBLEDeviceName)
+                        {
+                            //! send via BLE
+                            //!send a string of 13 or less characters.
+                            sendCommandBLEClient_13orLess("F");
+                        }
+                        else
+                        {
+                            //! set our own buzzer ???
+                        }
+
+                    }
+                    else if (strcasecmp(valCmdString, "socket")==0)
+                    {
+                        //! toggle the socket
+                    }
+                }
+
                 
                 //! 8.2.24 to let older Tumbler NOT do the auto direction (back and forth)
                 //! Isue #332
@@ -4643,7 +4742,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
 #endif //ESP)_M5
                 else if (strcasecmp(setCmdString,"semanticMarker")==0)
                 {
-                    SerialDebug.printf("SemanticMarker: %s\n", valCmdString);
+                    SerialDebug.printf("2.SemanticMarker: %s\n", valCmdString);
                     setLastDocFollowSemanticMarker_MQTTNetworking(valCmdString);
                     
                     //! 9.28.29 devOnlySM if set, then

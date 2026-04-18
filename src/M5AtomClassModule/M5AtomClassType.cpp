@@ -9,7 +9,7 @@
 
 M5AtomClassType::M5AtomClassType(char *config)
 {
-    SerialDebug.printf("M5AtomClassType init %s\n", config);
+    SerialLots.printf("M5AtomClassType init %s\n", config);
     //! 5.3.25 create storage here
     _identityString = (char*)calloc(strlen(config)+1, sizeof(char));
     strcpy(_identityString, config);
@@ -35,5 +35,15 @@ char *M5AtomClassType::classIdentity()
 boolean M5AtomClassType::isPTFeeder_M5AtomClassType()
 {
     return false;
+}
+
+//! 11.25.25 Add LONG LONG press for the AP mode
+//! default unless overridded
+void M5AtomClassType::buttonA_LongLongPress_M5AtomClassType()
+{
+    SerialDebug.printf("base class: buttonA_LongLongPress_M5AtomClassType\n");
+
+    //! dispatches a call to the command specified. This is run on the next loop()
+    main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_CREDENTIALS);
 }
 

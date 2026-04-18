@@ -68,6 +68,8 @@ void M5Atom_NoModuleClass::start_M5AtomClassType()
 void M5Atom_NoModuleClass::setup_M5AtomClassType()
 {
     SerialDebug.println("M5Atom_NoModuleClass::setup_M5AtomClassType");
+    //! call super..
+    //M5AtomClassType::setup_M5AtomClassType();
     
 #ifdef USE_FAST_LED
     SerialDebug.println("M5Atom_NoModuleClass.M5.begin");
@@ -167,21 +169,66 @@ void M5Atom_NoModuleClass::buttonA_ShortPress_M5AtomClassType()
     
     ///feed always  (done after the code below..)
     main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
+    
+    //! 11.26.25 send status as well .. so we can hear what's happening
+    //! 8.16.25 MQTT
+    //!also send a #STATUS
+    //sendMessageMQTT((char*)"#STATUS");
 
     //! start the delay..  (which at .5 might not be needed...)
     //! 10.26.25 when done .. change to BLUE again
     _timerDelayClass_M5NoModuleClass->startDelay(_delaySeconds_M5NoModuleClass_setting);
 }
+
 //!long press on buttonA (top button)
 void M5Atom_NoModuleClass::buttonA_LongPress_M5AtomClassType()
 {
-    
     SerialDebug.println("M5Atom_HDriverModuleClass::buttonA_LongPress_M5Atom_NoModuleClass");
+    
+#define USE_OPTION_1
+#ifdef USE_OPTION_1
+    //! 11.26.25
+    //! as per issue #412 option 1 is to store locally,
+    togglePreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE);
+    //! 8.16.25 BLE CLIENT                //!optimized to not send the wrapper around the message
+    // need to send B or b .. depending on result
+    if (getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE))
+    {
+        SerialDebug.println("*** NoModuleClass sending Buzzer = on 'B'");
+        sendCommandBLEClient_13orLess("B");
+    }
+    else
+    {
+        SerialDebug.println("*** NoModuleClass sending Buzzer = off 'b'");
+        sendCommandBLEClient_13orLess("b");
+    }
+
+#else
+    //! 11.25.25 cold out, no snow but needed for skiing
+    //! add a version of the long press that turns on.off the buzzer ..
+    //! actually will call Toggle if connected via BLE
+    //! see if connected to a BLE device..
+    char *connectedBLEDeviceName = connectedBLEDeviceName_mainModule()?connectedBLEDeviceName_mainModule():NULL;
+    SerialDebug.printf("connectedBLEDeviceName = %s\n", connectedBLEDeviceName);
+    if (connectedBLEDeviceName)
+    {
+        //! make a BLE call to our connected device
+        sendCommandBLEClient_13orLess("F");
+
+        //! call their toggle the buzzer...
+       // processClientCommandChar_mainModule('F');
+    }
+#endif
+    
+#ifdef IN_BASE_TYPE_NOW
+
     //
     SerialDebug.printf("CLEAN CREDENTIALS and reboot to AP mode\n");
     
     //! dispatches a call to the command specified. This is run on the next loop()
     main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_CREDENTIALS);
+#endif
+
 }
 
 //!returns a string in in URL so:  status&battery=84'&buzzon='off'  } .. etc

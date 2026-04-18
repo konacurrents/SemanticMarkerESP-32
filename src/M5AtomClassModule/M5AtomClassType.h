@@ -28,6 +28,7 @@ public:
     //! returns the identity .. actaully the config
     //! This can be used to see if this class instance matches
     //! a known name (like DCMotorStepper, etc)
+    //! Cannot be overridden
     char *classIdentity();
     
     //! Data members of class
@@ -68,7 +69,9 @@ public:
     virtual void buttonA_ShortPress_M5AtomClassType() = 0;
     //!long press on buttonA (top button)
     virtual void buttonA_LongPress_M5AtomClassType() = 0;
-    
+    //! 11.25.25 Add LONG LONG press for the AP mode
+    virtual void buttonA_LongLongPress_M5AtomClassType();
+
     //!returns a string in in URL so:  status&battery=84'&buzzon='off'  } .. etc
     //!starts with "&"*
     virtual char * currentStatusURL_M5AtomClassType() = 0;

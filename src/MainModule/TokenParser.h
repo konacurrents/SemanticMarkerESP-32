@@ -67,5 +67,33 @@ char *semanticMarkerToJSON_TokenParser(char* semanticMarker);
 //! add returning a UUID.FLOWNUM if valid, or nil if nota
 char *parseSM_For_UUID_Flownum(char* semanticMarker);
 
+//! 2.11.26 Rainier out in spring like day.
+//! refactor, moving parsing from Chain to here..
+
+
+//! 2.10.26 NICE day out ..
+//! struct for returning a parsed SM address
+//! syntax:   uuid.flow(set,val,dev)
+typedef struct smStruct
+{
+    char *smAddress;
+    char *setString;
+    char *valString;
+    char *devString;
+} SMStruct;
+
+//! 2.10.26 Sunny Clear, Mountain,
+//! parse the address
+//! syntax:   uuid.flow(set,val,dev)
+//! NOTE: THis creates storage for the 3 components
+SMStruct parseSMAddress(char *str);
+
+//! 2.11.26 Lincoln's birthday, Puppies going home to Auburn, Nice Day out..
+//! return the uuid.flownum (if any)
+//! search for 'uuid=<uuid>&"  and "flow=<flow> [& or }"
+//! return NULL if not matching
+//! NOTE: no storage is created but the buffer returned is REUSED
+char *parseDOCFOLLOW(char *str);
+
 #endif// TokenParser_h
 

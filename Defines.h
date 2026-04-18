@@ -2,7 +2,8 @@
 //  Defines.h
 //
 //  Created by Scott Moody on 3/8/22.
-//  NOW: May 14, 2025         8/16/25 (3+ years later)
+//  NOW: May 14, 2025         8/16/25 (3+ years later)e
+//       Nov 21, 2025         
 
 #ifndef Defines_h
 #define Defines_h
@@ -67,7 +68,9 @@
 #endif
 
 // *** Start of Configurations ***
-#define M5STACK_VERSION "2.0.4"
+//! updated 2.1.1 for awhile, but today is 12.19.25
+#define M5STACK_VERSION "2.1.1"
+//#define M5STACK_VERSION "2.0.4"
 //#define DHAT not working.. with 2.1.0
 //#define M5STACK_VERSION "2.0.7"  //9.24.23  (didn't seem to have heap space to start BLE server)
 // 2.1 is too BIG .. 2.22.24   (ALSO: issue OTA of too big an app...)
@@ -88,7 +91,7 @@
 
 
 //!global to all releases (for now) used in Status for M5 (only 2 characters)
-#define VERSION_SHORT "v1"
+#define VERSION_SHORT "v2"
 
 //!used to force using the BLE Device name in SERVER( eg. PTFEEDER:ScoobyDoo)
 //NOT NOW 9.14.22 (no)
@@ -136,7 +139,19 @@
 #else
 //! ***** THIS IS MAIN "ATOM" *****   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom
 //!
-#define VERSION "v10_27_25(5.17d)-ATOM_890_BUTTON_PTFEEDER_SSIDPASS_FRANCE_COLOR_2FEED_UNL2003_REFACTOR_NO_CAMERA"
+#define VERSION "v4_3_26(5.22b)-ATOM_NOT_NAME_CHAIN_JC_VAL_RUN_DC_SKI_SMART"
+//#define VERSION "v3_20_26(5.22b)-ATOM_CHAIN_JC_VAL_RUN_DC_SKI_SMART"
+
+//#define VERSION "v2_16_26(5.22a)-ATOM_VAL_RUN_DC_SKI_SMART"
+
+//#define VERSION "v02_7_26(5.20e)-ATOM_TIME_NFL_CHAIN_PARSE_HAT_MQTT_STATUS_LONGLONG_PTFEEDER"
+//#define VERSION "v01_30_26(5.20d)-ATOM_NFL_CHAIN_PARSE_HAT_MQTT_STATUS_LONGLONG_PTFEEDER"
+//#define VERSION "v01_01_26(5.20a)-ATOM_BLINK2_HAT_MQTT_STATUS_LONGLONG_PTFEEDER"
+
+//#define VERSION "v12_24_25(5.19c)-ATOM_BLINK_HAT_MQTT_STATUS_LONGLONG_PTFEEDER"
+
+//#define VERSION "v11_28_25(5.19a)-ATOM_HAT_MQTT_STATUS_LONGLONG_PTFEEDER"
+//#define VERSION "v10_27_25(5.17d)-ATOM_890_BUTTON_PTFEEDER_SSIDPASS_FRANCE_COLOR_2FEED_UNL2003_REFACTOR_NO_CAMERA"
 //#define VERSION "v9_15_25(5.15)-ATOM_NULL_SSIDPASS_FRANCE_COLOR_2FEED_UNL2003_REFACTOR_NO_CAMERA"
 
 //! ***** THIS IS MAIN "ATOM" *****   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom

@@ -829,14 +829,23 @@ char *semanticMarkerToJSON_TokenParser(char* semanticMarker)
     return _JSON_String_mainModule;
 }
 
+#define REFACTORED
+//! before 1355313  now 1355169
+#ifdef REFACTORED
+#else
 //! global for returning..
 char _sm_for_UUID_Flownum[100];
+#endif
 //! 3.29.25 Raiiiinier Beeer movie last night
 //! add returning a UUID.FLOWNUM if valid, or nil if nota
 //! note "flow"  .. not flownum
 //! uuid=x&flow=y&   .. flownum could be the last .. so end-of-line
 char *parseSM_For_UUID_Flownum(char* semanticMarker)
 {
+    //! 2.11.26 REFACTORinto the version below...
+#ifdef REFACTORED
+    return parseDOCFOLLOW(semanticMarker);
+#else
     //! syntax:  uuid=X&flownum=Y
     /*
      
@@ -926,4 +935,121 @@ char *parseSM_For_UUID_Flownum(char* semanticMarker)
         
     }
     return _sm_for_UUID_Flownum;
+#endif
 }
+
+//! 2.11.26 moved here from ChainButtonClassType
+
+//! 2.10.26 Sunny Clear, Mountain,
+//! parse the address
+//! syntax:   uuid.flow(set,val,dev)
+//! NOTE: THis creates storage for the 3 components
+SMStruct parseSMAddress(char *str)
+{
+    //! return value
+    SMStruct sm;
+    SerialDebug.printf("ParseSM: %s\n", str);
+    
+    //! syntax:   uuid.flow(set,val,dev)
+    
+    // search for '(' first
+    char* paren = index(str, '(');
+    {
+        char b[100];
+        strcpy(b, str);
+        b[paren-str] = '\0';
+        //strncpy(b, str, paren-str);
+        sm.smAddress = createCopy(b);
+        SerialLots.printf("sm. %s\n", b);
+    }
+    
+    //! now find the pieces starting at 1 past paren
+    // (toggleSocket,,M5AtomSocket)
+    paren++;
+    char *comma = index(paren,',');
+    {
+        char b[50];
+        strcpy(b, paren);
+        b[comma-paren] = '\0';
+        //strncpy(b, paren, comma-paren);
+        SerialLots.printf("str. %s\n", b);
+        sm.setString = createCopy(b);
+    }
+    
+    //! now the valString
+    paren = ++comma;
+    comma = index(paren,',');
+    {
+        char b[50];
+        strcpy(b, paren);
+        b[comma-paren] = '\0';
+        //strncpy(b, paren, comma-paren);
+        SerialLots.printf("val. %s\n", b);
+        sm.valString = createCopy(b);
+        //! get rid of the " " version
+        if (strlen(sm.valString) == 1)
+        {
+            sm.valString = createCopy((char*)"");
+        }
+    }
+    
+    //! now the dev follow = )
+    paren = ++comma;
+    char *rparen = index(paren,')');
+    {
+        char b[50];
+        strcpy(b,paren);
+        b[rparen-paren] = '\0';
+        //strncpy(b, paren, rparen - paren);
+        SerialLots.printf("dev. %s\n", b);
+        sm.devString = createCopy(b);
+    }
+    
+    return sm;
+}
+
+//! storage for sm parsin
+char _smBuffer_chain[100];
+//! 2.11.26 Lincoln's birthday, Puppies going home to Auburn, Nice Day out..
+//! return the uuid.flownum (if any)
+//! search for 'uuid=<uuid>&"  and "flow=<flow> [& or }"
+//! return NULL if not matching
+//! NOTE: no storage is created but the buffer returned is REUSED
+char *parseDOCFOLLOW(char *str)
+{
+    
+    //!  strstr() function locates the first occurrence of the null-terminated string needle in the null-terminated string
+    char *uuidIndex = strstr(str, "uuid=");
+    if (!uuidIndex)
+        return NULL;
+    
+    //! find uuid
+    uuidIndex += strlen("uuid=");
+    int i = 0;
+    while (uuidIndex[i] != '&')
+    {
+        _smBuffer_chain[i] = uuidIndex[i];
+        i++;
+    }
+    _smBuffer_chain[i++] = '.';
+    _smBuffer_chain[i] = '\0';
+    
+    //! now find flow
+    char *flowIndex = strstr(str, "flow=");
+    if (!flowIndex)
+        return NULL;
+    flowIndex += strlen("flow=");
+    
+    //! follow = } or & (if more args)
+    int j=0;
+    while (flowIndex[j] != '&' && flowIndex[j] != '}' && flowIndex[j] != '\0')
+    {
+        _smBuffer_chain[i] = flowIndex[j];
+        i++;
+        j++;
+    }
+    _smBuffer_chain[i] = '\0';
+    
+    return _smBuffer_chain;
+}
+

@@ -12,15 +12,84 @@ PIRSensorClass::PIRSensorClass(char *config) : SensorClassType(config)
    printf("PIRSensorClass init %s\n", config);
 }
 
+//! 11.27.25 bringing in the M5 code for the HAT
+//!
+//#define PIR_PIN 36 //passive IR Hat
+const uint32_t SLEEP_DURATION_PIRSensorClass = 1 * 1000000;
+
+//unsigned long _PrevSampleTime_PIRSensorClass    = 0;
+//unsigned long _PrevTriggerTime_PIRSensorClass    = 0;
+//unsigned long _InactivityTimeOut_PIRSensorClass = 0;
+
+#define Elapsed3secs  3000
+#define Elapsed4secs  4000
+
+#define Elapsed3mins  180000 // 3 minutes in milliseconds
+
+//!Return "true" on PIR (over sensitivity) and false otherwise
+//!This is just a sensor (if plugged in) - so any timing is on the caller of this
+bool PIRSensorClass::checkPIR_ButtonProcessing()
+{
+    //    if (!getPreferenceBoolean_mainModule(PREFERENCE_SENSOR_PIR_VALUE))
+    //        return false;
+    
+    boolean triggeredPIR = digitalRead(_pin2);
+    if (triggeredPIR)
+    {
+        if ((millis()-_PrevTriggerTime_PIRSensorClass)>Elapsed4secs)
+        {
+            triggeredPIR = true;
+            _PrevTriggerTime_PIRSensorClass = millis();
+            SerialTemp.println("triggeredPIR = true");
+        }
+        else
+            triggeredPIR = false;
+    }
+    return triggeredPIR;
+}
+
 //!@see https://www.w3schools.com/cpp/cpp_class_methods.asp
 void PIRSensorClass::loop()
 {
-   printf("PIRSensorClass::loop()\n");
+    //printf("PIRSensorClass::loop()\n");
+    
+    //! call the check
+    long triggered = checkPIR_ButtonProcessing();
+    //! what to do with trigger?
+    //! call feed
+    if (triggered)
+        //! 11.26.25 send status as well .. so we can hear what's happening
+        //! 8.16.25 MQTT
+        //!also send a #STATUS
+        sendMessageMQTT((char*)"#STATUS");
 }
 
 void PIRSensorClass::setup()
 {
-   printf("PIRSensorClass::setup()\n");
+    SerialDebug.printf("PIRSensorClass::setup(%d,%d)\n",_pin1, _pin2);
+
+    
+    if (_pin1 == 0)
+    {
+        //! default to 21,33
+        //! PIRSensorClass,23,33
+        _pin1 = 23;
+        _pin2 = 33;
+    }
+    
+    //https://www.reddit.com/r/arduino/comments/1g89dlo/esp32_crashing_due_to_pinmode_and_fastled/
+//    pinMode(_pin1, OUTPUT);
+//    pinMode(_pin2, OUTPUT);
+    pinMode(_pin2,INPUT_PULLUP);
+    
+    registerPinUse_mainModule(_pin1,"Pin1","PIRSensorClass",false);
+    registerPinUse_mainModule(_pin2,"Pin2","PIRSensorClass",false);
+    
+    //! turn off..
+//    digitalWrite(_pin1, LOW);
+//    digitalWrite(_pin2, LOW);
+    
+    SerialDebug.println("DONE PIRSensorClass::setup");
 }
 
 

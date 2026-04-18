@@ -162,9 +162,14 @@
 //! sets the 2feed option (go back and forth)
 #define PREFERENCE_STEPPER_2FEED_SETTING 54
 
+//!12.21.25 Winter Solstice party ..
+//! issue #365 Object Oriented Sensors as well
+//! define the sensors (not sensorPlugs). MQTT:  set:sensor,  set:sensors
+#define PREFERENCE_CHAIN_SENSORS_SETTING 55
+
 #pragma mark MAX_PREFERENCE Set here
 //! *******  1 greater than last value **** IMPORTANT *** and no gaps..
-#define MAX_MAIN_PREFERENCES 55
+#define MAX_MAIN_PREFERENCES 56
 
 //! 8.2.24 retrieve the includeGroup
 //! really ask a topic if it's in the include group
@@ -282,6 +287,16 @@ int getM5ATOMKind_MainModule();
 //!forward definition
 class SensorClassType;
 
+//! 12.17.25 No Power. 1 tree down, HIGH winds last night, no flooding here, but valleys and roads bad
+//! extend the parser for different SensorKindEnum with different number of parameters and types (int vs str)
+//! There will be a setSensors (existing), and then a setM5Chain the new one.. it's own EPROM too
+//!the SensorKindEnum is what state we are holding. There will be state models behind each of these.
+typedef enum
+{
+    sensorClassTypeEnum = 0,
+    chainClassTypeEnum = 1
+} SensorKindEnum;
+
 //! sensor struct
 //! defines the structure
 typedef struct sensorStruct
@@ -291,6 +306,11 @@ typedef struct sensorStruct
     int pin2;
     //! and the pointer to matching SensorClassType
     SensorClassType* sensorClassType;
+    
+    //!1.22.26 - with puppies
+    //!need to have multiple for ChainButtonClassType
+    //!but defining different buttons (and the order is the order plugged in)
+    //!int buttonNumber; 1..n
 } SensorStruct;
 
 //! wrap sensors
@@ -323,6 +343,142 @@ void printSensors_mainModule(SensorsStruct* sensors);
 
 //! 7.9.25 reset SENSORS to default
 //! "BuzzerSensorClass,23,33,L9110S_DCStepperClass,21,25"
-void resetSensorToDefault_mainModule();
+//void resetSensorToDefault_mainModule();
+
+#pragma mark CHAIN
+#pragma mark CHAIN STRUCT
+#define CHAIN_USE_MAX 15
+
+#define BUTTON_ANY -1
+#define BUTTON_SHORT_PRESS 0
+#define BUTTON_LONG_PRESS 1
+#define BUTTON_DOUBLE_PRESS 2
+//! map x,y to quadrants
+#define BUTTON_JOYSTICK_LEFT 100
+#define BUTTON_JOYSTICK_TOP 101
+#define BUTTON_JOYSTICK_RIGHT 102
+#define BUTTON_JOYSTICK_BOTTOM 103
+
+
+//! 1.22.26 wrap the button
+//! define ChainbuttonStruct
+typedef struct {
+    //! chain use string for debugging printout
+    char *chainUse;
+    //! string describing the module, etc
+    //! THis can be short "BC", or long .. but trying to shorten for EPROM storage
+    char *classType;
+    //! each in chainUseCount references the 4 arrays index
+    //! the buton numbers
+    int buttonNumber;
+    //! the set strings, val strings, device strings
+    char *setString;
+    //! val strings
+    char *valString;
+    //! the device strings
+    //! Note, if "localhost" then this is an INTERNAL message (like feed)
+    //! so use bluetooth or whatever network works
+    char *deviceString;
+    //! press kind:  0 = short press, 1 = long press, 2 = long long press, -1 any,  100,101,102,103 Yoystick left, top, right, bottom
+    int pressKind;
+    //! 2.9.26 Superbowl Win, L Vonn crash ouch
+    //! add the SMART Address here in case of the new indirection. Thus if a message shows up, the message info might change
+    //! <class, buttonNum, pressKind,  $SMART, uuid.flownum, DEV>
+    //! SMARTAddress = uuid.flownum
+    char *SMARTAddress;
+    //! 2.1.26 Nice day
+    //! add isDOCFOLLOW (where a $DC or $DOCFOLLOW is defined
+    //! Here .. is a DOCFOLLOW message arrives .. it searches for the DOCFOLLOW (if more than one)
+    //! and replaces with SMARTAddress with the address specified .. then sends getSmartDefn and waits for reply
+    //! BUT . the next DOCFOLLOW that shows up, it will override the SMARTAddress and start again.
+    //! The BUTTON will perform the operations specified as if a SMARTAddress (and a MQTT definition)
+    boolean isDOCFOLLOW;
+    
+    //! if finalized yet ... if the set/val are defined..
+    boolean buttonFinalized;
+    
+} ChainButtonStruct;
+
+
+//! 12.19.25 ChainStruct, duplicated from above
+//! NOTE: the parser will be updated...
+//! TODO: update the parser
+typedef struct {
+    //! number of chain
+    int chainUseCount;
+    
+    //! 1.22.26 define a Chainbutton and creates N of them
+    ChainButtonStruct* chainButtonStructArray;
+    
+} ChainUseStruct;
+//! get the chain struct
+ChainUseStruct* getChainUseStruct_mainModule();
+
+//!12.19.25 use the Chain
+//! 5.3.25 add a central clearing house for defining PIN use
+//! central clearing house for all pins used to we can analyze if there are overlaps
+//! pin is the actual number, pinName is the local name (eg. IN1_PIN or VIN_PIN).
+//! moduleName is the module in the code,
+//! isI2C is whether this is a I2C bus (which we aren't using much yet)
+//! 1.22.26 add pressKind and classType
+void registerChain_mainModule(String classType, int buttonNumber, int pressKind, String setString, String valString, String deviceString) ;
+
+
+//! COPIED from template above..
+//! Only 1 setSensorsString now .. will always append
+//! message:  set:sensors, val:<val> or empty to clean it out
+//! unless a null or blank "" string
+//! set a sensor val (array of  sensor,pin,pin,sensor,pin,pin...)
+//! After each set, the SensorsStruct will be updated
+void setChainSensorsString_mainModule(char *sensorsString);
+
+//!  init the sensorString from EPROM
+//!PREFERENCE_SENSOR_PLUGS_SETTING
+void initChainSensorStringsFromEPROM_mainModule();
+
+//! print sensors, passing in a struct
+void printChainSensors_mainModule(ChainUseStruct* chainUseStruct);
+
+//! 7.9.25 reset SENSORS to default
+//! "BuzzerSensorClass,23,33,L9110S_DCStepperClass,21,25"
+//void resetChainSensorToDefault_mainModule();
+
+
+//! 1.22.26 Dead Morning Dew
+//! process the given button
+//! 1.24.26 NOTE: this doesn't care about button press or joystick .. it's just run that button
+void processChainButtonStruct(ChainButtonStruct* chainButtonStruct);
+
+//! 1.22.26 with puppies, cold dry outside
+//! get the ChainUseStruct for the buttonNumber (eg 1..9  (no 0)
+//! Column Major in the Matrix (but sequential here)
+//! return the definition for this 1 based button number (if any)]   //TODO -1
+//! pressKind = -1 (matches first one ..)
+//! NOTE: pressKind for Joystick is here..
+//! 1.28.26 you can ask for BUTTON 0 (which will be the deault for the M5Atom single press (or maybe long press)
+//! 2.9.26 will only return if the button is finalized
+ChainButtonStruct* getChainButtonStruct(int buttonNumber_1based, int pressKind);
+
+#ifdef NOT_THIS_ONW
+
+//! 2.9.26 Superbowl Win, Vonn Crash
+//! get the chain use struct for the SMART address
+ChainButtonStruct* getChainButtonStructSMART(char *SMARTAddress);
+#endif
+
+//! 2.11.26 set the value for the smartAddress
+//! the val will be parsed..
+void setChainButtonStructSMART(char *valValue);
+
+//! 2.11.26 Lincolns birtyday
+//! will set any buttons with DOCFOLLOW with the smart address specified
+void setChainButtonStructDOCFOLLOW(char *SMARTAddress);
+
+//! 2.9.26 Rain. puppies still couple more days
+//! call this to ask for SMART Addresses .. when MQTT is connected
+//! this looks at all Chain Buttons and if a SMART Address .. requests on MQTT via
+//! set: getSmartDefn message
+//! 2.14.26 WORKS .. dynamic binding .. but now add a cache of last results (would have to reboot to clear cache)
+void requestChainSMARTButtons();
 
 #endif // PreferensesController_h

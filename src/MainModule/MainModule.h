@@ -446,6 +446,8 @@ char *connectedBLEDeviceNameAddress_mainModule();
 void buttonA_ShortPress_mainModule();
 //!long press on buttonA (top button)
 void buttonA_LongPress_mainModule();
+//!long long press on buttonA (top button)
+void buttonA_LongLongPress_mainModule();
 //!the long press of the side button
 void buttonB_LongPress_mainModule();
 //!the short press of the side button
@@ -486,6 +488,7 @@ void changeButtonColor_MainModule();
 //! defined in TokenParser.h
 char *semanticMarkerToJSON_mainModule(char* semanticMarker);
 
+#pragma mark PIN_USE_STRUCT
 //! 5.3.25 add a central clearing house for defining PIN use
 //! central clearing house for all pins used to we can analyze if there are overlaps
 //! pin is the actual number, pinName is the local name (eg. IN1_PIN or VIN_PIN).
@@ -504,12 +507,17 @@ typedef struct  {
     long pinNumArray[PIN_USE_MAX];
 } PinUseStruct;
 //! get the pin use array
-PinUseStruct getPinUseStruct_mainModule();
+PinUseStruct* getPinUseStruct_mainModule();
 
 //! 8.20.25 Horses grazing if field first time for Mark and Bud
 //! add set/config
 //! PTStepper
 //! M5AtomCamera
 void setConfiguration_mainModule(char* configurationName);
+
+
+//!If nil it create one with just the null, so strlen = 0
+//!NOTE: the strdup() might be used later..
+char* createCopy2(const char * stringA);
 
 #endif /* MainModule_h */

@@ -18,6 +18,9 @@ MotorStepperClassType::MotorStepperClassType(char *config)
     _identityString = (char*)calloc(strlen(config)+1, sizeof(char));
     strcpy(_identityString, config);
     
+    //! 11.28.25 Nice day
+    //! we are using the SensorClassType to define the pins that this Motor uses
+    //! it's like a lookAside task that goes with it. So all the 'loop' are
     //! 7.9.25
     //! return the sensor specified or null
     SensorStruct* sensorStruct = getSensor_mainModule(_identityString);

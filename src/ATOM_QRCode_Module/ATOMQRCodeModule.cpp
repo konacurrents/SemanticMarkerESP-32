@@ -720,7 +720,7 @@ char * currentStatusURL_ATOMQRCodeModule()
 {
     //! 8.4.25 add QR
     char *parsedSM = parsedSM_fromSemanticMarker(_lastSemanticMarker);
-    sprintf(_statusBuffer_ATOMQRCodeModule,"&k=QR&smscanner=on&sm=%s", parsedSM);
+    sprintf(_statusBuffer_ATOMQRCodeModule,"&k=QR&smscanner=on&sm=%s", parsedSM?parsedSM:(char*)"");
     return _statusBuffer_ATOMQRCodeModule;
 }
 
@@ -731,7 +731,7 @@ char * currentStatusJSON_ATOMQRCodeModule()
     //! 3.29.25 Raiiiinier Beeer movie last night
     //! add returning a UUID.FLOWNUM if valid, or nil if nota
     char *parsedSM = parsedSM_fromSemanticMarker(_lastSemanticMarker);
-    sprintf(_statusBuffer_ATOMQRCodeModule,"'smscanner':'on','sm':'%s'", parsedSM);
+    sprintf(_statusBuffer_ATOMQRCodeModule,"'smscanner':'on','sm':'%s'", parsedSM?parsedSM:(char*)"");
     return _statusBuffer_ATOMQRCodeModule;
 }
 

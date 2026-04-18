@@ -11,6 +11,10 @@ char _preferenceBuffer[100];
 //!buffer for the string
 char _preferenceBufferString[100];
 
+//! 1.27.26 Chain Buttons .. which non-chain can use too
+//! storage tor a message
+char _mqttMessage_ChainButton[100];
+
 //! 8.2.24 includeGroups
 //! 8.2.24 break up the list..
 #define NUMBER_GROUPS 4
@@ -185,6 +189,12 @@ char _includeGroupsStringArray[NUMBER_GROUPS][STRING_MAX_SIZE];
 //! 9.3.25 back from LA, Horses out. Tyler on lap. Europe next week
 //! sets the 2feed option (go back and forth)
 #define EPROM_STEPPER_2FEED_SETTING "542feed"
+
+//!12.21.25 Winter Solstice party ..
+//! issue #365 Object Oriented Sensors as well
+//! define the sensors (not sensorPlugs). MQTT:  set:sensor,  set:sensors
+#define EPROM_CHAIN_SENSORS_SETTING "6Chain5snsors"
+
 
 //!the EPROM is in preferences.h
 #include <Preferences.h>
@@ -649,6 +659,12 @@ void readPreferences_mainModule()
     //! add the Sensors as well..
     initSensorStringsFromEPROM_mainModule();
     
+#pragma mark CHAIN
+    //! 1.23.26 do the same for chain
+    //! 1.30.26 THIS is done whether we have the actual buttons or not,
+    //! that is defined which SensorClass -- ChainButtonClassType
+    initChainSensorStringsFromEPROM_mainModule();
+    
 }
 
 //!initialize the _preferencesMainLookup with EPROM lookup names
@@ -1081,6 +1097,14 @@ void initPreferencesMainModule()
                 _preferenceMainModuleLookupDefaults[i] = (char*)"L9110S_DCStepperClass";
                 break;
                 
+                //! 12.21.25 Winter Solstice, Eagles, Party,
+                //! these are the CHAIN_SENSORS
+            case PREFERENCE_CHAIN_SENSORS_SETTING:
+                _preferenceMainModuleLookupEPROMNames[i] =
+                (char*)EPROM_CHAIN_SENSORS_SETTING;
+                _preferenceMainModuleLookupDefaults[i] = (char*)"";
+                break;
+                
                 //!5.14.25 Dead 5.14.74 Montana
                 //! issue #365 Object Oriented Sensors as well
                 //! define the sensors (not sensorPlugs). MQTT:  set:sensor,  set:sensors
@@ -1118,12 +1142,14 @@ void initPreferencesMainModule()
     }
 }
 
+#ifdef NOT_USED
 //! 7.9.25 reset SENSORS to default
 //! "BuzzerSensorClass,23,33,L9110S_DCStepperClass,21,25"
 void resetSensorToDefault_mainModule()
 {
     setSensorsString_mainModule((char*)"BuzzerSensorClass,23,33,L9110S_DCStepperClass,21,25");
 }
+#endif
 
 //!print the preferences to SerialDebug
 void printPreferenceValues_mainModule()
@@ -1136,7 +1162,16 @@ void printPreferenceValues_mainModule()
     SerialTemp.println(VERSION);
     SerialTemp.printf("CHIP_ID: %s\n", getChipIdString());
     SerialTemp.printf("PREFERENCE_DEVICE_NAME_SETTING: %s\n", getPreference_mainModule(PREFERENCE_DEVICE_NAME_SETTING));
+    {
+        const char *BLEDeviceName = connectedBLEDeviceName_mainModule()?connectedBLEDeviceName_mainModule():"none";
 
+        SerialTemp.printf("CONNECTED_BLE_DEVICE: %s\n", BLEDeviceName);
+    }
+    //! 12.24.25 return the username and password, Kevin feature .. he was setting to WIFI acidently. I updated APP to make that harder
+    //! note on reboot this won't be set until later, so do another ""
+    SerialTemp.printf("USERNAME: %s\n", main_getUsername());
+    SerialTemp.printf("PASSWORD: %s\n", main_getPassword());
+    
     //ouch.. this sets 2 values ..
     //  readPreferences_mainModule();
     SerialTemp.printf("STEPPER_KIND: %d  1=UNO,2=MINI,3=TUMBLER\n", getPreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE));
@@ -1146,6 +1181,8 @@ void printPreferenceValues_mainModule()
     SerialTemp.printf("PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING: %f\n", getPreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING));
     SerialTemp.printf("STEPPER_FEEDS_PER_JACKPOT: %d\n", getPreferenceInt_mainModule(PREFERENCE_STEPPER_FEEDS_PER_JACKPOT));
     SerialTemp.printf("DISPLAY_SCREEN_TIMEOUT: %d\n", getPreferenceInt_mainModule(PREFERENCE_DISPLAY_SCREEN_TIMEOUT_VALUE));
+    SerialTemp.printf("PREFERENCE_STEPPER_BUZZER_VALUE: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE));
+
     SerialTemp.printf("PREFERENCE_HIGH_TEMP_POWEROFF_VALUE: %d\n", getPreferenceInt_mainModule(PREFERENCE_HIGH_TEMP_POWEROFF_VALUE));
     SerialTemp.printf("PREFERENCE_IS_MINIMAL_MENU_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_IS_MINIMAL_MENU_SETTING));
     SerialTemp.printf("PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_SEMANTIC_MARKER_ZOOMED_VALUE));
@@ -1184,7 +1221,7 @@ void printPreferenceValues_mainModule()
     SerialTemp.printf("PREFERENCE_DEV_ONLY_SM_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_DEV_ONLY_SM_SETTING));
 
     SerialTemp.printf("PREFERENCE_ATOMS_SETTING: %s\n", getPreference_mainModule(PREFERENCE_ATOMS_SETTING));
-    SerialTemp.printf("PREFERENCE_ATOM_KIND_SETTING: %s\n", getPreference_mainModule(PREFERENCE_ATOM_KIND_SETTING));
+    SerialTemp.printf("PREFERENCE_ATOM_KIND_SETTING (M5AtomClassType): %s\n", getPreference_mainModule(PREFERENCE_ATOM_KIND_SETTING));
 
     //! 1.10.24 Flag on whether a Semantic Marker command is sent on PIR, and the Command to send
     SerialTemp.printf("PREFERENCE_SM_ON_PIR_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_SM_ON_PIR_SETTING));
@@ -1195,10 +1232,14 @@ void printPreferenceValues_mainModule()
     //! 1.12.24 The  Semantic Marker command is sent on PIR, and the Command to send
     SerialTemp.printf("PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING: %d\n", getPreferenceBoolean_mainModule(PREFERENCE_ATOM_SOCKET_GLOBAL_ONOFF_SETTING));
     
-    SerialTemp.printf("PREFERENCE_SENSOR_PLUGS_SETTING: %s\n", getPreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING));
+    SerialTemp.printf("PREFERENCE_SENSOR_PLUGS_SETTING (MotorStepperClassType): %s\n", getPreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING));
     
     //! 5.14.25
     SerialTemp.printf("PREFERENCE_SENSORS_SETTING: %s\n", getPreference_mainModule(PREFERENCE_SENSORS_SETTING));
+
+    //! 12.21.25
+    //! 5.14.25
+    SerialTemp.printf("PREFERENCE_CHAIN_SENSORS_SETTING: %s\n", getPreference_mainModule(PREFERENCE_CHAIN_SENSORS_SETTING));
 
     //!8.14.25 Dead Movie from 10.19.1974 tonight..
     //! issue #394 stepperRPM
@@ -1226,24 +1267,29 @@ void printPreferenceValues_mainModule()
     //! print sensors
     printSensors_mainModule(getSensors_mainModule());
     
+    //! 1.24.26 Clear day .. 2 eagles again on walk
+    printChainSensors_mainModule(getChainUseStruct_mainModule());
+    
     //! 7.31.25
     SerialTemp.println(" *** Example JSON messages you can modify and paste into serial monitor, no DEV required");
     //! TODO: add preference to not support this??
     //! show example JSON  (break up as getPreference re-uses same string...
     SerialTemp.printf("{\"set\":\"sensors\",\"val\":\"%s\"}", (char*)"BuzzerSensorClass,19,22,L9110S_DCStepperClass,21,25");
     SerialTemp.println();
-    SerialTemp.printf("{\"set\":\"sensors\",\"val\":\"%s\"}", (char*)"BuzzerSensorClass,21,25,ULN2003_StepperClass,23,33");
+//    SerialTemp.printf("{\"set\":\"sensors\",\"val\":\"%s\"}", (char*)"BuzzerSensorClass,21,25,ULN2003_StepperClass,23,33");
+//    SerialTemp.println();
+    SerialTemp.printf("{\"set\":\"sensors\",\"val\":\"%s\"}", (char*)"PIRSensorClass,23,33");
     SerialTemp.println();
     SerialTemp.printf("{\"set\":\"sensorPlugs\",\"val\":\"L9110S_DCStepperClass\"}");
     SerialTemp.println();
     SerialTemp.printf("{\"set\":\"M5AtomKind\",\"val\":\"M5HDriver\"}");
     SerialTemp.println();
-    SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"0.25\"} ");
-    SerialTemp.println();
-    SerialTemp.printf("{\"set\":\"stepperRPM\",\"val\":\"15.0\"}");
-    SerialTemp.println();
-    SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"2048.0\"}");
-    SerialTemp.println();
+//    SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"0.25\"} ");
+//    SerialTemp.println();
+//    SerialTemp.printf("{\"set\":\"stepperRPM\",\"val\":\"15.0\"}");
+//    SerialTemp.println();
+//    SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"2048.0\"}");
+//    SerialTemp.println();
     SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"150\"}  --new Feeder");
     SerialTemp.println();
 
@@ -1254,32 +1300,32 @@ void printPreferenceValues_mainModule()
 
     
     //! 7.31.25 PIN USE
-    PinUseStruct pinUseStruct = getPinUseStruct_mainModule();
-    SerialTemp.printf(" *** PIN USE (%d) .. check for duplicated done next .. look for 'ERROR' \n", pinUseStruct.pinUseCount);
+    PinUseStruct* pinUseStruct = getPinUseStruct_mainModule();
+    SerialTemp.printf(" *** PIN USE (%d) .. check for duplicated done next .. look for 'ERROR' \n", pinUseStruct->pinUseCount);
 
-    for (int i=0; i< pinUseStruct.pinUseCount; i++)
+    for (int i=0; i< pinUseStruct->pinUseCount; i++)
     {
-        SerialTemp.println(pinUseStruct.pinUseArray[i]);
+        SerialTemp.println(pinUseStruct->pinUseArray[i]);
     }
-    SerialTemp.printf(" *** PIN Count = %d\n", pinUseStruct.pinUseCount);
+    SerialTemp.printf(" *** PIN Count = %d\n", pinUseStruct->pinUseCount);
     
     //! this needs to have a long pin in the array as well
     //! 8.30.25 check if duplicates
     //! @see https://stackoverflow.com/questions/8199403/how-to-check-if-an-array-has-any-duplicates
-    int count = pinUseStruct.pinUseCount;
+    int count = pinUseStruct->pinUseCount;
     boolean duplicatePins = false;
     
     for (int i = 0; i < count - 1; i++)
     {
         for (int j = i + 1; j < count; j++)
         {
-            long pin1 = pinUseStruct.pinNumArray[i];
-            long pin2 = pinUseStruct.pinNumArray[j];
+            long pin1 = pinUseStruct->pinNumArray[i];
+            long pin2 = pinUseStruct->pinNumArray[j];
             if (pin1 == pin2)
             {
                 // do whatever you do in case of a duplicate
                 duplicatePins = true;
-                SerialDebug.printf("*** ERROR: DUPLICATE PIN: %d, (%s) == (%s)\n",pin1, pinUseStruct.pinUseArray[i], pinUseStruct.pinUseArray[j]);
+                SerialDebug.printf("*** ERROR: DUPLICATE PIN: %d, (%s) == (%s)\n",pin1, pinUseStruct->pinUseArray[i], pinUseStruct->pinUseArray[j]);
             }
         }
     }
@@ -1383,11 +1429,14 @@ int getM5ATOMKind_MainModule()
 //! the memory for the sensorsEPROM
 char _sensorsEPROM[500];
 
+
 //! array of sensorStruct
 SensorsStruct *_sensorsStructs_mainModule = NULL;
 
 //! return array of SensorsStruct after parsing string syntax:   {SENSOR,pin1,pin2}
 SensorsStruct* parseSensorString_mainModule(char *str);
+
+
 
 //! print sensor
 void printSensor_mainModule(SensorStruct* sensor)
@@ -1402,8 +1451,9 @@ void printSensor_mainModule(SensorStruct* sensor)
 //! print sensors, passing in a struct
 void printSensors_mainModule(SensorsStruct* sensors)
 {
-    SerialDebug.printf("SENSORS ******** \n");
     int count = sensors->count;
+    SerialDebug.printf("DEFINED_SENSORS SensorClassType (%ld):\n", count);
+    SerialDebug.printf(" ******** \n");
     for (int i=0; i< count; i++)
     {
         printSensor_mainModule(&sensors->sensors[i]);
@@ -1466,6 +1516,7 @@ void setSensorsString_mainModule(char *sensorsString)
 
     //! Parse to the global..
     _sensorsStructs_mainModule = parseSensorString_mainModule(_sensorsEPROM);
+    SerialDebug.printf("setSensors:_sensorsStructs_mainModule = %d\n", _sensorsStructs_mainModule);
 }
 
 //!  init the sensorString from EPROM
@@ -1476,8 +1527,9 @@ void initSensorStringsFromEPROM_mainModule()
     strcpy(_sensorsEPROM, getPreference_mainModule(PREFERENCE_SENSORS_SETTING));
     //! Parse to the global..
     _sensorsStructs_mainModule = parseSensorString_mainModule(_sensorsEPROM);
+    SerialDebug.printf("initSensors:_sensorsStructs_mainModule = %d\n", _sensorsStructs_mainModule);
+
 }
-//!  **********************************
 
 
 //! copy string
@@ -1487,6 +1539,7 @@ char *copyString_mainModule(char *str)
     return copy;
 }
 
+
 //! 3.29.25 Raiiiinier Beeer movie last night
 //! 5.13.25 Home with Tyler, Mom in LA
 //! Foundation triligy..
@@ -1495,7 +1548,8 @@ SensorsStruct *parseSensorString_mainModule(char* sensorsString)
 {
     //! result
     SensorsStruct *sensors;
-    //! default
+    //! default  create memory for the SensorsStruct which holds all the sensors..
+    //! the array will be created on the 2nd pass
     sensors = (SensorsStruct*) calloc(1,sizeof(SensorsStruct));
     sensors->count = 0;
     sensors->sensors = NULL;
@@ -1505,6 +1559,7 @@ SensorsStruct *parseSensorString_mainModule(char* sensorsString)
     
     if (!sensorsString || strlen(sensorsString)==0)
     {
+        SerialDebug.println("parseSensorString_mainModule: *** No Sensors or string **");
         return sensors;
     }
     
@@ -1607,6 +1662,980 @@ SensorsStruct *parseSensorString_mainModule(char* sensorsString)
     sensors->count = numSensors;
     sensors->sensors = sensorItems;
     
+    SerialDebug.printf("parseSensorString_mainModule: ** sensors->count = %ld\n", sensors->count);
     return sensors;
 }
 
+#pragma mark CHAIN
+
+#pragma mark CHAIN_STRUCT
+/**
+ #define CHAIN_USE_MAX 15
+ typedef struct {
+ //! number of chain
+ int chainUseCount;
+ //! the buton numbers
+ int buttonNumberArray[PIN_USE_MAX];
+ //! the set strings, val strings, device strings
+ char *setStringArray[PIN_USE_MAX];
+ //! val strings
+ char *valStringArray[PIN_USE_MAX];
+ //! the device strings
+ char *deviceStringArray[PIN_USE_MAX];
+ 
+ } ChainUseStruct;
+ */
+
+//! global for use. This is an object (not a pointer) and has all the storage created statically
+ChainUseStruct* _chainUseStruct = NULL;
+//! get the pin use array
+ChainUseStruct* getChainUseStruct_mainModule()
+{
+    return _chainUseStruct;
+}
+
+
+//! 1.23.26 storage for the chain sensors EPROM value ..
+//! the memory for the chainSensorsEPROM
+char _chainSensorsEPROM[700];
+//! 1.23.26 Cold, Clear, Mt Nice ... need to use the version above with 5 items ..
+//! pointer to the ChainSensors
+//! return array of ChainUseStruct after parsing string syntax:   {SENSOR,pin1,pin2}
+ChainUseStruct* parseChainSensorString_mainModule(char *chainUseString)
+{
+    //! syntax:  sensor,pin1,pin2
+    SerialDebug.printf("*** parseChainSensorString_mainModule: %s\n", chainUseString);
+    
+    //! result
+    ChainUseStruct *chainUseStruct = (ChainUseStruct*) calloc(1,sizeof(ChainUseStruct));
+    //! default
+    chainUseStruct->chainUseCount = 0;
+    //! create memory.. (the 2nd pass would do this in the future ...)
+    chainUseStruct->chainButtonStructArray = (ChainButtonStruct*) calloc(CHAIN_USE_MAX, sizeof(ChainButtonStruct));
+    
+    //! TEMP .. until parse working ...  will do the same as registerChain does..
+    
+    return chainUseStruct;
+}
+
+//! 1.23.26 Cold, Clear, Mt Nice ... need to use the version above with 5 items ..
+//! pointer to the ChainSensors
+//! return array of ChainUseStruct after parsing string syntax:   {SENSOR,pin1,pin2}
+ChainUseStruct* parseChainSensorString_mainModuleNEW(char *chainUseString)
+{
+    //! syntax:  sensor,pin1,pin2
+    SerialDebug.printf("*** parseChainSensorString_mainModuleNEW:\n%s\n", chainUseString);
+    
+    //! result
+    ChainUseStruct *chainUseStruct = (ChainUseStruct*) calloc(1,sizeof(ChainUseStruct));
+    //! default
+    chainUseStruct->chainUseCount = 0;
+  
+    if (!chainUseString || strlen(chainUseString)==0)
+    {
+        SerialDebug.println("parseSensorString_mainModule: *** No chainUseString or string **");
+        return chainUseStruct;
+    }
+    
+    char *rest = NULL;
+    char *token;
+    int arrayIndex = 0;
+    
+    //! needed to copy sensorsString.. as the code below broke the callers' value to "https:" .. SIDE EFFECT
+#define MAX_CHAIN_STRING 400
+    char str[MAX_CHAIN_STRING];
+    char strCopy[MAX_CHAIN_STRING];
+    if (strlen(chainUseString) > MAX_CHAIN_STRING)
+    {
+        SerialDebug.printf("ChainUseString length too big %d\n", strlen(chainUseString));
+        return NULL;
+    }
+    strcpy(str,chainUseString);
+    strcpy(strCopy,chainUseString);
+    
+    //! resulting array
+    ChainButtonStruct *chainButtonStructs;
+    
+    //! number of sensors
+    int numChainStructs;
+    
+    //char *str = "BC,1,1,feed,,$localhost,
+    //             BC,1,2,feed,,,
+    //             BC,2,2,SM_Matrix,6,$dev,
+    //             BC,2,3, togglesocket,,M5AtomSocket,
+    //! 2 pass
+    for (int whichPass = 0; whichPass<2; whichPass++)
+    {
+#define secondPass (whichPass == 1)
+        //! for this we have MAX = 6
+        int max = 6;
+        
+        if (secondPass)
+        {
+            //! create the storage
+            numChainStructs = arrayIndex / max;
+            strcpy(str,strCopy);
+            SerialLots.printf(" ** Create sensors %d\n", numChainStructs);
+            chainButtonStructs= (ChainButtonStruct*) calloc(numChainStructs,sizeof(ChainButtonStruct));
+            chainUseStruct->chainButtonStructArray = chainButtonStructs;
+
+        }
+        
+        //! reset arrayIndex (which will be increments of 3)
+        arrayIndex = 0;
+        
+        //! 2 pass, first count, 2nd parseSensorString_mainModule
+        
+        //! look for tokens, comma seperated (SEEMS cannot be null or empty .. ?? eg  ,,,,
+        for (char *token= strtok(str,","); token!= NULL; token= strtok(NULL, ","))
+        {
+            int indexInSensor = arrayIndex / max;
+            int indexInArray = arrayIndex % max;
+            SerialLots.printf("%d Token[%d] = %s\n",indexInArray, indexInSensor,  token);
+            
+            if (!secondPass)
+            {
+                //! continut loop .. but increment (since code below wont' increment)
+                arrayIndex++;
+                continue;
+                
+            }
+            
+            //! which of the max is this..
+            //! "BC,1,1,feed,,$localhost,   <string> <int> <int> <string> <string> <string>
+            switch (indexInArray)
+            {
+                case 0: // <string>
+                {
+                    //TODO: strip the spaces of this token
+                    chainButtonStructs[indexInSensor].classType = copyString_mainModule(token);
+                }
+                    break;
+                case 1: // <int>
+                {
+                    int num = atoi(token);
+                    chainButtonStructs[indexInSensor].buttonNumber = num;
+                }
+                    break;
+                case 2: // <int>
+                {
+                    int num = atoi(token);
+                    chainButtonStructs[indexInSensor].pressKind = num;
+                }
+                    break;
+                case 3: // <string>   setString
+                    chainButtonStructs[indexInSensor].setString = copyString_mainModule(token);
+                    break;
+                case 4: // <string> valString
+                    chainButtonStructs[indexInSensor].valString = copyString_mainModule(token);
+                    break;
+                case 5: // <string> device
+                    chainButtonStructs[indexInSensor].deviceString = copyString_mainModule(token);
+                    
+                {
+                    //! update the chain use string ..
+                    char chainUseSample[200];
+                    sprintf(chainUseSample,"CHAIN_USE: %s press=%d btn=%2d set= %s, val=%s dev=%s",chainButtonStructs[indexInSensor].classType, chainButtonStructs[indexInSensor].pressKind, chainButtonStructs[indexInSensor].buttonNumber, chainButtonStructs[indexInSensor].setString, chainButtonStructs[indexInSensor].valString, chainButtonStructs[indexInSensor].deviceString);
+                    chainButtonStructs[indexInSensor].chainUse = copyString_mainModule(chainUseSample);
+                }
+                    break;
+            }
+            
+            //! only incremnet arrayIndex when
+            arrayIndex++;
+        }
+    }
+    
+    //! update the result (storage already created)
+    chainUseStruct->chainUseCount = numChainStructs;
+    chainUseStruct->chainButtonStructArray = chainButtonStructs;
+    
+    SerialDebug.printf("parseSensorString_mainModule: ** sensors->count = %ld\n", numChainStructs);
+    
+    return chainUseStruct;
+}
+
+//! 2.9.26 TODO .. use this for good ...
+//! just try parsing for now..
+void testParse()
+{
+    
+    //! 200 fixed problem..
+    char str[400];
+    //! needs spaces between "," or won't find them .. FIX THIS ..
+    //strcpy(str,"BC,1,1,feed, ,$localhost, BC,1,2,feed, , , BC,2,2,SM_Matrix,6,$dev, BC,2,3, togglesocket, ,M5AtomSocket");
+    strcpy(str,(char*)"BC,0,0,feed, ,$localhost,BC,0,2,feed, , ,BC,1,0,feed, ,$localhost,BC,1,2,feed, , ,BC,2,2,SM_MatrixCell,6,$dev,BC,2,1,togglesocket, ,M5AtomSocket,BC,2,0,togglesocket, ,M5AtomSocket,JC,3,0,feed, ,$localhost,JC,3,100,feed, , ,JC,3,101,togglesocket, ,M5AtomSocket,JC,3,102,feed, , ,JC,3,103,$SMART,QHmwUurxC3.1703806697279,");
+
+    //! parse it
+    ChainUseStruct *chainUseStruct = parseChainSensorString_mainModuleNEW(str);
+    //! print it
+    printChainSensors_mainModule(chainUseStruct);
+
+    SerialDebug.println("DONE testParse");
+    
+    //! bombing after this..
+}
+
+#pragma mark CHAIN
+//!TODO  add code here
+//! 1.23.26 storage for the chain sensors EPROM value ..
+//!PREFERENCE_CHAIN_SENSORS_SETTING
+//!FIRST do the registration maniually .. LATER .. parseSensros
+void initChainSensorStringsFromEPROM_mainModule()
+{
+    strcpy(_chainSensorsEPROM, getPreference_mainModule(PREFERENCE_CHAIN_SENSORS_SETTING));
+    SerialDebug.printf("initSensors:initChainSensorStringsFromEPROM_mainModule = '%s'\n", _chainSensorsEPROM);
+
+    //! Parse to the global..
+    //! TODO .. finish this (it should parse the structure like testParse() and do all the registerChain calls..
+    _chainUseStruct = parseChainSensorString_mainModule(_chainSensorsEPROM);
+    
+    //! add this which is Button -0 (not a Chain button).
+    //! So if a message comes in for button 0 .. it can find this one..
+    registerChain_mainModule("BC", 0, BUTTON_SHORT_PRESS, "feed", "", "$localhost" );
+    registerChain_mainModule("BC", 0, BUTTON_DOUBLE_PRESS,"feed", "", "" ); //wifi feed, or BLE if connected as well with the !dev
+
+    //TODO: long press is the AP mode...
+    //registerChain_mainModule("BC", 0, BUTTON_LONG_PRESS, clean credentials ... eg.  "x" local .. something..
+
+    //! TODO: the following would use the testParse
+    //! has to be after the _chainUseStruct global is set...
+    if (true)
+    {
+        //! idea is you define the button and the press kind
+        //! MatrixCell is Column Major  1,4, 7 // 2,5,8 // 3,6,9
+        registerChain_mainModule("BC", 1, BUTTON_SHORT_PRESS,  "feed", "", "$localhost" );
+        registerChain_mainModule("BC", 1, BUTTON_DOUBLE_PRESS,  "feed", "", "" ); //wifi
+
+       // registerChain_mainModule("BC",   2, BUTTON_SHORT_PRESS,    "SM_MatrixCell", "5", "$dev" );
+        registerChain_mainModule("BC",   2, BUTTON_DOUBLE_PRESS,   "SM_MatrixCell", "6", "$dev");
+        //{"cmd":"togglesocket","dev":"M5AtomSocket"}
+        registerChain_mainModule("BC",   2, BUTTON_LONG_PRESS,     "togglesocket", "", "M5AtomSocket");
+        registerChain_mainModule("BC",   2, BUTTON_SHORT_PRESS,    "togglesocket", "", "M5AtomSocket");
+
+        //!joystick buttons..
+        //registerChain_mainModule("JC", 3, BUTTON_SHORT_PRESS,  "feed", "", "$localhost" );
+        //! 1.24.26 don't know what to do yet ... x,y (or left, top, right, botton ??)
+        //registerChain_mainModule("JC", 3, BUTTON_JOYSTICK_LEFT,  "status", "", "" );
+        registerChain_mainModule("JC", 3, BUTTON_JOYSTICK_TOP,  "togglesocket", "", "M5AtomSocket");
+        registerChain_mainModule("JC", 3, BUTTON_JOYSTICK_RIGHT,  "feed", "", "" );
+        //registerChain_mainModule("JC", 3, BUTTON_JOYSTICK_BOTTOM,  "status", "", "" );
+        
+        //! 2.9.26 try the new smartDefn indirect button
+        //! this has a future text with MQTT defined
+        registerChain_mainModule("JC", 3, BUTTON_JOYSTICK_BOTTOM,  "$SMART", "QHmwUurxC3.1769990960124", "" );
+        //1769990960124&flowCat=MQTT&name=sendMQTT
+        
+        //!
+        //! 2.16.26 runSmart will just send the runSmart, uuid.flownum .. and let someone else run it..
+        registerChain_mainModule("JC", 3, BUTTON_SHORT_PRESS,  "runSmart", "QHmwUurxC3.1769990960124", "" );
+        //1769990960124&flowCat=MQTT&name=sendMQTT
+
+        //! 2.9.26 try the new smartDefn indirect button
+        //! this has a future text with MQTT defined
+        registerChain_mainModule("JC", 3, BUTTON_JOYSTICK_LEFT,  "$DOCFOLLOW", "bobsYourUncle", "" );
+        //registerChain_mainModule("JC", 3, BUTTON_JOYSTICK_LEFT,  "$DC", "bobsYourUncle", "name" );
+
+        
+#define TRY_JC_BUTTON_1
+#ifdef  TRY_JC_BUTTON_1
+        //! 3.20.26 Pinapple Express Rain, after Deep Snow last weekend,
+        //! adding JC to button1 - incase it's the only one there..
+        //! This is because the button is known when it's touched .. so it searches numbered button for the Press kind (and joystick is seperate)
+        //! TODO: check STORAGE
+        registerChain_mainModule("JC", 1, BUTTON_JOYSTICK_TOP,  "togglesocket", "", "M5AtomSocket");
+        registerChain_mainModule("JC", 1, BUTTON_JOYSTICK_RIGHT,  "feed", "", "" );
+        registerChain_mainModule("JC", 1, BUTTON_JOYSTICK_BOTTOM,  "$SMART", "QHmwUurxC3.1769990960124", "" );
+        //! 2.16.26 runSmart will just send the runSmart, uuid.flownum .. and let someone else run it..
+        registerChain_mainModule("JC", 1, BUTTON_SHORT_PRESS,  "runSmart", "QHmwUurxC3.1769990960124", "" );
+        //! 2.9.26 try the new smartDefn indirect button
+        //! this has a future text with MQTT defined
+        registerChain_mainModule("JC", 1, BUTTON_JOYSTICK_LEFT,  "$DOCFOLLOW", "bobsYourUncle", "" );
+    
+#endif
+        //! 2.9.26 After Seahawks Superbowl Win
+        //! #419 https://github.com/konacurrents/KSQRAvatar/issues/489
+        //! decide where the message shows up..
+        // <class, buttonNum, pressKind,  $SMART, uuid.flownum, DEV>
+        
+        //! eg:
+        //char *str = "BC,1,1,feed,,$localhost, BC,1,2,feed,,, BC,2,2,SM_Matrix,6,$dev, BC,2,3, togglesocket,,M5AtomSocket, YC, 
+    }
+    
+    //!test...
+    testParse();
+    
+    //! request the chain buttons if SMART
+    requestChainSMARTButtons();
+    
+    SerialDebug.println("done register chain buttons");
+
+}
+
+
+
+//! 1.23.26 Clear Day .. puppies, tyler, Clear Snowy Mt Rainier
+//!
+//! Only 1 setSensorsString now .. will always append
+//! unless a null or blank "" string
+//! PREFERENCE_CHAIN_SENSORS_SETTING
+//! set a sensor val (array of  sensor,pin,pin,sensor,pin,pin...)
+void setChainSensorsString_mainModule(char *chainSensorsString)
+{
+    //! for now .. resetting
+    //! 5.17.25
+    strcpy(_chainSensorsEPROM, "");
+    
+    SerialDebug.printf("setChainSensorsString_mainModule(%s)\n", chainSensorsString);
+    //! init EPROM
+    if (!chainSensorsString || strlen(chainSensorsString)==0)
+        strcpy(_chainSensorsEPROM, "");
+    else if (strlen(_chainSensorsEPROM) > 0)
+    {
+        // add a ','
+        strcat(_chainSensorsEPROM, ",");
+    }
+    strcat(_chainSensorsEPROM, chainSensorsString);
+    
+    //! store in EPROM
+    savePreference_mainModule(PREFERENCE_CHAIN_SENSORS_SETTING, _chainSensorsEPROM);
+    
+    //! Parse to the global..
+    _chainUseStruct = parseChainSensorString_mainModule(_chainSensorsEPROM);
+    //!printout
+    SerialDebug.printf("setSensors:setChainSensorsString_mainModule = %d\n", _chainUseStruct->chainUseCount);
+    
+}
+
+//! 1.30.26 RAIN, puppies, Tyler looking at me
+//! return a non 0 length string " " if nothing or 0 length
+char *non0string(char* str)
+{
+    if (!str)
+        return (char*)" ";
+    else if (strlen(str) == 0)
+        return (char*)" ";
+    else
+        return str;
+}
+//! print sensors, passing in a struct
+//! also makes a requestChainSMARTButtons() call ..
+void printChainSensors_mainModule(ChainUseStruct* chainUseStruct)
+{
+    if (chainUseStruct)
+    {
+        //! print it 2 ways, one as the EPROM wouild look, the other are the chain use string
+        for (int lap = 0; lap < 2; lap++)
+        {
+            boolean showAsEPROM = (lap == 0);
+            
+            //! go through looking for N one (0 based)
+            for (int i=0; i< chainUseStruct->chainUseCount; i++)
+            {
+                //! grab the i'th struct, then look at the button number and pressKind
+                ChainButtonStruct* chainButtonStruct = &chainUseStruct->chainButtonStructArray[i];
+                if (showAsEPROM)
+                {
+                    //!   "JC", 3, BUTTON_JOYSTICK_RIGHT,  "feed", "", "" );
+                    if (i > 0)
+                        SerialDebug.printf(",");
+                    SerialDebug.printf("%s,%d,%d,%s,%s,%s (docfollow=%d)", chainButtonStruct->classType, chainButtonStruct->buttonNumber, chainButtonStruct->pressKind, non0string(chainButtonStruct->setString), non0string(chainButtonStruct->valString), non0string(chainButtonStruct->deviceString), chainButtonStruct->isDOCFOLLOW);
+                }
+                else
+                    SerialDebug.printf("%d -> %s\n", i, chainButtonStruct->chainUse?chainButtonStruct->chainUse:(char*)"NULL");
+                
+#ifdef DO_THIS_LATER
+                //! 2.9.26 SuperBowl win, Vonn crash
+                //! send the request message again..
+                //! This will only be set if the setString wasn't updated ..
+                if (strcmp(chainButtonStruct->setString,"$SMART")==0)
+                {
+                    //! not finalized yes .. so fire off a request again.
+                    //! make a request for the UUID ...
+                    //! {"set":"getSmartDefn", "val":"uuid.flownum"}
+                    sprintf(_mqttMessage_ChainButton, "{'set':'getSmartDefn','val':'%s'}", chainButtonStruct->valString);
+                    SerialDebug.println(_mqttMessage_ChainButton);
+                    
+                    //! send MQTT message requesting a definiition for our SMART button
+                    //! send this message
+                    sendMessageNoChangeMQTT(_mqttMessage_ChainButton);
+                }
+#endif
+            }
+            if (showAsEPROM)
+                SerialDebug.println();
+        }
+        
+        //! request the chain buttons if SMART
+        requestChainSMARTButtons();
+    }
+}
+
+#ifdef LATER
+//! 2.14.26 WORKS .. dynamic binding .. but now add a cache of last results (would have to reboot to clear cache)
+boolean cachedChainDefinition(char *smartAddress)
+{
+    //! if cached return true
+    boolean cached = false;
+    //! would be lookup smartAddres to the 'tuple MQTT message'
+    //! calll
+    /*
+    //! //! 2.11.26 set the value for the smartAddress
+    //! the val will be parsed..
+    void setChainButtonStructSMART(char *valValue);
+    
+    //! 2.11.26 Lincolns birtyday
+    //! will set any buttons with DOCFOLLOW with the smart address specified
+    void setChainButtonStructDOCFOLLOW(char *SMARTAddress);
+     */
+    return cached;
+}
+#endif
+
+//! 2.9.26 SuperBowl win, Vonn crash
+//! send the request message again..
+//! This will only be set if the setString wasn't updated ..
+//! 2.9.26 Rain. puppies still couple more days
+//! call this to ask for SMART Addresses .. when MQTT is connected
+//! this looks at all Chain Buttons and if a SMART Address .. requests on MQTT via
+//! set: getSmartDefn message
+//! TODO: 2.14.26 WORKS .. dynamic binding .. but now add a cache of last results (would have to reboot to clear cache)
+void requestChainSMARTButtons()
+{
+    SerialDebug.println("requestChainSMARTButtons");
+    //! go through all chain buttons and see if any are $SMART
+    //! if so .. make a MQTT request
+    ChainUseStruct* chainUseStruct = getChainUseStruct_mainModule();
+    if (chainUseStruct)
+    {
+        SerialDebug.printf("%d SMARTButtons\n", chainUseStruct->chainUseCount);
+
+        //! go through looking for N one (0 based)
+        for (int i=0; i< chainUseStruct->chainUseCount; i++)
+        {
+            //! grab the i'th struct, then look at the button number and pressKind
+            ChainButtonStruct* chainButtonStruct = &chainUseStruct->chainButtonStructArray[i];
+            
+            //! 2.9.26 SuperBowl win, Vonn crash (5 inch hit gate)
+            //! send the request message again..
+            //! This will only be set if the setString wasn't updated ..
+            if (strcmp(chainButtonStruct->setString,"$SMART")==0)
+            {
+                char* smartAddress = chainButtonStruct->valString;
+                //! 2.14.26 Valentimes day, 46th with Laura Babe
+                //! if already cached .. skip the request
+                //if (!cachedChainDefinition(smartAddress))
+                {
+                    //! not finalized yes .. so fire off a request again.
+                    //! make a request for the UUID ...
+                    //! {"set":"getSmartDefn", "val":"uuid.flownum"}
+                    sprintf(_mqttMessage_ChainButton, "{'set':'getSmartDefn','val':'%s'}", smartAddress);
+                    SerialDebug.printf("Request(%d, %s) %s\n", i, smartAddress, _mqttMessage_ChainButton);
+                    
+                    //! send MQTT message requesting a definiition for our SMART button
+                    //! send this message
+                    sendMessageNoChangeMQTT(_mqttMessage_ChainButton);
+                }
+            }
+        }
+    }
+}
+
+//! 2.13.26 2 eagles, starting rain, nice ski yesterday
+//! add storage for the VALstring so not creating new copy always
+#define MAX_SMART_ADDRESS 80
+char _buffer_ChainButtonSMARTAddress[MAX_SMART_ADDRESS];
+//! return memory that can be used (reused)
+char *copyString_SMARTAddress(char* valString)
+{
+    if (strlen(valString) > MAX_SMART_ADDRESS)
+        strcpy(_buffer_ChainButtonSMARTAddress,(char*)"");
+    else
+        strcpy(_buffer_ChainButtonSMARTAddress, valString);
+    return _buffer_ChainButtonSMARTAddress;
+}
+//! 2.13.26 2 eagles, starting rain, nice ski yesterday
+//! add storage for the VALstring so not creating new copy always
+#define MAX_USE_SAMPLE 250
+char _buffer_ChainButtonUseSample[MAX_USE_SAMPLE];
+//! return memory that can be used (reused)
+//! namespace future use ...
+char *copyString_UseSample(char* valString, char *category)
+{
+    if (strlen(valString) > MAX_USE_SAMPLE)
+        strcpy(_buffer_ChainButtonUseSample,(char*)"");
+    else
+        strcpy(_buffer_ChainButtonUseSample, valString);
+    return _buffer_ChainButtonUseSample;
+}
+
+//! 2.12.26 Lincolns birtyday, SKI crystal nice turns
+//! will set any buttons with DOCFOLLOW with the smart address specified
+//! $SMART, uuid.flow, dev
+//! here the smartAddress == UUID.FLOWNUM
+//! SMARTAddress is temporary transient storage
+void setChainButtonStructDOCFOLLOW(char *SMARTAddress)
+{
+    SerialDebug.printf("setChainButtonStructDOCFOLLOW: %s\n", SMARTAddress);
+    //! go through all chain buttons and see if any are $SMART
+    //! if so .. make a MQTT request
+    ChainUseStruct* chainUseStruct = getChainUseStruct_mainModule();
+    if (chainUseStruct)
+    {
+        //! go through looking for N one (0 based)
+        for (int i=0; i< chainUseStruct->chainUseCount; i++)
+        {
+            //! grab the i'th struct, then look at the button number and pressKind
+            ChainButtonStruct* chainButtonStruct = &chainUseStruct->chainButtonStructArray[i];
+            if (chainButtonStruct->isDOCFOLLOW)
+            {
+                //         registerChain_mainModule("JC", 3, BUTTON_JOYSTICK_BOTTOM,  "$SMART", "QHmwUurxC3.1769990960124", "" );
+
+                SerialDebug.printf("setDOCFOLLOW address=($SMART,%s,)\n",(char*) SMARTAddress);
+                //! the SMART Address is when finalized, so the same button can be updated in the future with just the address UUID.FLOW
+                chainButtonStruct->SMARTAddress = copyString_SMARTAddress(SMARTAddress);
+                //! change the DOCFOLLOW to a SMART item..
+                chainButtonStruct->setString = (char*)"$SMART";
+                chainButtonStruct->valString = chainButtonStruct->SMARTAddress;
+                chainButtonStruct->deviceString = (char*)"";
+              
+                //! buttonFinalized means we have the MQTT message definition (retrieved from the internet, actually iPhone sends the setSmartDefn message
+                //! If finalized then the SMARTAddress is what you want to use, which will
+                chainButtonStruct->buttonFinalized = false;
+           
+                
+                //!update the chain use for this one..
+                //! eg: "$SMART", "QHmwUurxC3.1769990960124", ""
+                char chainUseSample[MAX_USE_SAMPLE];
+                sprintf(chainUseSample,(char*)"CHAIN_USE: %s btn=%2d press=%d set= %s, val=%s dev=%s", chainButtonStruct->classType, chainButtonStruct->buttonNumber, chainButtonStruct->pressKind, chainButtonStruct->setString, chainButtonStruct->valString, chainButtonStruct->deviceString);
+                //! since DOCFOLLOW all have the same, we can use the same (FOR NOW..
+                //! TODO : if the <cat> is used .. then different buffers needed..
+                chainButtonStruct->chainUse = copyString_UseSample(chainUseSample, (char*)"");
+            }
+        }
+    }
+    //! print it out ...
+    printChainSensors_mainModule(getChainUseStruct_mainModule());
+    
+#ifdef DONE_BY_PRINT
+    //! start the process... this sends MQTT message to look for non buttonFinalized smart addresses.
+    requestChainSMARTButtons();
+#endif
+}
+
+//! 1.27.26
+//! 7.9.25 reset SENSORS to default
+//! "BuzzerSensorClass,23,33,L9110S_DCStepperClass,21,25"
+void resetChainSensorToDefault_mainModule()
+{
+    //UNUSED
+}
+
+
+
+//!12.19.25 use the Chain
+//! 5.3.25 add a central clearing house for defining PIN use
+//! central clearing house for all pins used to we can analyze if there are overlaps
+//! pin is the actual number, pinName is the local name (eg. IN1_PIN or VIN_PIN).
+//! moduleName is the module in the code,
+//! isI2C is whether this is a I2C bus (which we aren't using much yet)
+//! 1.22.26 add pressKind and classType
+void registerChain_mainModule(String classType, int buttonNumber, int pressKind, String setString, String valString, String deviceString)
+{
+    
+    if (_chainUseStruct->chainUseCount >= CHAIN_USE_MAX)
+    {
+        SerialError.printf("*** ERROR .. too many CHAINS defined ***");
+        return;
+    }
+    
+    char chainUseSample[100];
+    sprintf(chainUseSample,"CHAIN_USE: %s btn=%2d press=%d set= %s, val=%s dev=%s",classType, buttonNumber,pressKind, setString.c_str(), valString.c_str(), deviceString.c_str());
+    SerialDebug.println(chainUseSample);
+    
+    //! storage is supposed to have been created .. but this line blows ..
+    SerialLots.printf("chainButtonStruct = %d, count = %d\n", _chainUseStruct,_chainUseStruct? _chainUseStruct->chainUseCount:-1);
+    //! update the n'th version
+    //! grab a pointer to the size already created
+    //! The array is really contiguous memory .. vs linked list, to the address of the n't array is the pointer to that struct
+    //! grab the next entry (chainUseCount)
+    ChainButtonStruct *chainbuttonStruct = &_chainUseStruct->chainButtonStructArray[_chainUseStruct->chainUseCount];
+    
+    //! 1.23.26
+    //! 5.3.25 create storage here
+    char *chainUse = (char*)calloc(strlen(chainUseSample)+1, sizeof(char));
+    strcpy(chainUse, chainUseSample);
+    
+    //!store globally
+    chainbuttonStruct->chainUse = chainUse;
+    
+    //!store classType
+    chainbuttonStruct->classType = createCopy2(classType.c_str());
+    
+    //! set the buttonNumber for this chain #
+    chainbuttonStruct->buttonNumber = buttonNumber;
+    
+    //! pressKind
+    chainbuttonStruct->pressKind = pressKind;
+    
+    //! set the set for this chain #
+    chainbuttonStruct->setString = createCopy2(setString.c_str());
+    
+    //! set the set for this chain #
+    chainbuttonStruct->valString = createCopy2(valString.c_str());
+    
+    //! set the set for this chain #
+    chainbuttonStruct->deviceString = createCopy2(deviceString.c_str());
+    
+    //! 2.11.26
+    chainbuttonStruct->isDOCFOLLOW = false;
+    
+    //! 2.9.26 superbowl, raining out
+    //! fi the set is $SMART then do something ... request the value again .. since otherwise the setString value would be changed
+    //! $SMART, UUID.FLOW, <dev>
+    if (strcmp(chainbuttonStruct->setString, "$SMART")==0)
+    {
+        //! set the SMARTAddress
+        chainbuttonStruct->SMARTAddress = createCopy(chainbuttonStruct->valString);
+        //! not finalized (not BOUND to the MQTT message. the iPhone is the one providing that information ...
+        chainbuttonStruct->buttonFinalized = false;
+#ifdef DO_THIS_LATER
+        //! make a request for the UUID ...
+        //! {"set":"getSmartDefn", "val":"uuid.flownum"}
+        sprintf(_mqttMessage_ChainButton, "{'set':'getSmartDefn','val':'%s'}", chainbuttonStruct->SMARTAddress);
+        SerialDebug.println(_mqttMessage_ChainButton);
+        
+        //! send MQTT message requesting a definiition for our SMART button
+        //! send this message
+        sendMessageNoChangeMQTT(_mqttMessage_ChainButton);
+#endif
+    }
+    //! 2.11.26 add the docfollow
+    //! $DC,,  <nill args)>
+    //! TODO: args:  $DC, <group>, <name> help filter out $DC subsets (context)
+    else if (strcmp(chainbuttonStruct->setString, "$DC")==0|| strcmp(chainbuttonStruct->setString, "$DOCFOLLOW")==0)
+    {
+        //! 2.11.26
+        chainbuttonStruct->isDOCFOLLOW = true;
+        //! no smart address
+        chainbuttonStruct->SMARTAddress = createCopy((char*)"");
+        //! but finalized
+        chainbuttonStruct->buttonFinalized = false;
+    }
+    else
+    {
+        //! no smart address
+        chainbuttonStruct->SMARTAddress = createCopy((char*)"");
+        //! but finalized
+        chainbuttonStruct->buttonFinalized = true;
+    }
+    
+    //! increment chainUseCound
+    _chainUseStruct->chainUseCount++;
+   
+    
+}
+
+#ifdef LATER_STANGE
+//! NOT USING THIS YET ...
+//! 3.15.26 find first button struct for a pressKind (so the joystick can be found)
+//!if matched returns defintion otherwises sends a getSmartDefn message over MQTT hoping it shows up here as DOCFOLLOW sends MQTT
+ChainButtonStruct* getChainButtonStruct(int pressKind)
+{
+    SerialDebug.printf("getChainUseStruct(%d)\n", pressKind);
+    ChainUseStruct* chainUseStruct = getChainUseStruct_mainModule();
+    if (chainUseStruct)
+    {
+        //! go through looking for N one (0 based)
+        for (int i=0; i< chainUseStruct->chainUseCount; i++)
+        {
+            //! grab the i'th struct, then look at the button number and pressKind
+            ChainButtonStruct* chainButtonStruct = &chainUseStruct->chainButtonStructArray[i];
+            
+            //! i is just the entry .. not the button number
+            //! N'th entry
+            if (chainButtonStruct->pressKind == pressKind || chainButtonStruct->pressKind == BUTTON_ANY)
+            {
+                SerialDebug.printf("chainButton press=%d) = %s\n", chainButtonStruct->pressKind, chainButtonStruct->chainUse);
+                //! see if the right pressKind
+                {
+                    SerialDebug.printf("matched button %ld, press=%ld \n", chainButtonStruct->buttonNumber, pressKind);
+                    
+                    //! 2.9.26 if not finalized .. ask again
+                    if (chainButtonStruct->buttonFinalized)
+                        //! found one .. go with it
+                        return chainButtonStruct;
+                    else
+                    {
+                        //! not finalized yes .. so fire off a request again.
+                        //! make a request for the UUID ...
+                        //! {"set":"getSmartDefn", "val":"uuid.flownum"}
+                        sprintf(_mqttMessage_ChainButton, "{'set':'getSmartDefn','val':'%s'}", chainButtonStruct->valString);
+                        SerialDebug.println(_mqttMessage_ChainButton);
+                        
+                        //! send MQTT message requesting a definiition for our SMART button
+                        //! send this message
+                        sendMessageNoChangeMQTT(_mqttMessage_ChainButton);
+                        
+                        //! and no match..
+                        return NULL;
+                    }
+                }
+            }
+        }
+    }
+    return NULL;
+}
+#endif
+
+//! 1.27.26 moved here for generic use .. even by a non chain button
+//! 1.22.26 with puppies, cold dry outside
+//! get the ChainUseStruct for the buttonNumber (eg 1..9  (no 0)
+//! Column Major in the Matrix (but sequential here)
+//! return the definition for this 1 based button number (if any)]   //TODO -1
+//! pressKind = -1 (matches first one ..)
+//! NOTE: pressKind for Joystick is here..
+//! 1.28.26 you can ask for BUTTON 0 (which will be the deault for the M5Atom single press (or maybe long press)
+//! 2.9.26 if not finlized yet, then request a smart definition.. in case not found yet.
+ChainButtonStruct* getChainButtonStruct(int buttonNumber_1based, int pressKind)
+{
+    SerialDebug.printf("getChainUseStruct(%d, %d)\n", buttonNumber_1based, pressKind);
+    ChainUseStruct* chainUseStruct = getChainUseStruct_mainModule();
+    if (chainUseStruct)
+    {
+        //! go through looking for N one (0 based)
+        for (int i=0; i< chainUseStruct->chainUseCount; i++)
+        {
+            //! grab the i'th struct, then look at the button number and pressKind
+            ChainButtonStruct* chainButtonStruct = &chainUseStruct->chainButtonStructArray[i];
+            
+            //! i is just the entry .. not the button number
+            //! N'th entry
+            if (chainButtonStruct->buttonNumber == buttonNumber_1based)
+            {
+                SerialDebug.printf("chainButton (%d, press=%d) = %s\n", buttonNumber_1based, chainButtonStruct->pressKind, chainButtonStruct->chainUse);
+                //! see if the right pressKind
+                if (chainButtonStruct->pressKind == pressKind || chainButtonStruct->pressKind == BUTTON_ANY)
+                {
+                    SerialDebug.printf("matched button %ld, press=%ld \n", buttonNumber_1based, pressKind);
+                    
+                    //! 2.9.26 if not finalized .. ask again
+                    if (chainButtonStruct->buttonFinalized)
+                        //! found one .. go with it
+                        return chainButtonStruct;
+                    else
+                    {
+                        //! not finalized yes .. so fire off a request again.
+                        //! make a request for the UUID ...
+                        //! {"set":"getSmartDefn", "val":"uuid.flownum"}
+                        sprintf(_mqttMessage_ChainButton, "{'set':'getSmartDefn','val':'%s'}", chainButtonStruct->valString);
+                        SerialDebug.println(_mqttMessage_ChainButton);
+
+                        //! send MQTT message requesting a definiition for our SMART button
+                        //! send this message
+                        sendMessageNoChangeMQTT(_mqttMessage_ChainButton);
+                        
+                        //! and no match..
+                        return NULL;
+                    }
+                }
+            }
+        }
+    }
+    return NULL;
+}
+
+#ifdef NOT_THIS_ONW
+//! 2.9.26 Superbowl Win, Vonn Crash
+//! get the chain use struct for the SMART address
+ChainButtonStruct* getChainButtonStructSMART(char *SMARTAddress)
+{
+    SerialDebug.printf("getChainUseStructSMART(%s)\n", SMARTAddress);
+    ChainUseStruct* chainUseStruct = getChainUseStruct_mainModule();
+    if (chainUseStruct)
+    {
+        //! go through looking for N one (0 based)
+        for (int i=0; i< chainUseStruct->chainUseCount; i++)
+        {
+            //! grab the i'th struct, then look at the button number and pressKind
+            ChainButtonStruct* chainButtonStruct = &chainUseStruct->chainButtonStructArray[i];
+            
+            //! i is just the entry .. not the button number
+            //! N'th entry
+            if (strcmp(chainButtonStruct->SMARTAddress, SMARTAddress)==0)
+            {
+                SerialDebug.printf("Found chainButton %s for SMART = %s\n", chainButtonStruct->classType, SMARTAddress);
+                //! found one .. go with it
+                return chainButtonStruct;
+                
+                
+            }
+        }
+    }
+    return NULL;
+}
+#endif
+
+//! 2.11.26 set the value for the smartAddress
+//! the val will be parsed..
+//! valValue is the address used:  UUID.FLOW(set,val,dev)
+//! NOTE: valValue is transient storage
+void setChainButtonStructSMART(char *valValue)
+{
+    SerialDebug.printf("setChainButtonStructSMART(%s)\n", valValue);
+    ChainUseStruct* chainUseStruct = getChainUseStruct_mainModule();
+    if (chainUseStruct)
+    {
+        //! 2.,10.26 parsing works .. no extra spaces ..
+        //! UUID.FLOW(set,val,dev)
+        SMStruct sm = parseSMAddress(valValue);
+        char *SMARTAddress = sm.smAddress;
+        SerialDebug.printf("SM = '%s', '%s', '%s', '%s'\n", sm.smAddress, sm.setString, sm.valString, sm.devString);
+
+        
+        //! go through looking for N one (0 based)
+        for (int i=0; i< chainUseStruct->chainUseCount; i++)
+        {
+            //! grab the i'th struct, then look at the button number and pressKind
+            ChainButtonStruct* chainButtonStruct = &chainUseStruct->chainButtonStructArray[i];
+            
+            //! i is just the entry .. not the button number
+            //! N'th entry
+            if (strcmp(chainButtonStruct->SMARTAddress, SMARTAddress)==0)
+            {
+                SerialDebug.printf("Found chainButton %s for SMART = %s\n", chainButtonStruct->classType, SMARTAddress);
+                //! found one .. go with it
+                
+                //! 2.9.26 works.. but there might be multiple with same SMART address
+                //! OOPS .. the getChainButtonStructSMART .. looks for matches .. this should be returning multiple
+                //! BUT for now .. only the first one.
+                //! NOTE: this is a chain button with a smart address .. which can be re-bound through this message..
+                if (chainButtonStruct)
+                {
+                    SerialDebug.printf("FOUND chainButtonSMART(%s, %d) =  %s", SMARTAddress, chainButtonStruct->pressKind, chainButtonStruct->chainUse);
+                    
+                    //! for now .. set to the ToggleSocket
+                    chainButtonStruct->setString = sm.setString;
+                    chainButtonStruct->valString = sm.valString;
+                    chainButtonStruct->deviceString = sm.devString;
+                    chainButtonStruct->buttonFinalized = true;
+                    //!update the chain use for this one..
+                    char chainUseSample[250];
+                    sprintf(chainUseSample,(char*)"CHAIN_USE: %s btn=%2d press=%d set= %s, val=%s dev=%s", chainButtonStruct->classType, chainButtonStruct->buttonNumber, chainButtonStruct->pressKind, chainButtonStruct->setString, chainButtonStruct->valString, chainButtonStruct->deviceString);
+                    chainButtonStruct->chainUse = copyString_mainModule(chainUseSample);
+                    //! printout
+                    printChainSensors_mainModule(getChainUseStruct_mainModule());
+                    
+                }
+            }
+        }
+    }
+}
+      
+        //! 1.22.26 Dead Morning Dew
+//! process the given button
+//! 1.24.26 NOTE: this doesn't care about button press or joystick .. it's just run that button
+void processChainButtonStruct(ChainButtonStruct* chainButtonStruct)
+{
+    if (chainButtonStruct)
+    {
+        SerialDebug.printf("processChainUseStruct: %s, %s\n", chainButtonStruct->setString, chainButtonStruct->valString);
+        char *deviceName = chainButtonStruct->deviceString;
+        boolean isLocalHost = false;
+        boolean useCurrentDevice = false;
+        boolean nullValString = false;
+        if (!chainButtonStruct->valString || strlen(chainButtonStruct->valString) == 0)
+            nullValString = true;
+        if (deviceName && strlen(deviceName) > 0)
+        {
+            //! 1.24.26 look at $options
+            switch (deviceName[0])
+            {
+                case '$':
+                {
+                    //! special
+                    if ( strcmp(deviceName,"$localhost")==0)
+                        isLocalHost = true;
+                    else if (strcmp(deviceName, "$dev")==0)
+                        useCurrentDevice = true;
+                }
+                    break;
+            }
+            
+        }
+        else
+            deviceName = NULL;
+
+
+        if (isLocalHost && strcmp(chainButtonStruct->setString,"feed")==0)
+        {
+            if (isConnectedBLEClient())
+            {
+                //! 4.3.26 if BLE connected .. just do that..
+                
+                //!send a BLE feed command as we are connected
+                sendFeedCommandBLEClient();
+            }
+            else
+            {
+                //! feed ..
+                ///feed always  (done after the code below..)
+                main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
+                //! This will send BLE to our connected device ..
+                //!
+            }
+           
+        }
+#define TRY_FEED_BLE_WIFI
+        //! 4.3.26 Off to the Moon
+        //! if "feed" then send via BLE and WIFI
+#ifdef TRY_FEED_BLE_WIFI
+        else if (strcmp(chainButtonStruct->setString,"feed")==0 &&    //! 8.16.25 BLE CLIENT
+                 //!9.30.22  IF SET .. send a feed but to all devices except ours and our pair (if any)
+                 //! uses new wildcard syntax either  ! OUR NAME  [ & ! OUR_CONNECTED_NAME
+                 getPreferenceBoolean_mainModule(PREFERENCE_SENDWIFI_WITH_BLE) && isConnectedBLEClient())
+                 
+        {
+            SerialDebug.println("*** feed and BLE connected **");
+            ///feed always  (done after the code below..)
+            main_dispatchAsyncCommand(ASYNC_SEND_MQTT_FEED_MESSAGE);
+        }
+#else
+#endif
+
+        else
+        {
+            if (nullValString)
+            {
+                //! create a set/val message
+                //! TODO; device, etc.. topic
+                ///eg. registerChain_mainModule("BC", 1, BUTTON_DOUBLE_PRESS,  "feed", "", "" ); //wifi
+
+                if (deviceName)
+                    sprintf(_mqttMessage_ChainButton, "{'cmd':'%s','dev':'%s'}", chainButtonStruct->setString, deviceName);
+                else
+                    sprintf(_mqttMessage_ChainButton, "{'cmd':'%s'}", chainButtonStruct->setString);
+                
+            }
+            else
+            {
+                //! create a set/val message
+                //! TODO; device, etc.. topic
+                if (deviceName)
+                    sprintf(_mqttMessage_ChainButton, "{'set':'%s','val':'%s','dev':'%s'}", chainButtonStruct->setString, chainButtonStruct->valString, deviceName);
+                else
+                    sprintf(_mqttMessage_ChainButton, "{'set':'%s','val':'%s'}", chainButtonStruct->setString, chainButtonStruct->valString);
+                
+            }
+            //! send this message
+            sendMessageNoChangeMQTT(_mqttMessage_ChainButton);
+        }
+        //!
+        //! idea is you define the button and the press kind
+        //! MatrixCell is Column Major  1,4, 7 // 2,5,8 // 3,6,9
+        //registerChain_mainModule("ButtonClass",   1, BUTTON_SHORT_PRESS,  "SM_MatrixCell", "15", "$dev" );
+        //registerChain_mainModule("ButtonClass",   1, BUTTON_LONG_PRESS,   "SM_MatrixCell", "6", "$dev");
+        //registerChain_mainModule("JoystickClass", 2, BUTTON_SHORT_PRESS,  "feed", "", "$localhost" );
+        
+    }
+}

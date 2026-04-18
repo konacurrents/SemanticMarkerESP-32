@@ -37,6 +37,7 @@ void checkButtonA_MainModule();
 void checkButtonB_MainModule();
 
 //! instances of the M5AtomClassType
+#pragma mark M5AtomClassType
 
 //1
 M5Atom_SocketModuleClass* _M5Atom_SocketModuleClass;
@@ -69,23 +70,151 @@ M5AtomClassType *_whichM5AtomClassType;
 
 #endif //USE_NEW_M5ATOMCLASS
 
+#pragma mark SensorClassType
+
 #define USE_SENSOR_CLASS
 #ifdef  USE_SENSOR_CLASS
 //! 5.14.25 
 #include "../SensorClass/SensorClassType.h"
 #include "../SensorClass/BuzzerSensorClass.h"
 #include "../SensorClass/KeyUnitSensorClass.h"
+//! 11.27.25 add PIRSensor
+#include "../SensorClass/PIRSensorClass.h"
+//! 12.19.25 48 hrs no power, high wind storm, flooding in lowlands - bad
+//! this will be the ChainButtonClass
+#include "../SensorClass/ChainButtonClassType.h"
 
-#define NUM_SENSOR_CLASS 2
+#define NUM_SENSOR_CLASS_TYPES 4
+//!
 BuzzerSensorClass* _BuzzerSensorClass;
-KeyUnitSensorClass* _KeyUnitSensorClass;
+//2
+KeyUnitSensorClass* _KeyUnitSensorClass; //not used.. here
+//3
+PIRSensorClass* _PIRSensorClass;
+//4
+ChainButtonClass* _ChainButtonClass;
 
+//! 11.28.25 Clear day, M5 Out
+//! create array of instances POSSIBLE (the Sensors, pin1,pin2 -- will instantiate them)
+SensorClassType* _SensorClassTypes[NUM_SENSOR_CLASS_TYPES];
+
+//! 11.27.25 Turkey Day, loop
+void loopSensorClassTypeArray()
+{
+    //return; //! 11.28.25 inifinite loop when using a  sensor is defined, but no instance created, eg StepperMotor ..
+
+    //! return the sensor specified or null
+    SensorsStruct* sensorsStruct = getSensors_mainModule();
+    //SerialDebug.printf(" *** loopSensorClassTypeArray (%ld) ***\n",  sensorsStruct?sensorsStruct->count:-1);
+#define SERIAL_LOTS_
+#ifdef SERIAL_LOTS
+    //! try a debug print..
+    printSensors_mainModule(sensorsStruct);
+#endif
+
+    if (sensorsStruct)
+    {
+        //! all the sensors defined
+        //! sensors is an array of sensor
+        SensorStruct *sensors = sensorsStruct->sensors;
+        int count = sensorsStruct->count;
+        
+        //! go through the defined sensorName and call loop on those classes
+        for (int i=0; i< count; i++)
+        {
+            //! this only works if there is an instance there of value .. the NULL doesn't work
+            //! as this is a memory location somethwere.
+            //! so the instantiator will now create a DUMMY SensorClass object .. so this works.
+            //! The issue is there can be a sensor that doesn't exist so that slot is empty .. but the &sensors[i] BLOWS up
+            SensorStruct* sensor = &sensors[i];
+
+            //! 11.28.25 KLUDGE .. for now only this sensor has a loop
+         //   if (strcmp(sensor->sensorName, (char*)"PIRSensorClass")==0)
+                //! check sensor exists ..
+                if (sensor)
+                {
+                    //check this???  PIR HAT only one so far that needs this ...
+                    sensor->sensorClassType->loop();
+                }
+        }
+
+    }
+}
+
+//! 1.24.26 send the setval of the MQTT message ..TODO
+//! 11.27.25 Turkey Day, loop
+void messageSetVal_SensorClassTypeArray(char *setName, char* valValue, boolean deviceNameSpecified)
+{
+    //return; //! 11.28.25 inifinite loop when using a  sensor is defined, but no instance created, eg StepperMotor ..
+    
+    //! return the sensor specified or null
+    SensorsStruct* sensorsStruct = getSensors_mainModule();
+    if (sensorsStruct)
+    {
+        //! all the sensors defined
+        //! sensors is an array of sensor
+        SensorStruct *sensors = sensorsStruct->sensors;
+        int count = sensorsStruct->count;
+        
+        //! go through the defined sensorName and call loop on those classes
+        for (int i=0; i< count; i++)
+        {
+            //! this only works if there is an instance there of value .. the NULL doesn't work
+            //! as this is a memory location somethwere.
+            //! so the instantiator will now create a DUMMY SensorClass object .. so this works.
+            //! The issue is there can be a sensor that doesn't exist so that slot is empty .. but the &sensors[i] BLOWS up
+            SensorStruct* sensor = &sensors[i];
+            
+            //! check sensor exists ..
+            if (sensor)
+            {
+                SensorClassType *sensorClassType = sensor->sensorClassType;
+                if (sensorClassType)
+                    //! forward the message
+                    sensorClassType->messageSetVal_SensorClassType(setName, valValue, deviceNameSpecified);
+            }
+        }
+    }
+}
+    
 //! init will look at those SensorClass known above, and look
 //! to see which ones are defined by the user in the SensorsStruct
 //! A report will show which ones were not found
 void initSensorClassTypeArray()
 {
     SerialDebug.println(" *** initSensorClassTypeArray ***");
+    
+    //! create possible Sensor class instan ces
+    //! 11.28.25
+    //! use the class name as identity()
+    _BuzzerSensorClass = new BuzzerSensorClass((char*)"BuzzerSensorClass");
+    _KeyUnitSensorClass = new KeyUnitSensorClass((char*)"KeyUnitSensorClass");
+    _PIRSensorClass = new PIRSensorClass((char*)"PIRSensorClass");
+    //! 12.19.25 add Class type for Chain
+    _ChainButtonClass = new ChainButtonClass((char*)"ChainButtonClass");
+    
+    //! 11.28.25 Clear day, M5 Out
+    //! create array of instances POSSIBLE (the Sensors, pin1,pin2 -- will instantiate them)
+    SensorClassType* _SensorClassTypes[NUM_SENSOR_CLASS_TYPES];
+    
+    int whichSensorClassIndex = 0;
+    SerialDebug.println("setup_SensorClassIypes");
+    
+    //! 11.28.25 create array of Sensors
+    _SensorClassTypes[whichSensorClassIndex++] = _BuzzerSensorClass;
+    _SensorClassTypes[whichSensorClassIndex++] = _KeyUnitSensorClass;
+    _SensorClassTypes[whichSensorClassIndex++] = _PIRSensorClass;
+    //! 12.19.25 add ChainButtonClass
+    _SensorClassTypes[whichSensorClassIndex++] = _ChainButtonClass;
+    
+    //! add check..
+    if (whichSensorClassIndex > NUM_SENSOR_CLASS_TYPES)
+    {
+        SerialDebug.printf("**** sensors are more than max .. FIX CODE");
+    }
+    SerialDebug.printf("Created %d SensorClassTypes\n", whichSensorClassIndex);
+    
+    
     //! return the sensor specified or null
     SensorsStruct* sensorsStruct = getSensors_mainModule();
     if (sensorsStruct)
@@ -95,10 +224,74 @@ void initSensorClassTypeArray()
         SensorStruct *sensors = sensorsStruct->sensors;
         int count = sensorsStruct->count;
 
+        //! 11.28.25 use the SensorClassType (like the M5AtomClassType pattern)
         //! go through the defined sensorName and instantiate those classes
         for (int i=0; i< count; i++)
         {
             SensorStruct* sensor = &sensors[i];
+            SerialDebug.printf("Looking for sensor: %s, %ld, %ld\n", sensor->sensorName, sensor->pin1, sensor->pin2);
+            //! find matching sensor instantiated
+            SensorClassType *whichSensorClassType = NULL;
+            boolean foundMatchingClassType = false;
+            for (int whichSensor=0; whichSensor<NUM_SENSOR_CLASS_TYPES; whichSensor++)
+            {
+                //! look for ths sensor mentioned..
+                whichSensorClassType = _SensorClassTypes[whichSensor];
+                char *sensorIdentity = whichSensorClassType->classIdentity();
+                if (strcmp(sensor->sensorName, sensorIdentity)==0)
+                {
+                    //! set the running sensor type for this instnce (currently only 1 per sensor type)
+                    sensor->sensorClassType = whichSensorClassType;
+                    
+#ifdef ALL_ARE_SENSOR_CLASS
+                    //! 12.20.25 Winter Solstice party, do some polymorphsm if different sub-class (ChainButtonClassType)
+                    //! @see https://forum.arduino.cc/t/casting-from-base-class-to-derived-class/849723/9
+                    //! not allowed ....
+                    //! @see https://stackoverflow.com/questions/307765/how-do-i-check-if-an-objects-type-is-a-particular-subclass-in-c
+                    //! 12.21.25 Eagles 2
+                    //! no static, no dynamic (now try typeid)
+                    //if (dynamic_cast<ChainButtonClass*>(whichSensorClassType) != nullptr)
+                    //if (static_cast<ChainButtonClass>(whichSensorClassType) != nullptr)
+                    switch (whichSensorClassType->type())
+                    {
+                        case Type::ChainButtonClassType:
+                            
+                            //! this is a ChainButton .. do something different..
+                            SerialDebug.printf("whichSensorClass == ChainButtonClassType\n");
+                            //! SET the other sensors
+                            //! TODO .. set it's values differently (no Pins)
+                            //! 1.22.26 2026
+                            //! set the messages and button definition..
+                            //! NOTE: the button number will have to be set as well.
+                            //! Actually there will be a lot of info for the button configuration
+                            //! already read into the SensorStruct
+                            break;
+                        case Type::SensorClassType:
+                            
+                            //! this is a ChainButton .. do something different..
+                            SerialDebug.printf("whichSensorClass == SensorClassType\n");
+                            //! call this setup and pin sets
+                            //! setup and then setPins..
+                            whichSensorClassType->setPinValues(sensor->pin1, sensor->pin2);
+                            //! TODO .. set it's values differently (no Pins)
+                            break;
+                    }
+#else
+                    //! call this setup and pin sets
+                    //! setup and then setPins..
+                    whichSensorClassType->setPinValues(sensor->pin1, sensor->pin2);
+                    //! 1.22.26 the Chain will read the button definitions at setup time and loop time
+#endif
+                 
+                    
+                    //! call setup
+                    whichSensorClassType->setup();
+                    //! exit loop
+                    foundMatchingClassType = true;
+                    break;
+                }
+            }
+#ifdef NOT_OO_ENOUGH
             if (strcmp(sensor->sensorName, "BuzzerSensorClass")==0)
             {
                 //! init this class
@@ -111,6 +304,26 @@ void initSensorClassTypeArray()
                 //! call setup
                 _BuzzerSensorClass->setup();
             }
+            //! 11.27.25 Turkey Day, Mt Out nice
+            //! adding the PIRSensorClass
+            else if (strcmp(sensor->sensorName, "PIRSensorClass")==0)
+            {
+                //! init this class
+                _PIRSensorClass = new PIRSensorClass((char*)"PIRSensorClass");
+                //! store the class type instance
+                sensor->sensorClassType = _PIRSensorClass;
+                //! setup and then setPins..
+                _PIRSensorClass->setPinValues(sensor->pin1, sensor->pin2);
+                
+                //! call setup
+                _PIRSensorClass->setup();
+            }
+#endif
+            if (!foundMatchingClassType)
+            {
+                SerialDebug.printf("Missing SensorClass definition: %s\n", sensor->sensorName);
+                sensor->sensorClassType = NULL;
+            }
         }
         //! find missing sensors
         //! go throug the defined sensorName and instantiate those classes
@@ -121,6 +334,7 @@ void initSensorClassTypeArray()
             {
                 //! missing instance
                 SerialDebug.printf("Missing class definition: %s\n", sensor->sensorName);
+                sensor->sensorClassType = _BuzzerSensorClass;
             }
         }
     }
@@ -241,7 +455,11 @@ void setup_mainModule()
     //!cleans the EPROM .. if things are really not working..
     cleanEPROM_mainModule();
 #endif
-
+#define TEMP_FIX_LOOP_NO
+#ifdef TEMP_FIX_LOOP
+    setSensorsString_mainModule((char*)"BuzzerSensorClass,21,25");
+#endif
+    
     //test...
     //! setup for the token parser (really just for testing)  -- an
     setup_tokenParser_mainModule();
@@ -298,6 +516,8 @@ void setup_mainModule()
         registerPinUse_mainModule(27, "TestPin27", "MainModule", false);
     }
 #endif
+    
+    SerialDebug.println("END setup_mainModule");
 }
 
 #if defined(ESP_M5_CAMERA) || defined(ESP_32)
@@ -388,9 +608,14 @@ void loop_mainModule()
     }
     else if (_longLongPress_MainModule)
     {
-        buttonA_LongPress_mainModule();
+        //! 11.25.25 Cold 30's
+        //! call the long long
+        buttonA_LongLongPress_mainModule();
     }
 #endif
+    
+    //! 11.27.25 Turkey Day, loop
+    loopSensorClassTypeArray();
 }
 
 
@@ -630,6 +855,9 @@ void messageSetVal_mainModule(char *setName, char* valValue, boolean deviceNameS
     if (_whichM5AtomClassType)
         _whichM5AtomClassType->messageSetVal_M5AtomClassType(setName, valValue, deviceNameSpecified);
 
+    //! 1.24.26 call the same on the SensorClassType
+    messageSetVal_SensorClassTypeArray(setName, valValue, deviceNameSpecified);
+    
 #endif //M5_ATOM
     
 #ifdef M5CORE2_MODULE
@@ -695,6 +923,10 @@ void feedMessageCallback(char *message)
         }
         SerialLots.println("after send feed via ble");
     }
+    
+    //! 11.26.25 try the #STATUS on every feed
+    SerialDebug.println("FEED now send STATUS");
+    sendMessageMQTT((char*)"#STATUS");
 }
 
 //!moved here 4.25.22 (entirely from ESP_IOT.ino)
@@ -1420,7 +1652,9 @@ void invokeAsyncCommands()
                         //!perform ACK too
                         //! 8.16.25 MQTT
                         //ack is sent by the caller of this message..??
-                        sendMessageMQTT((char *)"#ackMe");
+                        //! 11.26.25 send Status instead
+                        //sendMessageMQTT((char *)"#ackMe");
+                        sendMessageMQTT((char*)"#STATUS");
                     }
 #ifdef NOT_NOW
                     //! 8.24.22 (This will redraw the screen - and turn off the blank screen (but not let anyone know)
@@ -1450,7 +1684,11 @@ void invokeAsyncCommands()
                     SerialDebug.printf("ASYNC_CALL_BUZZ %d\n",isBuzzOn);
                     String cmdToSend;
                     if (isBuzzOn)
+                    {
                         cmdToSend = "{'cmd':'buzzon'}";
+                        //! click call synchronously ...
+                        main_dispatchSyncCommand(SYNC_CLICK_SOUND);
+                    }
                     else
                         cmdToSend = "{'cmd':'buzzoff'}";
  
@@ -1466,12 +1704,12 @@ void invokeAsyncCommands()
                         SerialLots.println("async_call_buzz_on/off -- not BLE connected.. send MQTT");
                         //! If not connected over BLE -- then send the MQTT buzzon message..
                         //! 8.16.25 MQTT
-                            sendMessageMQTT((char*)cmdToSend.c_str());
+                        sendMessageMQTT((char*)cmdToSend.c_str());
                     }
                     else
                     {
                         //!send over BLE...
-                            sendCommandBLEClient(cmdToSend);
+                        sendCommandBLEClient(cmdToSend);
                     }
 #else  //not M5
                     
@@ -1660,6 +1898,11 @@ char* _OFF_LIGHT = (char*)"OFF";
 //!callback for blinking led
 void blinkMessageCallback(char *message)
 {
+    //! 12.19.25 Power back on, Snowing in mountains
+    //! support the blink but using the plugin class
+    //! 5.15.25 try the async CLICK
+    //! click call  5.26.25 SYNC version
+    main_dispatchSyncCommand(SYNC_CLICK_SOUND);
     
 #ifdef ESP_M5
     
@@ -1899,6 +2142,16 @@ char* createCopy(char * stringA)
         return strdup("");
 }
 
+//!If nil it create one with just the null, so strlen = 0
+//!NOTE: the strdup() might be used later..
+char* createCopy2(const char * stringA)
+{
+    if (stringA)
+        return strdup(stringA);
+    else
+        return strdup("");
+}
+
 //!informs if null or empty string
 boolean isEmptyString(char *stringA)
 {
@@ -1970,24 +2223,6 @@ float getBatPercentage_mainModule()
 void sendMessageString_mainModule(char *messageString)
 {
     sendMessageStringTopic_mainModule(messageString, TOPIC_TO_SEND);
-#ifdef REFACTOR
-
-    //! 8.16.25 MQTT
-    SerialDebug.printf("sendMessageString_mainModule(%s)\n", messageString);
-    if (strlen(messageString) > 0 && messageString[0] == '{')
-    {
-        // JSON Message
-        //! 12.19.23 Amber in air from Iceland. 50 years since Dead 12.19.73
-        sendMessageNoChangeMQTT(messageString);
-    }
-    else if (strlen(messageString) < MESSAGE_STORAGE_MAX)
-    {
-        //!NOTE: the # has to be there, otherwise the sendMessageMQTT ignores it..
-        sprintf(_messageStorage,"#%s {%s} {t:%d}", messageString, getDeviceNameMQTT(), getTimeStamp_mainModule());
-        //!send this message over MQTT
-        sendMessageMQTT(_messageStorage);
-    }
-#endif
 }
 
 
@@ -2384,12 +2619,56 @@ void processClientCommandChar_mainModule(char cmd)
             //! 8.18.24 setting this will check for the factory setting..
             //setClockwiseMotorDirection_mainModule(true);
         } break;
+            //! 11.25.25 toggle the buzzer, THIS is local already, but the toggle:buzzer will be ONLY be to a BLE device
+            //! that way it sends 'F'
+        case 'F':
+        {
+            SerialDebug.println("Toggle Buzzer via BLE: 'F'");
+            //! then toggle value
+            togglePreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE);
+            
+            //! will be turned on so make sound..
+            //! the main sync command (no parameters yet)
+            main_dispatchSyncCommand(SYNC_CLICK_SOUND);
+#ifdef LOCAL_NOT_REMOTE
+            if (buzzerOn)
+                main_dispatchAsyncCommand(ASYNC_CALL_BUZZ_OFF);
+            else
+                main_dispatchAsyncCommand(ASYNC_CALL_BUZZ_ON);
+#endif
+        } break;
+            //! this is a call to the connected device
+        case 'f':
+        {
+            //! this will be a BLE message to the connectd device sending a 'F"
+            SerialDebug.println("Toggle remove Buzzer via BLE: 'f'");
+            //! then toggle value
+            //! see if connected to a BLE device..
+            char *connectedBLEDeviceName = connectedBLEDeviceName_mainModule()?connectedBLEDeviceName_mainModule():NULL;
+            SerialDebug.printf("connectedBLEDeviceName = %s\n", connectedBLEDeviceName);
+            
+            if (connectedBLEDeviceName)
+            {
+                SerialDebug.printf("Call Toggle Buzzer via BLE: 'F' - dev=%s\n", connectedBLEDeviceName);
+
+                //! send via BLE
+                //!send a string of 13 or less characters.
+                sendCommandBLEClient_13orLess("F");
+            }
+        } break;
         case 'B':
         {
             sendToStepperModule = true;
             SerialDebug.println("Setting buzzStatus = BUZZON");
             //save pref
             savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE, true);
+            
+            //! 11.27.25 Turkey Day, Nice day Mt Out.
+            //! Also make the Buzzer sound
+            
+            //! will be turned on so make sound..
+            //! the main sync command (no parameters yet)
+            main_dispatchSyncCommand(SYNC_CLICK_SOUND);
         } break;
         case 'b':
         {
@@ -2631,11 +2910,19 @@ void processClientCommandChar_mainModule(char cmd)
         {
             setConfiguration_mainModule((char*)"L9110S_DCStepperClass");
         } break;
+#ifdef NOT_ANYMORE
             //! 7.12.25
             //!  2 == default for SMART Button
         case '2':
         {
             setConfiguration_mainModule((char*)"ULN2003_StepperClass");
+        } break;
+#endif
+            //! 12.21.25 Winter Solstice, Eagles,
+            //! support the new Chain Buttons
+        case '2':
+        {
+            setConfiguration_mainModule((char*)"ChainButtonClass");
         } break;
             //! 7.19.25 add Clear Sensors
         case '3':
@@ -2725,7 +3012,7 @@ void processClientCommandChar_mainModule(char cmd)
             SerialMin.println("Valid Commands: ");
             SerialMin.println("         . = help, this message");
             SerialMin.println("         p = poweroff if can");
-            SerialMin.println(" 0x0, s, c == Single Feed ");
+            SerialMin.println(" 0x0, s, c == Single Feed - via BLE to connected device");
             SerialMin.println("         a == AutoFeed On");
             SerialMin.println("         A == AutoFeed Off");
             SerialMin.println("         u == UNO ");
@@ -2737,6 +3024,11 @@ void processClientCommandChar_mainModule(char cmd)
             SerialMin.println("         d == FACTORY clockwise motor direction");
             SerialMin.println("         Q == change motor direction opposite of current");
             
+            //! this is local buzzer on/off calling the current Atom Class
+            SerialMin.println("         F == Toggle Buzzer on/off");
+            //! this will be a BLE message to the connectd device sending a 'F"
+            SerialMin.println("         f == Toggle Buzzer on/off on BLE connected device");
+
             SerialMin.println("         B == Buzzer On");
             SerialMin.println("         b == Buzzer Off");
             SerialMin.println("         G == Gateway On");
@@ -2776,13 +3068,13 @@ void processClientCommandChar_mainModule(char cmd)
 
             SerialMin.println("         k == no sensors");
             SerialMin.println("         1 == L9100S_DCStepper (current main)");
-            SerialMin.println("         2 == ULN2002 Stepper (new test 8.13.25)");
+            //SerialMin.println("         2 == ULN2002 Stepper (new test 8.13.25)");
+            SerialMin.println("         2 == ChainSensors (12.21.25))");
             SerialMin.println("         3 == *** PTStepperClass (original code - with M5");
             SerialMin.printf ("         4 == M5AtomCamera\n");
             SerialMin.println("         8 == SMART Button, Clicker");
             SerialMin.println("         9 == M5TinyGPS, Clicker");
             SerialMin.println("         0 == M5AtomScanner, Clicker");
-
 
 
 #ifdef NOT_SUPPORTED_RIGHT_NOW
@@ -2833,13 +3125,18 @@ void setConfiguration_mainModule(char* configurationName)
         //resetSensorToDefault_mainModule();
         //! 7.30.25 changing to the HDriver's board
         //!     savePreference_mainModule(PREFERENCE_SENSORS_SETTING, _sensorsEPROM);
+#ifdef DONT_ADD_TO_SENSORS
         setSensorsString_mainModule((char*)"BuzzerSensorClass,21,25,PTStepperClass,23,33");
+#else
+        setSensorsString_mainModule((char*)"BuzzerSensorClass,21,25");
+
+#endif
         //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
         savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5HDriver");
         //! also specify the sensor plug
         savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "PTStepperClass");
         //! for Tumbler .. use 200
-        savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 200.0);
+        savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 250.0);
         //! @see #390 this is the RPM of the stepper
         //savePreferenceFloat_mainModule(PREFERENCE_STEPPER_RPM_SETTING, 15.0);
         //! set autoRotoate as well..
@@ -2861,30 +3158,55 @@ void setConfiguration_mainModule(char* configurationName)
         //! reboot .. so the sensors are set..
         rebootDevice_mainModule();
     }
-    else if (strcmp(configurationName, "L9110S_DCStepperClass")==0)
+#pragma mark CHAIN BUTTON
+    //! 12.21.25 Winter Solstice, Eagles,
+    //! Chain Button
+    else if (strcmp(configurationName, "ChainButtonClass")==0)
     {
         //! poweroff
-        SerialDebug.println("Default L9110S_DCStepperClass");
+        SerialDebug.println("Default ChainButtonClass  **** NEED WORK ****");
         //resetSensorToDefault_mainModule();
         //! 7.30.25 changing to the HDriver's board
-        setSensorsString_mainModule((char*)"BuzzerSensorClass,19,22,L9110S_DCStepperClass,21,25");
+        setSensorsString_mainModule((char*)"ChainButtonClass,19,22");
+        
         //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
-        savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5HDriver");
-        //! also specify the sensor plug
-        savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "L9110S_DCStepperClass");
-        //! 1 second motor (overloads "angle" field)
-        savePreferenceFloat_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 1.0);
-        //! set tumbler
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_ANGLE_FLOAT_SETTING, 1.0);
-        //! set autoRotoate as well..
-        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_AUTO_MOTOR_DIRECTION_SETTING, true);
-        //! tumbler
-        savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
+        savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5AtomNoModule");
+        //! also specify the sensor plug (non for now..
+        savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "");
+       
+        //! 4.3.26 Off to the Moon
+        //! This will send WIFI along with BLE (if double click). or WIFI if not BLE connected
+        savePreferenceBoolean_mainModule(PREFERENCE_SENDWIFI_WITH_BLE, true);
+        
+        
+        //!TODO.. Chain
+        //!presskind = 0, short, 1, long, 2, longlong
+        //!ButtonKind, number_1based, pressKind, setString, valString, device
+        //!if localhost then internal message, otherwise external MQTT message
+        savePreference_mainModule(PREFERENCE_CHAIN_SENSORS_SETTING, "ChainButtonClass,1,0,SM_MatrixCell,8,$all,ButtonClass,1,1,feed,,$pair,JoystickClass,2,0,feed,,$localhost");
+        
+        //! iniitlize from the string ..
+        initChainSensorStringsFromEPROM_mainModule();
+        
+        //! idea is you define the button and the press kind
+        //! MatrixCell is Column Major  1,4, 7 // 2,5,8 // 3,6,9
+        registerChain_mainModule("ButtonClass",   1, BUTTON_SHORT_PRESS,  "SM_MatrixCell", "15", "$dev" );
+        registerChain_mainModule("ButtonClass",   1, BUTTON_LONG_PRESS,   "SM_MatrixCell", "6", "$dev");
+        registerChain_mainModule("JoystickClass", 2, BUTTON_SHORT_PRESS,  "feed", "", "localhost" );
+
+
+        //! 10.24.25 also set BLE client and serve on,
+        //! RAIN .. atosmopheric river
+        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE, true);
+        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE, true);
         
         //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
         savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
         
+        processClientCommandChar_mainModule('.');
+
         //! reboot .. so the sensors are set..
+        // FOR NOW until parser workign .. don't reboot ...
         rebootDevice_mainModule();
     }
     else if (strcmp(configurationName, "ULN2003_StepperClass")==0)
@@ -2899,7 +3221,7 @@ void setConfiguration_mainModule(char* configurationName)
         SerialDebug.println("Default ULN2003_StepperClass");
         //resetSensorToDefault_mainModule();
         //! 7.30.25 changing to the HDriver's board
-        setSensorsString_mainModule((char*)"BuzzerSensorClass,21,25,ULN2003_StepperClass,23,33");
+        setSensorsString_mainModule((char*)"BuzzerSensorClass,21,25");
         //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
         savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5HDriver");
         //! also specify the sensor plug
@@ -3031,7 +3353,7 @@ int getTimeStamp_mainModule()
     //! 7.27.25
     //! miliseconds .. convert to seconds
     //now = now * 1000;
-    SerialMin.printf("Unix Time: %d\n", now);
+    SerialLots.printf("Unix Time: %d\n", now);
     return now;
 }
 
@@ -3359,6 +3681,8 @@ void setup_Sensors_mainModule()
     
 #ifdef M5_ATOM
   
+#pragma mark M5AtomClassType
+
     //! 5.6.25 use the M5Atom ClassType
 #ifdef USE_NEW_M5ATOMCLASS
     //! @see https://www.cs.fsu.edu/~myers/cop3330/notes/dma.html
@@ -3394,7 +3718,6 @@ void setup_Sensors_mainModule()
         SerialDebug.printf("**** sensors are more than max .. FIX CODE");
     }
     SerialDebug.printf("Created %d M5AtomClassTypes\n", whichM5AtomIndex);
-    
     
     //! use this one...
     _whichM5AtomClassType = NULL;
@@ -3491,6 +3814,30 @@ void buttonA_LongPress_mainModule()
 #endif
 }
 
+//! 11.25.25 add long long
+//!long press on buttonA (top button)
+void buttonA_LongLongPress_mainModule()
+{
+#ifdef USE_BUTTON_MODULE
+    buttonA_LongLongPress();
+#endif
+#ifdef M5CORE2_MODULE
+    buttonA_LongLongPress_M5Core2Module();
+#elif defined(M5_ATOM)
+    
+#pragma mark USE_NEW_M5ATOMCLASS
+    //! 5.6.25 use object version
+    if (_whichM5AtomClassType)
+    {
+        SerialDebug.println("buttonA_LongLongPress_mainModule");
+        _whichM5AtomClassType->buttonA_LongLongPress_M5AtomClassType();
+    }
+    
+#elif defined(M5BUTTON_MODULE)
+    buttonA_LongLongPress_M5ButtonModule();
+#endif
+}
+
 
 //!the long press of the side button
 void buttonB_LongPress_mainModule()
@@ -3527,7 +3874,7 @@ void checkButtonA_MainModule()
 
     //!NOTE: ths issue is the timer is interruped by the scanner.. so make long-long very long..
     //was 1000  (from 500)
-    if (M5.BtnA.wasReleasefor(3500))
+    if (M5.BtnA.wasReleasefor(4500))
     {
         //        buttonA_longPress_MainModule();
         SerialDebug.println("MainModule **** LONG LONG PRESS ***");
@@ -3557,7 +3904,7 @@ void checkButtonB_MainModule()
     
     //!NOTE: ths issue is the timer is interruped by the scanner.. so make long-long very long..
     //was 1000  (from 500)
-    if (M5.BtnB.wasReleasefor(3500))
+    if (M5.BtnB.wasReleasefor(4500))
     {
         //        buttonA_longPress_MainModule();
         SerialDebug.println("MainModule **** LONG LONG PRESS ***");
@@ -3605,6 +3952,7 @@ char *semanticMarkerToJSON_mainModule(char* semanticMarker)
     return semanticMarkerToJSON_TokenParser(semanticMarker);
 }
 
+#pragma mark PIN_USE_STRUCT
 #pragma mark PIN USE to see if overlaps.
 //! 7.31.25 add this for a status, saw that QRCode was using 22 also  .. so buzer didn't work.
 /**
@@ -3618,12 +3966,12 @@ struct pinUseStruct {
 } _pinUseStruct;
 */
 
-//! global for use
+//! global for use. This is an object (not a pointer) and has all the storage created statically
 PinUseStruct _pinUseStruct;
 //! get the pin use array
-PinUseStruct getPinUseStruct_mainModule()
+PinUseStruct* getPinUseStruct_mainModule()
 {
-    return _pinUseStruct;
+    return &_pinUseStruct;
 }
 
 
@@ -3658,3 +4006,7 @@ void registerPinUse_mainModule(long pin, String pinName, String moduleName, bool
     
     SerialDebug.printf("** PIN_USE: %s = %d, module=%s %s\n", pinName.c_str(), pin, moduleName.c_str(), isI2C?"(I2C)":"");
 }
+
+
+
+

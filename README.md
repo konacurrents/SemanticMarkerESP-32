@@ -1,4 +1,4 @@
-# ESP_IOT Framework v2.0
+k # ESP_IOT Framework v2.0
 
 The goal of ESP_IOT is to have a set of modules that can be included in the loop and setup. Adding them will add and manipulate
 various IoT capabilities, while using the ESP_IOT framework to connect the various devices. The ESP-32 devices support bluetooth and 
@@ -18,9 +18,12 @@ The ESP_IOT supports adding and sharing between can use the #ifdef to add or rem
 \ref DisplayModule
 \ref MQTTModule
 
+<a href="https://github.com/PetTutor/PetTutor-Mini-Parts">PetTutor mini 3d parts</a>
+
 ![PetTutor Mini](GreyGoose.jpg))
 ![ESP_IOT Diagram](KSNetworking.004.jpeg)
 ![ESP_IOT Modules](ESP_IOT_Modules.png)
+
 
 # Important Game Changing Features
 Here are a some of the most important features:
@@ -35,6 +38,11 @@ Here are a some of the most important features:
 8. Group messaging - permission based shared threads
 9. QR Codes (Semantic Marker) in displays for dynamic feedback
 10. Node-Red cloud processing (http REST interface)
+11. Chain Buttons and an Object Oriented Implementation 
+
+## Chain Buttons
+
+<img src="OOM5Atom.png">
 
 ## Over the Air (OTA) updates
 

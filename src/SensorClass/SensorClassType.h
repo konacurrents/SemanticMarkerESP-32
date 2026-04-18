@@ -18,25 +18,40 @@ typedef void sensorCallbackValueSignature(char *, int);
 //!optional
 typedef void sensorCallbackJSONSignature(char *);
 
+enum class Type {SensorClassType, ChainButtonClassType};
+
 //! An abstract class
 //! @see https://www.geeksforgeeks.org/pure-virtual-functions-and-abstract-classes/
 //! @see https://www.programiz.com/cpp-programming/pure-virtual-funtion#:~:text=A%20pure%20virtual%20function%20doesn,assigning%200%20to%20the%20function.
 class SensorClassType {
 public:
-    //! Data members of class
-	 //! Generic config info .. specific the the sensor type
-	 char *_config;
-  
+   
     //! Pure Virtual Function
 	 //! The config will be used by 
-  
-    SensorClassType(char* config)
-    {
-        _config = config;
-    };
+     //! constructor. Note: config is currently just
+     //! the name of the plug (eg. HDriverStepperClass
+     //! or DCMotorStepperClass
+     //! BUT: it could be extended in the future
+     //! to include the PIN numbers, etc.
+     //! This might be JSON:  {'id':'DCMotorStepperClass,'pin1':'33'}
+    SensorClassType(char* config);
+    
+    
+    //! returns the identity .. actaully the config
+    //! This can be used to see if this class instance matches
+    //! a known name (like DCMotorStepper, etc)
+    //! Cannot be overridden
+    char *classIdentity();
     
     //! destructor
     ~SensorClassType();
+    
+    //! 12.21.25 Great Party.. 21 people. Hike with Eagles..
+    //! since cannot do dynamic_cast() one arduino without RSSI
+    //!everone has to override this.. eg.  Type::ChainButtonClass
+    virtual Type type() const {
+        return Type::SensorClassType;
+    }
     
     //! Pure Virtual Function
     virtual void loop() = 0;
@@ -61,7 +76,6 @@ public:
     //! the callback when events in the sensorClass occur
     //! This is provided on instantiation
     void registerCallbackJSON(sensorCallbackJSONSignature *callback);
-    
     
     //!call the callback
     void callCallback(char *info, boolean flag);
@@ -99,6 +113,10 @@ public:
     int _pin1 = 0;
     //! pin2
     int _pin2 = 0;
+    
+    //! 12.19.25 add ability to know which kind of SensorClass we are
+    //boolean isChainClass = false;
+    
 private:
     
     //! callback storage
@@ -110,6 +128,11 @@ private:
     //! callback storage for the JSON
     sensorCallbackJSONSignature* _callbackJSON = NULL;
     
+    //! 11.28.25 after thanksgiving
+    //! use the identity string as well. like M5AtomClassType
+    //! 5.3.25 create storage here. This will create dynamic memory
+    //! and answer to the classIIdentity() method
+    char *_identityString;
 };
 
 #endif
