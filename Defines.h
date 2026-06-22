@@ -2,6 +2,7 @@
 //  Defines.h
 //
 //  Created by Scott Moody on 3/8/22.
+//  NOW  APril 28, 2026 -- another year.. 
 //  NOW: May 14, 2025         8/16/25 (3+ years later)e
 //       Nov 21, 2025         
 
@@ -139,7 +140,9 @@
 #else
 //! ***** THIS IS MAIN "ATOM" *****   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom
 //!
-#define VERSION "v4_3_26(5.22b)-ATOM_NOT_NAME_CHAIN_JC_VAL_RUN_DC_SKI_SMART"
+#define VERSION "v4_28_26(5.22c)-ATOM_COM_NOT_NAME_CHAIN_JC_VAL_RUN_DC_SKI_SMART"
+
+//#define VERSION "v4_3_26(5.22b)-ATOM_NOT_NAME_CHAIN_JC_VAL_RUN_DC_SKI_SMART"
 //#define VERSION "v3_20_26(5.22b)-ATOM_CHAIN_JC_VAL_RUN_DC_SKI_SMART"
 
 //#define VERSION "v2_16_26(5.22a)-ATOM_VAL_RUN_DC_SKI_SMART"

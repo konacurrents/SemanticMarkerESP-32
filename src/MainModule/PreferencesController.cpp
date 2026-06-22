@@ -1267,6 +1267,17 @@ void printPreferenceValues_mainModule()
     //! print sensors
     printSensors_mainModule(getSensors_mainModule());
     
+    //! 4.28.26 home alone with Tyler and Spike. Kids Q&A comming over for Spaghetti
+    //! print the
+    ///! retrieve the Configuration JSON string in JSON format..
+    String JSONConfigString = getJSONConfigString();
+    SerialTemp.println("");
+    SerialTemp.print("JSONconfig: ");
+    SerialTemp.print(JSONConfigString);
+    SerialTemp.println("");
+    SerialTemp.println("");
+
+    
     //! 1.24.26 Clear day .. 2 eagles again on walk
     printChainSensors_mainModule(getChainUseStruct_mainModule());
     
