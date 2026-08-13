@@ -1,7 +1,8 @@
 #ifndef REQUESTHANDLER_H
 #define REQUESTHANDLER_H
 #include "../../Defines.h"
-
+#ifdef USE_LIB_WEBSERVER
+#else
 class RequestHandler {
 public:
     virtual ~RequestHandler() { }
@@ -16,5 +17,5 @@ public:
 private:
     RequestHandler* _next = nullptr;
 };
-
+#endif
 #endif //REQUESTHANDLER_H

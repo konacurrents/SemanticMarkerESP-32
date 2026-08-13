@@ -17,6 +17,9 @@
 #include "../ATOM_LED_Module/M5Display.h"
 #endif
 
+//! 7.13.26 added here for now ..
+boolean _validPins_TinyGPS = true;
+
 //! 7.20.25 60outside. 6 month since T
 //! add time from @see https://github.com/PaulStoffregen/Time/blob/master/examples/TimeGPS/TimeGPS.ino
 //#include "../TimeModule/TimeLib.h"
@@ -84,20 +87,29 @@ void M5Atom_TinyGPSModuleClass::start_M5AtomClassType()
 //!setup the PTStepper
 void M5Atom_TinyGPSModuleClass::setup_M5AtomClassType()
 {
-#ifdef USE_FAST_LED
     SerialDebug.println("M5Atom_TinyGPSModuleClass.M5.begin");
-    
+#ifdef USE_FAST_LED
+
     //  M5.begin(true,false,true);
     //!NOTE: this could probably be done by ESP_IOT.ino .. but for now keep here (and in the other ATOM code..)
     setup_M5Display();
     //  fillpix(L_GREEN);
     fillpix(L_BLUE);
-    
+#else
+    //! 8.2.26 LED working
+    setLEDColor(BLUE_LED);
 #endif
     
     //! 5.3.25 register our PIN use
-    registerPinUse_mainModule(TinyGPS_RXPin,  "TinyGPS_RXPin", "M5Atom_TinyGPSModuleClass", false);
-    registerPinUse_mainModule(TinyGPS_TXPin,  "TinyGPS_TXPin", "M5Atom_TinyGPSModuleClass", false);
+    //! 7.12.26 Ashton's birthday 12
+    //! register so get error before doing the being or other crashable ops
+    _validPins_TinyGPS = registerPinUse_mainModule(TinyGPS_RXPin,  "TinyGPS_RXPin", "M5Atom_TinyGPSModuleClass", false);
+    _validPins_TinyGPS = _validPins_TinyGPS && registerPinUse_mainModule(TinyGPS_TXPin,  "TinyGPS_TXPin", "M5Atom_TinyGPSModuleClass", false);
+    if (!_validPins_TinyGPS)
+    {
+        SerialError.println("**** TinyGPS Invalid pins");
+        return;
+    }
 
     
     gps.begin();
@@ -139,6 +151,10 @@ void M5Atom_TinyGPSModuleClass::stop_M5AtomClassType()
 //!setup the PTStepper
 void M5Atom_TinyGPSModuleClass::loop_M5AtomClassType()
 {
+    //! if pins bad .. return
+    if (!_validPins_TinyGPS)
+        return;
+    
     //SerialDebug.println("M5Atom_TinyGPSModuleClass::loop_M5AtomClassType");
     // Update data
     boolean getEachLoop = false;

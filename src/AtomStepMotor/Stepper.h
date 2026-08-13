@@ -78,6 +78,7 @@
 // ensure this library description is only included once
 #ifndef Stepper_h
 #define Stepper_h
+#include "../../Defines.h"
 
 // library interface description
 class Stepper {

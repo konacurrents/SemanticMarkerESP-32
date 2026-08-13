@@ -7,6 +7,25 @@
 //!defines.h defines the #ifdef USE_MODULE statements, as they are included elsewhere.. Don't define them here.
 #include "Defines.h"
 
+//#define useMAIN
+#ifdef  USE_PLATFORM_IO
+//! nothing .. it's all in src/main.cpp
+#else
+export void mainLoop();
+export void mainSetup();
+void loop()
+{
+    mainLoop();
+}
+void setup()
+{
+    mainSetup();
+}
+#endif
+
+//!  8.12.26 moved to src/main.cpp
+#ifdef useMAIN
+
 #ifdef ESP_M5
 //NEED to fix the port to use...   /dev/cu.usbserial-61CEEBBFAD
 //todo..
@@ -38,6 +57,8 @@ void finishSetup();
 //!main setup
 void setup()
 {
+  //! start begin here
+    espBegin_mainModule(69);
     
 #ifdef ERASE_ALL
     //https://github.com/espressif/arduino-esp32/issues/2144
@@ -55,12 +76,13 @@ void setup()
 #endif
     Serial.println("ESP_IOT Startup");
     
+#ifdef M5UNIFIED
     //! added 8.29.23 .. figure if this is right!
     //! 9.25.23 .. took out .. might be cause of crash..
     pinMode(LED, OUTPUT);
     //! 5.3.25 register our PIN use
     registerPinUse_mainModule(LED, "LED_OUTPUT", "ESP_IOT", false);
-    
+#endif
     
     //This must be first .. as it inializes the display and Serial Ports..
     //! called for the loop() of this plugin
@@ -106,7 +128,6 @@ void setup()
     //! take away the #ifdef
     //calls the setup() for ButtonModule
     setup_Sensors_mainModule();
-    
 #ifdef USE_BUTTON_MODULE
     //register the single click
     registerCallbackMain(CALLBACKS_BUTTON_MODULE, SINGLE_CLICK_BM, &singleClickTouched);
@@ -173,6 +194,8 @@ void setup()
     boolean useBLEServer = true;
 #ifdef ESP_M5
     useBLEServer = getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE);
+    //hardwire  #### FIX
+    //useBLEServer = false;
 #endif
     if (useBLEServer)
     {
@@ -401,3 +424,5 @@ void loop() {
     delay(50); // 1.26.24 try a smaller loop delay
 #endif
 } //loop()
+
+#endif

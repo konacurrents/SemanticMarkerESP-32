@@ -79,7 +79,7 @@ void M5Atom_NoModuleClass::setup_M5AtomClassType()
     setup_M5Display();
     //  fillpix(L_GREEN);
     fillpix(L_BLUE);
-    M5.update();
+    espUpdate_mainModule(5); //7.26.26 //M5.update();
 
 #endif
     
@@ -108,7 +108,7 @@ void M5Atom_NoModuleClass::stop_M5AtomClassType()
 //!setup the PTStepper
 void M5Atom_NoModuleClass::loop_M5AtomClassType()
 {
-    M5.update();
+    espUpdate_mainModule(5); //7.26.26 //M5.update();
 
 #ifdef KEY_UNIT_SENSOR_CLASS
     //SerialDebug.printf("_Key = %d\n", _KeyUnitSensorClass_M5AtomNoModule);
@@ -122,7 +122,7 @@ void M5Atom_NoModuleClass::loop_M5AtomClassType()
     {
 #ifdef USE_FAST_LED
         fillpix(L_BLUE);
-        M5.update();
+        espUpdate_mainModule(5); //7.26.26 //M5.update();
 #endif
     }
     
@@ -163,7 +163,7 @@ void M5Atom_NoModuleClass::buttonA_ShortPress_M5AtomClassType()
     
 #ifdef USE_FAST_LED
     fillpix(L_RED);
-    M5.update();
+    espUpdate_mainModule(5); //7.26.26 //M5.update();
 
 #endif
     
@@ -257,3 +257,31 @@ boolean M5Atom_NoModuleClass::isPTFeeder_M5AtomClassType()
     
     return false;
 }
+
+#ifdef WORK_ON_THIS
+
+#pragma mark override of buttonb
+//! 8.9.26 Nice day, heading to Boat cruise of Fox Island, etc with Cousins
+//! try the button B override
+//! 8.9.26 start working on getting ButtonB working..
+//! BUTTON PROCESSING abstraction
+//! This version has the code using "void ..." then override
+//!short press on buttonB (top button)
+void M5AtomClassType::buttonB_ShortPress_M5AtomClassType()
+{
+    SerialDebug.printf("M5Atom_NoModuleClass buttonB_ShortPress\n");
+
+}
+//!long press on buttonB (top button)
+void M5AtomClassType::buttonB_LongPress_M5AtomClassType()
+{
+    SerialDebug.printf("M5Atom_NoModuleClass buttonB_LongPress\n");
+
+}
+//! 11.25.25 Add LONG LONG press for the AP mode
+void M5AtomClassType::buttonB_LongLongPress_M5AtomClassType()
+{
+    SerialDebug.printf("M5Atom_NoModuleClass buttonB_LongLongPress\n");
+
+}
+#endif

@@ -1,4 +1,4 @@
-#include "Arduino.h"
+//#include "Arduino.h"
 #include "StepperDriver.h"
 #ifdef ATOM_STEPPER_MOTOR_MODULE
 

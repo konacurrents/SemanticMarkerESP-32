@@ -5,7 +5,7 @@
 
 #ifdef USE_CAMERA_MODULE
 
-#include <Arduino.h>
+//#include <Arduino.h>
 #include <pgmspace.h>
 #include <stdio.h>
 #include "esp_log.h"

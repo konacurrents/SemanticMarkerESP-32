@@ -161,6 +161,12 @@ void setup_StepperModule()
         //! use this one...
         _whichMotorStepper = _PTStepperClass;
 #else
+        SerialDebug.printf("**** Using default PTStepper since null EPROM value ***\n");
+        //! 7.26.26 Tyler and Me .. 1991 Dead, Scar->Fire,Maggie, etc
+        //! this might be the BUG ... it's null it crashes later ... so a constraing is a NON NULL ??
+        //! use same PTStepperClass default
+       // _whichMotorStepper = _PTStepperClass;
+        
         //! the motorStepper can be nil
         //_whichMotorStepper = NULL;
         //! 5.2.25 default to HDriver..

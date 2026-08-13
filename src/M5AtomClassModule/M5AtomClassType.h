@@ -64,13 +64,29 @@ public:
     //! for the cmd
   //  virtual void messageCmd_M5AtomClassType(char *cmdValue) = 0;
     
+    //!@see https://www.geeksforgeeks.org/cpp/virtual-function-cpp/
     //! BUTTON PROCESSING abstraction
+    //! A pure virtual function is a virtual function declared with = 0 in a base class. It is used to enforce that derived classes provide their own implementation.
     //!short press on buttonA (top button)
     virtual void buttonA_ShortPress_M5AtomClassType() = 0;
     //!long press on buttonA (top button)
     virtual void buttonA_LongPress_M5AtomClassType() = 0;
     //! 11.25.25 Add LONG LONG press for the AP mode
     virtual void buttonA_LongLongPress_M5AtomClassType();
+    
+#pragma mark ButtonB
+    //! 8.9.26 start working on getting ButtonB working..
+    //! BUTTON PROCESSING abstraction
+    //! This version has the code using "void ..." then override - or no implementation
+    //!short press on buttonB (top button)
+    //!OO:  seems the "virtual" requires everone to implement. This doesn't but uses "override"
+    //! cannot provide default implementation .. either.
+    //! Says the NoModule doesn't override but says it does... whats up?
+    void buttonB_ShortPress_M5AtomClassType();
+    //!long press on buttonB (top button)
+    void buttonB_LongPress_M5AtomClassType();
+    //! 11.25.25 Add LONG LONG press for the AP mode
+    void buttonB_LongLongPress_M5AtomClassType();
 
     //!returns a string in in URL so:  status&battery=84'&buzzon='off'  } .. etc
     //!starts with "&"*

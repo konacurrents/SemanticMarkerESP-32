@@ -409,7 +409,16 @@ void buttonA_LongPress()
     performProcessCurrentMode();
 
 }
-
+#pragma mark TODO
+//! 7.16.26  NEED TO merge this with the smart buttons ... Class (make the ButtonProcewssing a Class
+//!long press on buttonA (top button)
+void buttonA_LongLongPress()
+{
+    SerialTemp.println("long long press.. processMode");
+    
+    //!long long press
+    performProcessCurrentMode();
+}
 
 //!short press on buttonA (top button)
 void buttonA_ShortPress()
@@ -554,7 +563,7 @@ void loop_ButtonProcessing()
 
 }
 
-#ifdef ESP_M5
+//#ifdef ESP_M5
 #else
 //!short press on buttonA (top button)
 void buttonA_ShortPress() {}
@@ -564,5 +573,5 @@ void buttonA_LongPress() {}
 void buttonB_LongPress() {}
 //!the short press of the side button
 void buttonB_ShortPress() {}
-#endif //ESP_M5
+//#endif //ESP_M5
 #endif //USE_BUTTON_MODULE

@@ -25,7 +25,7 @@ M5AtomClassType::~M5AtomClassType()
 //! a known name (like DCMotorStepper, etc)
 char *M5AtomClassType::classIdentity()
 {
-    SerialDebug.printf("M5AtomClassType::classIdentity = %s\n", _identityString);
+    SerialLots.printf("M5AtomClassType::classIdentity = %s\n", _identityString);
     return _identityString;
 }
 

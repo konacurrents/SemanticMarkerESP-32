@@ -21,12 +21,20 @@ ChainButtonClass::ChainButtonClass(char *config) : SensorClassType(config)
     SerialDebug.printf("ChainButtonClass init %s\n", config);
 }
 
+//! 7.13.26 Bday party for qwinton today, he's 26 friday 17th
+//boolean _pinValid_ChainButtonClass = false;
+
 //! from example:
+
+#ifdef ESP_M5_ATOM_S3
 //! @see https://github.com/m5stack/M5Chain
 //#define TXD_PIN GPIO_NUM_6  // Tx
 //#define RXD_PIN GPIO_NUM_5  // Rx
+//!NOTE: thes have to be 6,5  not 5,6
+#else
 #define TXD_PIN 22
 #define RXD_PIN 19
+#endif
 //! global M5Chain structure used by the physical chain's and their library
 Chain _M5Chain;
 //! the device list WE have defined (eg button, button, joystick)
@@ -183,6 +191,13 @@ long diffChainButtonTime(long timeNow, int pressKind)
 //! created, but calling them from here isn't easy. Instead we need MQTT messages (or internal messages, like feed the dog)
 void ChainButtonClass::loop()
 {
+    //! 7.13.26 Bday party for qwinton today, he's 26 friday 17th
+    if (!_pinsValid)
+    {
+        SerialLots.printf("**** M5Chain invalid Pins(%d,%d)\n", _pin1, _pin2);
+        return;
+    }
+    
     //! stores status
     chain_status_t chainStatus;
 
@@ -226,9 +241,13 @@ void ChainButtonClass::loop()
                 else
                 {
                     //! 1.29.26 Rain finally
-                    //! this happens when it's unplugged without rebooting ...
+                    //! this happens when it's unplugged without rebooting ... NOT AN ERROR really
                     SerialDebug.printf("KEY ID[%d] get button trigger interval failed, chainStatus:%d \r\n",
                                   _devicesList->devices[i].id, chainStatus);
+                    
+                    //! NOTE maybe we kill the buttons .. let the user reboot if they HOT plug them in...
+                    //! set NULL
+                    _devicesList = NULL;
                 }
                 chainStatus = _M5Chain.getKeyButtonMode(_devicesList->devices[i].id, &button_mode);
                 if (chainStatus == CHAIN_OK)
@@ -437,18 +456,27 @@ void ChainButtonClass::setup()
 
     SerialDebug.printf("ChainButtonClass::setup(%d,%d)\n",_pin1, _pin2);
  
-    SerialLots.println("1._M5Chain Key Test");
-    _M5Chain.begin(&Serial2, 115200, RXD_PIN, TXD_PIN);
+    //! register the pin used
+    //! 7.12.26 Ashton's birthday 12
+    //! register so get error before doing the being or other crashable ops
+    _pinsValid = registerPinUse_mainModule(_pin1, "RXD_PIN", "ChainButtonClass", false);
+    _pinsValid = _pinsValid && registerPinUse_mainModule(_pin2, "TXD_PIN", "ChainButtonClass", false);
+    if (!_pinsValid)
+    {
+        SerialError.printf("**** M5Chain invalid Pins (%d,%d)\n", _pin1, _pin2);
+        return;
+    }
+    
+    SerialDebug.printf("M5Chain.begin %d,%d\n", _pin1, _pin2);
+    _M5Chain.begin(&Serial2, 115200, _pin1, _pin2);
+    delay(10);
     
     //! 2.7.26 (after my 68th bday w Laura Babe, 2.5.2026).
     //! see if the message is too fast ??
     long chainButtonTime = getTimeStamp_mainModule();
     _lastChainButtonTime = chainButtonTime;
     
-    //! register the pin used
-    registerPinUse_mainModule(RXD_PIN, "RXD_PIN", "ChainButtonClass", false);
-    registerPinUse_mainModule(TXD_PIN, "TXD_PIN", "ChainButtonClass", false);
-    
+   
     //! if the chains are ready ...
     //! This first loop counts the number of devices, and then creates a devices list of that number..
     //! It would also know the type of the device ..
@@ -483,7 +511,8 @@ void ChainButtonClass::setup()
     }
     else
     {
-        SerialLots.println("devices is not connected.");
+        SerialDebug.println("***CHAIN devices **NOT connected.");
+        return;
     }
     
     //! this is our list but we don't know the button types yet
@@ -816,56 +845,11 @@ void ChainButtonClass::messageSetVal_SensorClassType(char *setName, char* valVal
     //! {"set":"smartDefn","val":"uuid.flownum(set, val, dev)"}
     else if (strcmp(setName, "smartDefn")==0)
     {
-#ifdef MOVED_TO_OTHER
-        //! 2.,10.26 parsing works .. no extra spaces ..
-        SMStruct sm = parseSMAddress(valValue);
-        char *smartAddress = sm.smAddress;
-        SerialDebug.printf("SM = '%s', '%s', '%s', '%s'\n", sm.smAddress, sm.setString, sm.valString, sm.devString);
-
-#ifdef DEBUG_VERSION
-        //! new message
-        //! break apart the definition .. parsing sucks
-        //! look for the '('
-        char smartAddress[50];
-        char setString[20];
-        char valString[20];
-        char devString[20];
-        SerialDebug.printf("TODO: smartDefn; %s\n", valValue);
-        //strcpy(smartAddress, "QHmwUurxC3.1703806697279");
-        strcpy(smartAddress, "QHmwUurxC3.1769990960124"); //! TODO THIS IS HARD WIRED FOR NOW.... unitl parser works..
-        strcpy(setString, "toggleSocket");
-        strcpy(valString, "");
-        strcpy(devString, "M5AtomSocket");
-         //test:      {'cmd':'togglesocket','dev':'M5AtomSocket'}
-#endif
-        //! 2.9.26 works.. but there might be multiple with same SMART address
-        //! OOPS .. the getChainButtonStructSMART .. looks for matches .. this should be returning multiple
-        //! BUT for now .. only the first one.
-        //! NOTE: this is a chain button with a smart address .. which can be re-bound through this message..
-        ChainButtonStruct* chainButtonStruct = getChainButtonStructSMART(smartAddress);
-        if (chainButtonStruct)
-        {
-            SerialDebug.printf("FOUND chainButtonSMART(%s, %d) =  %s", smartAddress, chainButtonStruct->pressKind, chainButtonStruct->chainUse);
-            
-            //! for now .. set to the ToggleSocket
-            chainButtonStruct->setString = sm.setString;
-            chainButtonStruct->valString = sm.valString;
-            chainButtonStruct->deviceString = sm.devString;
-            chainButtonStruct->buttonFinalized = true;
-            //!update the chain use for this one..
-            sprintf(chainButtonStruct->chainUse,createCopy("CHAIN_USE: %s btn=%2d press=%d set= %s, val=%s dev=%s", chainButtonStruct->classType, chainButtonStruct->buttonNumber, chainButtonStruct->pressKind, chainButtonStruct->setString, chainButtonStruct->valString, chainButtonStruct->deviceString));
-
-            //! printout
-            printChainSensors_mainModule(getChainUseStruct_mainModule());
-
-        }
-#else
         //! 2.9.26 works.. but there might be multiple with same SMART address
         //! OOPS .. the getChainButtonStructSMART .. looks for matches .. this should be returning multiple
         //! BUT for now .. only the first one.
         //! NOTE: this is a chain button with a smart address .. which can be re-bound through this message..
         setChainButtonStructSMART(valValue);
-#endif
     }
     //! 2.11.26 nice day. Mt Looking great
     //! the valValue could be the http version, or alerady a semantic marker UUID.flow

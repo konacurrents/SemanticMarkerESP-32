@@ -10,7 +10,7 @@
 
 #ifdef ESP_M5
 #ifdef M5CORE2_MODULE
-#include <M5Display.h>
+//#include <M5Display.h>
 #else
 #ifdef M5STICKCPLUS2
 #include <M5StickCPlus.h>
@@ -24,8 +24,9 @@ KeyUnitSensorClass::KeyUnitSensorClass(char *config)  : SensorClassType(config)
     
     printf("KeyUnitSensorClass init %s\n", config);
     _ledColor = 0;
+#ifdef USE_FAST_LED
     _leds = new CRGB[1] ;       // Define the array of leds.  定义LED阵列.
-
+#endif
 }
 
 KeyUnitSensorClass::~KeyUnitSensorClass()
@@ -37,7 +38,7 @@ KeyUnitSensorClass::~KeyUnitSensorClass()
 #define USE_LED
 #ifdef USE_LED
 #ifdef USE_FAST_LED
-#include <FastLED.h>
+//#include <FastLED.h>
 #endif
 
 //! 8.20.24
@@ -54,8 +55,16 @@ KeyUnitSensorClass::~KeyUnitSensorClass()
 //! if not factoryClockwise then it's the extension ..  (DATA_PIN 23, KEY_PIN 33)
 
 #ifdef ATOM_QRCODE_MODULE
+#ifdef ESP_M5_ATOM_S3
+//! port b
+#define DATA_PIN 35
+//!@see https://github.com/FastLED/FastLED/blob/356a3794d9d2b027685a374715e32d0ee2ad3e9b/examples/SpecialDrivers/ESP/DriverTest/PlatformConfig.h#L37
+//!@see https://github.com/esphome/issues/issues/4501
+//!the RGB pin 35
+#else
 //! port b
 #define DATA_PIN 26
+#endif
 int getDATA_PIN()
 {
     int pin;
@@ -88,7 +97,13 @@ void KeyUnitSensorClass::startTaskImpl(void* _this)
 #ifdef  KEY_UNIT_GROVE
 #ifdef ATOM_QRCODE_MODULE
 //! port b
+#ifdef ESP_M5_ATOM_S3
+//! 7.12.26 lots of room
+//! G32 -> G1
+#define KEY_PIN 1
+#else
 #define KEY_PIN 32
+#endif
 int getKEY_PIN()
 {
     int pin;
@@ -107,12 +122,16 @@ int getKEY_PIN() { return KEY_PIN; };
 void KeyUnitSensorClass::setupKeyUnit()
 {
     SerialDebug.printf("KeyUnitSensorClass.setupKeyUnit == %p\n", this);
-    
+    SerialDebug.printf("KeyUnitSensorClass. **** NOT pinMODE ... *******\n");
+
+ //DEBUG  7.10.26 FIX???
     pinMode(getKEY_PIN(), INPUT_PULLUP);  // Init Key pin.  初始化Key引脚.
     
     //! 5.3.25 register our PIN use
     registerPinUse_mainModule(getKEY_PIN(), "KEY_PIN", "KeyUnitSensorClass", false);
     //26 -- fastLED .. registerPinUse_mainModule(getDATA_PIN(), "DATA_PIN", "KeyUnitSensorClass", false);
+
+#ifdef USE_FAST_LED
 
 #ifdef USE_LED
     getDATA_PIN();
@@ -131,7 +150,9 @@ void KeyUnitSensorClass::setupKeyUnit()
         registerPinUse_mainModule(23, "FastLED", "KeyUnitSensorClass", false);
     }
 #endif
-#ifdef USE_LED_BREATH  //not working,
+#endif
+    
+#ifdef USE_LED_BREATH_x  //not working,
     //!@see https://stackoverflow.com/questions/45831114/c-freertos-task-invalid-use-of-non-static-member-function
     //!@see https://www.freertos.org/FreeRTOS_Support_Forum_Archive/July_2010/freertos_Is_it_possible_create_freertos_task_in_c_3778071.html
     //!@see https://stackoverflow.com/questions/77931188/c-freertos-task-this-instance-being-passed-as-null?noredirect=1#comment137393059_77931188
@@ -141,12 +162,15 @@ void KeyUnitSensorClass::setupKeyUnit()
                 &this->startTaskImpl, "led", 2024, this, 0,
                 NULL);  // Create a thread for breathing LED. 创建一个线程用于LED呼吸灯.
 #endif
+    
 }
 
 
 //! loop the key unit (after other called M5.updfate)
 void KeyUnitSensorClass::loopKeyUnit()
 {
+#pragma mark DEBUG_bad_maybeGoodNOW
+    //if (false)
     if (!digitalRead(getKEY_PIN()))
     {
         // If Key was pressed.  如果按键按下.
@@ -202,6 +226,8 @@ void KeyUnitSensorClass::keyUnitLED() {
 
     SerialDebug.printf(" setupKeyUnit %p\n", this);
     //! default to RED
+#ifdef USE_FAST_LED
+
     _leds[0] = CRGB::Red;
     for (;;) {
         for (int i = 0; i < 255; i++)
@@ -220,10 +246,12 @@ void KeyUnitSensorClass::keyUnitLED() {
         }
     }
     vTaskDelete(NULL);
+#endif
 }
 #endif
 
 void KeyUnitSensorClass::changeLedColor() {
+#ifdef USE_FAST_LED
     SerialDebug.println("changeLedColor");
     _ledColor++;
     if (_ledColor > 2) _ledColor = 0;
@@ -241,6 +269,7 @@ void KeyUnitSensorClass::changeLedColor() {
         default:
             break;
     }
+#endif
 }
 #endif //key unit grove
 

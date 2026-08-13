@@ -46,6 +46,9 @@ void M5Atom_HDriverModuleClass::setup_M5AtomClassType()
     setup_M5Display();
     //  fillpix(L_GREEN);
     fillpix(L_BLUE);
+#else
+    //! 8.2.26 LED working
+    setLEDColor(BLUE_LED);
     
 #endif
 

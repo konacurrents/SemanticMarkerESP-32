@@ -1,12 +1,15 @@
 # show the options
 help:
-	echo doxygen
-	echo uploadFlashOLD
-	echo uploadFlashM5TEST
-	echo uploadFlashOrigTEST
-	echo uploadFlashM5TEST_SENSORS
-	echo uploadFlashM5CameraTEST
-	echo uploadFlashM5AtomTEST
+	@echo doxygen
+	@echo uploadFlashOLD
+	@echo uploadFlashM5TEST
+	@echo uploadFlashOrigTEST
+	@echo uploadFlashM5TEST_SENSORS
+	@echo uploadFlashM5CameraTEST
+	@echo uploadFlashM5AtomTEST
+	@echo M5AtomS3
+	@echo uploadFlashM5AtomS3TEST
+	@echo uploadFlashM5AtomS3TEST_daily
 
 showLilbs:
 	arduino-cli lib list
@@ -125,17 +128,44 @@ uploadFlashM5CameraTEST: .
 # 7.9.25
 
 # Module M5ATOM Generically morphs to different ones ********** M5 Atom ***********
+### 6.9.26 M5UNIFIED changed bin to:  ESP_IOT.ino.m5stack_atom.bin
 
-uploadFlashM5AtomTEST: .
-	mv ESP_IOT.ino.m5stack_stickc_plus.bin ESP_IOT.ino.m5stick_c_plus.bin
-	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5Atom
+_NOT_NOW_uploadFlashM5AtomTEST: .
+#	mv ESP_IOT.ino.m5stack_stickc_plus.bin ESP_IOT.ino.m5stick_c_plus.bin
+	mv ESP_IOT.ino.m5stack_atom.bin ESP_IOT.ino.m5stick_c_plus.bin
+	# TODO: mv build/m5stack.esp32.m5stack_atom/ESP_IOT.ino.bin ESP_IOT.ino.m5stick_c_plus.bin
+	#scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5Atom
+	@echo "use '5'"
 	
 # Module M5ATOM Generically morphs to different ones ********** M5 Atom *********** DAILY
 # Upload a daily test..
+######## DAILY UPDATE #######
+########VVVVV THIS ONE "6"#######
+### 6.9.26 M5UNIFIED changed bin to:  ESP_IOT.ino.m5stack_atom.bin
 
-uploadFlashM5AtomTEST_daily: .
+## NOTE: the new Arduino puts the bin in build/m5stack.esp32.m5stack.atom/ESP_IOT.ino.bin
+## Old arduino puts it ESP_IOT.ino.m5stack_atom.bin
+## NEW: ESP_IOT.ino.m5stack_stickc_plus.bin
+#NOTE: the OTA file has to be:  ESP_IOT.ino.m5stick_c_plus.bin
+
+uploadFlashM5AtomTEST_dailyM5AtomLite_7_26_26: .
 	mv ESP_IOT.ino.m5stack_stickc_plus.bin ESP_IOT.ino.m5stick_c_plus.bin
+#	mv ESP_IOT.ino.m5stack_atom.bin ESP_IOT.ino.m5stick_c_plus.bin
+#	mv build/m5stack.esp32.m5stack_atom/ESP_IOT.ino.bin ESP_IOT.ino.m5stick_c_plus.bin
 	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5Atom/daily
+	@echo "use '6'"
+
+_NOT_NOW_uploadFlashM5AtomTEST_dailyOLDArduino: .
+#	mv ESP_IOT.ino.m5stack_stickc_plus.bin ESP_IOT.ino.m5stick_c_plus.bin
+	mv ESP_IOT.ino.m5stack_atom.bin ESP_IOT.ino.m5stick_c_plus.bin
+#	mv build/m5stack.esp32.m5stack_atom/ESP_IOT.ino.bin ESP_IOT.ino.m5stick_c_plus.bin
+	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5Atom/daily
+	@echo "use '6'"
+
+########^^^^ THIS ONE "6"#######
+######## 
+
+#################  this is the M5 Camera .. #############################
 
 # for now .. the M5TimerCAM is renamed for the M5Atom 
 uploadFlashM5AtomCAMERA_TEST_daily: .
@@ -163,3 +193,46 @@ semanticMarkerSync:
 	cp -Rp src /Users/scott/Documents/GitHub/SemanticMarkerESP-32
 
 
+######## DAILY UPDATE #######
+########VVVVV THIS ONE "Y"#######
+#################  this is the M5 AtomS3  only dev for now ..#############################
+# 7.10.26 NEW:
+# y  -- M5AtomS3 daily
+# Y  -- M5AtomS3 tested
+# 7.10.26 M5AtomS3 using unified and full size
+
+# Module M5ATOM Generically morphs to different ones ********** M5 Atom ***********
+### 6.9.26 M5UNIFIED changed bin to:  ESP_IOT.ino.m5stack_atom.bin
+
+## y
+uploadFlashM5AtomS3TEST: .
+	mv build/m5stack.esp32.m5stack_atomS3/ESP_IOT.ino.bin ESP_IOT.ino.m5stick_c_plus.bin
+	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5AtomS3
+	@echo "use 'y'"
+	
+# Upload a daily test..
+######## DAILY UPDATE #######
+########VVVVV THIS ONE "Y"#######
+### 6.9.26 M5UNIFIED changed bin to:  ESP_IOT.ino.m5stack_atom.bin
+
+## NOTE: the new Arduino puts the bin in build/m5stack.esp32.m5stack.atom/ESP_IOT.ino.bin
+## Old arduino puts it ESP_IOT.ino.m5stack_atom.bin
+
+## Y
+uploadFlashM5AtomS3TEST_daily: .
+#	mv ESP_IOT.ino.m5stack_stickc_plus.bin ESP_IOT.ino.m5stick_c_plus.bin
+#	mv ESP_IOT.ino.m5stack_atom.bin ESP_IOT.ino.m5stick_c_plus.bin
+	mv build/m5stack.esp32.m5stack_atomS3/ESP_IOT.ino.bin ESP_IOT.ino.m5stick_c_plus.bin
+	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT.ino.m5stick_c_plus.bin ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5AtomS3/daily
+	@echo "use 'Y'"
+
+
+########^^^^ THIS ONE "Y"#######
+######## 
+
+# This is the compile from a platform.io build
+## +   (file will be in the platform.io folder .. )
+uploadFlashM5AtomS3TEST_daily_platformIO: .
+	#mv platform.io/ESP_IOT.ino.bin ESP_IOT.ino.m5stick_c_plus.bin
+	scp -i ~/.ssh/idogwatch_001.pem ESP_IOT-8_11_26-m5stack-atoms3-OTA.bin  ec2-user@knowledgeshark.me:html/KnowledgeShark.org/OTA/TEST/M5AtomS3/platform.io/daily/ESP_IOT.ino.m5stick_c_plus.bin
+	@echo "use '+'"

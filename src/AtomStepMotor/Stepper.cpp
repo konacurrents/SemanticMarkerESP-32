@@ -75,7 +75,7 @@
  * http://www.arduino.cc/en/Tutorial/Stepper
  */
 
-#include "Arduino.h"
+//#include "Arduino.h"
 #include "Stepper.h"
 
 /*

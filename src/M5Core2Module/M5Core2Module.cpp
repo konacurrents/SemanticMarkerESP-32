@@ -3,8 +3,9 @@
 #ifdef M5CORE2_MODULE
 #include "M5Core2Module.h"
 
+#include "../ButtonModule/ButtonProcessing.h"
 
-#include <M5Display.h>
+//#include <M5Display.h>
 
 //#include <M5Atom.h>
 extern const unsigned char _previewR[120264];
@@ -113,6 +114,12 @@ struct IMUVariables
 //!Return "true" on motion (over sensitivity) and false otherwise
 bool checkMotion_ButtonProcessing()
 {
+    //! 8.6.26 Sunny, Warm, Smoky, Seahawks practice
+    //! unified has no IMU or needs new syntax
+#ifdef M5UNIFIED
+    return false;
+#else
+    
     //! if not an M5 return
 #ifndef ESP_M5
     return false;
@@ -179,6 +186,7 @@ bool checkMotion_ButtonProcessing()
         //movement does not exceed threshold
         return false;
     }
+#endif
 }  // end of CheckMotion
 #endif // SENSORS_MOTION_PIR
 //!forward reference .. since if button press called externally..
@@ -195,6 +203,11 @@ void buttonA_ShortPress_M5Core2Module()
 void buttonA_LongPress_M5Core2Module()
 {
     loopCode_M5Core2Module();
+}
+//!long press on buttonA (top button)
+void buttonA_LongLongPress_M5Core2Module()
+{
+    //???
 }
 //! BUTTON PROCESSING abstraction
 //!short press on buttonA (top button)
@@ -216,7 +229,10 @@ void buttonB_LongPress_M5Core2Module()
 //! for short, mid, long
 void vibrate_M5Core2Module(int relativeLength)
 {
-    
+    //! 8.6.26 Sunny, Warm, Smoky, Seahawks practice
+    //! unified has no IMU or needs new syntax
+#ifdef M5UNIFIED
+#else
     int length;
     switch (relativeLength)
     {
@@ -239,6 +255,8 @@ void vibrate_M5Core2Module(int relativeLength)
     M5.Axp.SetVibration(true);  // Open the vibration.   开启震动马达
     delay(length);
     M5.Axp.SetVibration(false);  // Open the vibration.   关闭震动马达
+#endif
+    
 #endif
     
 }
@@ -416,7 +434,11 @@ void setup_M5Core2Module()
 {
     SerialDebug.println("setup_M5Core2Module");
     initGlobals_M5Core2Module();
-    
+  
+    //! 8.6.26 Sunny, Warm, Smoky, Seahawks practice
+    //! unified has no IMU or needs new syntax
+#ifdef M5UNIFIED
+#else
     //!enable the speaker
     //!2.29.24 Leep Year (Grandma Bunny Birthday)
     M5.Axp.SetSpkEnable(true);
@@ -446,6 +468,8 @@ axp: vibrator voltage preset to 2v
     */
     _InactivityTimeOut = Elapsed3mins;
     
+#endif
+    
 #ifdef KEY_UNIT_SENSOR_CLASS
     _KeyUnitSensorClass_M5Core2Module = new KeyUnitSensorClass((char*)"_KeyUnitSensorClass_M5Core2Module");
     //! specify the callback
@@ -462,13 +486,17 @@ axp: vibrator voltage preset to 2v
 void loop_M5Core2Module()
 {
     //!Read the press state of the key.  读取按键 A, B, C 的状态
-    M5.update();
-    
+    espUpdate_mainModule(6); //7.26.26 //M5.update();
+
     _buttonTouched_M5Core2Module = false;
     checkButtonA_M5Core2Module();
     checkButtonB_M5Core2Module();
     checkButtonC_M5Core2Module();
     
+    //! 8.6.26 Sunny, Warm, Smoky, Seahawks practice
+    //! unified has no IMU or needs new syntax
+#ifdef M5UNIFIED
+#else
     if (!_buttonTouched_M5Core2Module)
     {
         TouchPoint_t pos = M5.Touch.getPressPoint();
@@ -542,6 +570,7 @@ void loop_M5Core2Module()
     {
      
     }
+#endif
 
     //! do loop code
     loopCode_M5Core2Module();

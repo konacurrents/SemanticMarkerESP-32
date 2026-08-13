@@ -19,7 +19,9 @@ void setup_AtomStepMotorModule()
 {
     SerialDebug.println("StepperDriver.M5.begin");
 
-    M5.begin(true, false, true);
+    //M5.begin(true, false, true);
+    espBegin_mainModule(3); //7.26.26 //M5.Begin();
+
     _stepperDriver.setSpeed(0);
     _stepperDriver.powerEnable(true);
     delay(1600);
@@ -32,7 +34,7 @@ void loop_AtomStepMotorModule()
         _stepperDriver.step(5000);
         _stepperDriver.step(-5000);
     }
-    M5.update();
+    espUpdate_mainModule(3); //7.26.26 //M5.update();
 }
 #else
 void setup_AtomStepMotorModule()

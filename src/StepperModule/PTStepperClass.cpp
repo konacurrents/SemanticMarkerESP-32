@@ -14,6 +14,9 @@
 #endif
 
 
+//! 7.13.26 Nice day, Field cut .. not hay yet. Ballon in morning..
+boolean _validPins_PTStepperClass = false;
+
 //! for now .. use the PTStepper.h
 //#include "PTStepper.h"
 
@@ -48,10 +51,18 @@ int _pins_PTStepperClass[]{
 #define NEW_M5_STEPPER
 #ifdef  NEW_M5_STEPPER
 // M5Atom GPIO pins connected to ULN2003 IN1–IN4
+#ifdef ESP_M5_ATOM_S3
+//! 7.12.26 new pins of Atom zs3
+#define IN1 5
+#define IN2 6
+#define IN3 7
+#define IN4 8
+#else
 #define IN1 22
 #define IN2 19
 #define IN3 23
 #define IN4 33
+#endif
 ////Put all the pins in an array to make them easy to work with
 int _pins_PTStepperClass[]{
     IN1,  //IN1 on the ULN2003 Board, BLUE end of the Blue/Yellow motor coil
@@ -101,6 +112,11 @@ void step_PTStepperClass(int steps[][4], int stepCount);
 
 /************* Set all motor pins off which turns off the motor ************************************************/
 void clearPins_PTStepperClass() {
+    //! check for valid
+    if (!_validPins_PTStepperClass)
+    {
+        return;
+    }
     for (int pin = 0; pin < 4; pin++) {
         pinMode(_pins_PTStepperClass[pin], OUTPUT);
         digitalWrite(_pins_PTStepperClass[pin], LOW);
@@ -172,17 +188,23 @@ void whoAreWe_PTStepperClass()
 //Prepare motor controller
 void PTStepperClass::setup_MotorStepper()
 {
-    clearPins_PTStepperClass();                     // Go turn all motor pins off
-                                     //SerialDebug.print("ourSteps after  ");
-                                     //SerialDebug.print(ourSteps);
-                                     //SerialDebug.println(" ");
-    
-    
+  
     //! 5.3.25 trying to figure out the PIN use
-    registerPinUse_mainModule(IN1, "IN1", "PTStepperClass", false);
-    registerPinUse_mainModule(IN2, "IN2", "PTStepperClass", false);
-    registerPinUse_mainModule(IN3, "IN3", "PTStepperClass", false);
-    registerPinUse_mainModule(IN4, "IN4", "PTStepperClass", false);
+    _validPins_PTStepperClass = registerPinUse_mainModule(IN1, "IN1", "PTStepperClass", false);
+    _validPins_PTStepperClass = _validPins_PTStepperClass && registerPinUse_mainModule(IN2, "IN2", "PTStepperClass", false);
+    _validPins_PTStepperClass = _validPins_PTStepperClass &&registerPinUse_mainModule(IN3, "IN3", "PTStepperClass", false);
+    _validPins_PTStepperClass = _validPins_PTStepperClass &&registerPinUse_mainModule(IN4, "IN4", "PTStepperClass", false);
+    
+    //! check for valid
+    if (!_validPins_PTStepperClass)
+    {
+        SerialError.println("**** invalid pins PTStepperClass");
+        return;
+    }
+    
+    //! uses the IN1 pins ..
+    clearPins_PTStepperClass();                     // Go turn all motor pins off
+    
 }
 
 void step_PTStepperClass(int steps[][4], int stepCount)
@@ -245,7 +267,13 @@ int delayAmount_MotorStepper()
 }
 
 //This will advance the stepper clockwise once by the angle specified in SetupStepper. Example 16 pockets in UNO is 22.5 degrees
-void PTStepperClass::start_MotorStepper() {
+void PTStepperClass::start_MotorStepper()
+{
+    //! check for valid
+    if (!_validPins_PTStepperClass)
+    {
+        return;
+    }
     if (_ourSteps_PTStepperClass == 0 || getFeederType_mainModule() != _lastType_PTStepperClass)
     {             // Not assigned yet, is zero or is different type
         whoAreWe_PTStepperClass();                                           // go figure who we are, Mini or Uno and calculate steps needed
@@ -256,6 +284,9 @@ void PTStepperClass::start_MotorStepper() {
     //! 8.30.25 LA Warm, Zuma Beach - end scene of Planet of Apes
 #ifdef USE_FAST_LED
     fillpix(L_RED);
+#else
+    //! 8.2.26 LED working
+    setLEDColor(RED_LED);
 #endif
     //! 5.15.25 try the async CLICK
     //! click call
@@ -289,15 +320,26 @@ void PTStepperClass::start_MotorStepper() {
     //! 8.30.25 LA Warm, Zuma Beach - end scene of Planet of Apes
 #ifdef USE_FAST_LED
     fillpix(L_BLUE);
+#else
+    //! 8.2.26 LED working
+    setLEDColor(BLUE_LED);
 #endif
 }
 //! stops motor
 void PTStepperClass::stop_MotorStepper()
 {
-    
+    //! check for valid
+    if (!_validPins_PTStepperClass)
+    {
+        return;
+    }
 }
 //!loop the PTStepper (so timer can run)
 void PTStepperClass::loop_MotorStepper()
 {
-    
+    //! check for valid
+    if (!_validPins_PTStepperClass)
+    {
+        return;
+    }
 }

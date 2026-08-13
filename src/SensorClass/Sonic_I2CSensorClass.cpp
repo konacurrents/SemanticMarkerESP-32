@@ -10,7 +10,7 @@
 
 #ifdef ESP_M5
 #ifdef M5CORE2_MODULE
-#include <M5Display.h>
+//#include <M5Display.h>
 #else
 
 #ifdef M5STICKCPLUS2

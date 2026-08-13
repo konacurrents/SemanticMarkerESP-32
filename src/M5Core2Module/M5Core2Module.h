@@ -31,6 +31,8 @@ void messageSend_M5Core2Module(char* sendValue);
 void buttonA_ShortPress_M5Core2Module();
 //!long press on buttonA (top button)
 void buttonA_LongPress_M5Core2Module();
+//!long press on buttonA (top button)
+void buttonA_LongLongPress_M5Core2Module();
 //! BUTTON PROCESSING abstraction
 //!short press on buttonA (top button)
 void buttonB_ShortPress_M5Core2Module();

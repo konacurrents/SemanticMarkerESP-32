@@ -7,7 +7,8 @@
 #ifndef __MULITIPLESATELITE_H
 #define __MULITIPLESATELITE_H
 
-#include <Arduino.h>
+//#include <Arduino.h>
+#include "../../Defines.h"
 #include "TinyGPS.h"
 
 typedef enum {

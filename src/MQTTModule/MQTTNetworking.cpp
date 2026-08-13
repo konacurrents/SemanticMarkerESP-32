@@ -69,6 +69,10 @@
 
 //! 3.3.22 Using the new JSON library which is supposed to catch syntax errors without blowing up
 //https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
+//!@see https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
+//!Using 6.19.4 as of 6.10.26
+//!going to convert to 7.4.3 6.10.26
+//!see if compiles 
 #include <ArduinoJson.h>
 
 //the EPROM is in preferences.h
@@ -605,6 +609,8 @@ void publishSPIFFFile_MQTT(char *topic, char *path, int len)
         //! Alias /uploads "/var/lib/tomcat8/webapps/examples/uploads"
         sprintf(_semanticMarkerString,"#url {%s} {https://KnowledgeShark.me/uploads/%s}", getDeviceNameMQTT(),  &filename[0]);
         
+#ifdef STOP_THIS_FOR_NOW
+        //! 7.11.26 .. seems to be sending this all over .. wonder if it's my but with SM app??
         //! 7.25.25 print on serial monitor too..
         SerialDebug.println(_semanticMarkerString);
         
@@ -612,6 +618,7 @@ void publishSPIFFFile_MQTT(char *topic, char *path, int len)
         //! for now only send if it start message starts with "#"
         publishMQTTMessageDefaultTopic(_semanticMarkerString);
         //seems to be sent 2 times ...
+#endif
     }
     else
     {
@@ -4011,7 +4018,7 @@ boolean processJSONMessageMQTT(char *ascii, char *topic)
                 //!and print any preferences to show
                 printPreferenceValues_mainModule();
                 
-                sprintf(_fullMessageOut, "Syntax  {\'cmd': \'[ota|clean|feed|erase|status|buzzon|buzzoff| MORE..help]\'} ");
+                sprintf(_fullMessageOut, "Syntax  {\'cmd': \'[. | ota|clean|feed|erase|status|buzzon|buzzoff| MORE..help]\'} ");
                 //!publich back on topic
                 //_mqttClient.publish(_mqttTopicString, _fullMessageOut);
 #ifdef TRY_MORE_ASYNC_PROCESSING

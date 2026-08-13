@@ -30,6 +30,8 @@
 //! semantic marker processing
 #include "ATOM_SM.h"
 
+//! 7.13.26 add valid pin (before putting into class wide)
+boolean _validPins_ATOMQRCodeModule = true;
 
 boolean _shortPress_ATOMQRCodeModule = false;
 boolean _longPress_ATOMQRCodeModule = false;
@@ -302,54 +304,35 @@ void initGlobals_ATOMQRCodeModule()
 //!  the setup() for this ATOM
 void setup_ATOMQRCodeModule()
 {
- 
-#ifdef ESP_M5_ATOM_S3
-    M5.begin();
-#else
-    SerialDebug.println("setup_ATOMQRCodeModule.M5.begin");
-    //M5.begin(true, false, true);
-    // SerialEnable: true, I2CEnable: false, DisplayEnable: true
-    M5.begin(true, false, true);
-#endif
     
     SerialDebug.println("setup_ATOMQRCodeModule");
     initGlobals_ATOMQRCodeModule();
     
-   
-    
-//#define UART_VERSION
-    /**
-     Getting error:
-     
-     rst:0x7 (TG0WDT_SYS_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
-     flash read err, 1000
-     ets_main.c 371
-     ets Jun  8 2016 00:22:57
-
-     https://esp32.com/viewtopic.php?t=19176
-     
-     */
-#ifdef UART_VERSION
-#define UNIT_QRCODE_UART_BAUD 115200
-
-#define RX 16
-#define TX  17
-    Serial2.begin(
-                  UNIT_QRCODE_UART_BAUD, SERIAL_8N1, RX,
-                  TX);
+  
+#ifdef ESP_M5_ATOM_S3
+    #define RX 5
+    #define TX 6
 #else
 #define RX 22
 #define TX 19
+
+#endif
+
+    //! 5.3.25 register our PIN use
+    _validPins_ATOMQRCodeModule = registerPinUse_mainModule(RX, "RX", "ATOMQRCodeModule", false);
+    _validPins_ATOMQRCodeModule = _validPins_ATOMQRCodeModule && registerPinUse_mainModule(TX, "TX", "ATOMQRCodeModule", false);
+    //! 7.13.26 test pins ..
+    if (!_validPins_ATOMQRCodeModule)
+    {
+        SerialError.println(" **** Invalid pins in ATOMQRCodeModule ..");
+        return;
+    }
     Serial2.begin(
-                  9600, SERIAL_8N1, 22,
-                  19);  // Set the baud rate of serial port 2 to 115200,8 data bits, no
+                  9600, SERIAL_8N1, RX,
+                  TX);  // Set the baud rate of serial port 2 to 115200,8 data bits, no
                         // parity bits, and 1 stop bit, and set RX to 22 and TX to 19.
                         // 设置串口二的波特率为115200,8位数据位,没有校验位,1位停止位,并设置RX为22,TX为19
-#endif
-    //! 5.3.25 register our PIN use
-    registerPinUse_mainModule(RX, "RX", "ATOMQRCodeModule", false);
-    registerPinUse_mainModule(TX, "TX", "ATOMQRCodeModule", false);
-    
+
 #ifdef USE_FAST_LED
     //!NOTE: this could probably be done by ESP_IOT.ino .. but for now keep here (and in the other ATOM code..)
     setup_M5Display();
@@ -473,7 +456,7 @@ void setHostMode_ATOMQRCodeModule(boolean flag)
 //! the loop
 void loop_ATOMQRCodeModule()
 {
-    M5.update();
+    espUpdate_mainModule(1); //7.26.26 //M5.update();
     //    checkButtonA_ATOMQRCodeModule();
     checkButtonB_ATOMQRCodeModule();
     
@@ -700,14 +683,16 @@ char _statusBuffer_ATOMQRCodeModule[100];
 
 char *parsedSM_fromSemanticMarker(char *semanticMarker)
 {
+    //! 6.16.26 try debug as crashing ..
+    SerialDebug.printf("parseSM: %s\n", semanticMarker);
     //! 3.29.25 Raiiiinier Beeer movie last night
     //! add returning a UUID.FLOWNUM if valid, or nil if nota
     char *parsedSM = parseSM_For_UUID_Flownum(semanticMarker);
     if (strlen(parsedSM) == 0)
     {
-        if (strstr(_lastSemanticMarker,"togglesocket")>0)
+        if (strstr(_lastSemanticMarker,"togglesocket")) // removed 6.5.26 >0)
             parsedSM = (char*)"togglesocket";
-        else if (strstr(_lastSemanticMarker,"feed")>0)
+        else if (strstr(_lastSemanticMarker,"feed")) // removed 6.5.26 >0)
             parsedSM = (char*)"feed";
         else
             //! check for togleSocket (just for now)

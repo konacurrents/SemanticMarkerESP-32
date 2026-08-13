@@ -5,7 +5,7 @@
 
 SensorClassType::SensorClassType(char* config)
 {
-    SerialDebug.printf("SensorClassType init %s\n", config);
+    SerialLots.printf("SensorClassType init %s\n", config);
     //! 5.3.25 create storage here
     _identityString = (char*)calloc(strlen(config)+1, sizeof(char));
     strcpy(_identityString, config);
@@ -23,7 +23,7 @@ SensorClassType::~SensorClassType()
 //! a known name (like DCMotorStepper, etc)
 char *SensorClassType::classIdentity()
 {
-    SerialDebug.printf("SensorClassType::classIdentity = %s\n", _identityString);
+    SerialLots.printf("SensorClassType::classIdentity = %s\n", _identityString);
     return _identityString;
 }
 

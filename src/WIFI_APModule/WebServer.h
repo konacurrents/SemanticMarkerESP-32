@@ -24,6 +24,8 @@
 #ifndef WEBSERVER_H
 #define WEBSERVER_H
 #include "../../Defines.h"
+#ifdef USE_LIB_WEBSERVER
+#else
 
 #include <functional>
 #ifdef USE_REST_MESSAGING
@@ -187,5 +189,5 @@ protected:
 
 };
 
-
+#endif
 #endif //WebServer_H

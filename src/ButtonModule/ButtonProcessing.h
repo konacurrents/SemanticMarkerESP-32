@@ -27,13 +27,17 @@ void refreshDelayButtonTouched_ButtonProcessing();
 //! {'set':'buttonB','val':'longpress'}
 //! {'set':'buttonB','val':'shortpress'}
 
+#endif
+
 //!short press on buttonA (top button)
 void buttonA_ShortPress();
 //!long press on buttonA (top button)
 void buttonA_LongPress();
+//!long press on buttonA (top button)
+void buttonA_LongLongPress();
 //!the long press of the side button
 void buttonB_LongPress();
 //!the short press of the side button
 void buttonB_ShortPress();
 
-#endif //USE_BUTTON_MODULE
+//#endif //USE_BUTTON_MODULE

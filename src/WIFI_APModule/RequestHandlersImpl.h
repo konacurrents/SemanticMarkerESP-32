@@ -3,7 +3,8 @@
 
 #include "../../Defines.h"
 #include "RequestHandler.h"
-
+#ifdef USE_LIB_WEBSERVER
+#else
 class FunctionRequestHandler : public RequestHandler {
 public:
     FunctionRequestHandler(WebServer::THandlerFunction fn, WebServer::THandlerFunction ufn, const String &uri, HTTPMethod method)
@@ -150,5 +151,5 @@ protected:
     size_t _baseUriLength;
 };
 
-
+#endif
 #endif //REQUESTHANDLERSIMPL_H

@@ -77,7 +77,14 @@ public:
     //!return true or false if this should be a PTFeeder or PTClicker
     //!default 'false' to PTClicker.   The Bluetooth will use this
     boolean isPTFeeder_M5AtomClassType();
-    
+//#define WORK_ON_THIS
+#ifdef WORK_ON_THIS
+    void buttonB_ShortPress_M5AtomClassType() override;
+    //!long press on buttonB (top button)
+    void buttonB_LongPress_M5AtomClassType() override;
+    //! 11.25.25 Add LONG LONG press for the AP mode
+    void M5AtomClassType::buttonB_LongLongPress_M5AtomClassType() override;
+#endif
 private:
     //! display SerialDebug
     void displayInfo_No();

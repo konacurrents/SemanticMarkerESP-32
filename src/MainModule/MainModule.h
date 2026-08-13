@@ -116,6 +116,12 @@ void feedMessageCallback(char *message);
 //!supports turning on the solid light.. 
 void solidLightOnOff(boolean flag);
 
+//! main BEGIN and UPDATE .. everyone calls this .. and we can see if done too many times
+//! 7.26.26
+//! pass num to see if duplicates being called
+void espBegin_mainModule(int num);
+void espUpdate_mainModule(int num);
+
 //COMMON CALLBACKS
 //NOTE: This is where the true Object Oriented dynamic plug-in approaches would come in..
 // We are using #ifdef to bound the plug-in but there is still too much knowledge about wiring events to methods
@@ -494,7 +500,9 @@ char *semanticMarkerToJSON_mainModule(char* semanticMarker);
 //! pin is the actual number, pinName is the local name (eg. IN1_PIN or VIN_PIN).
 //! moduleName is the module in the code,
 //! isI2C is whether this is a I2C bus (which we aren't using much yet)
-void registerPinUse_mainModule(long pin, String pinName, String moduleName, boolean isI2C);
+//! 7.13.26 Ballon morning .. field haying
+//! return Boolean saying the pin was Valid of Invalie
+boolean registerPinUse_mainModule(long pin, String pinName, String moduleName, boolean isI2C);
 
 //! note these are the sets of pin use
 //! 8.18.25 OUCH>.. 10 .. now 20 max
@@ -519,5 +527,37 @@ void setConfiguration_mainModule(char* configurationName);
 //!If nil it create one with just the null, so strlen = 0
 //!NOTE: the strdup() might be used later..
 char* createCopy2(const char * stringA);
+
+#pragma mark LED
+#ifdef M5UNIFIED
+//! 2 year breakthrough - 8.1.26
+//! create enum for our colors (so we user _RED  or TFT_RED
+typedef enum  {
+    RED_LED = TFT_RED,
+    BLUE_LED = TFT_BLUE,
+    GREEN_LED = TFT_GREEN,
+    CYAN_LED = TFT_CYAN,
+    YELLOW_LED = TFT_YELLOW,
+    WHITE_LED = TFT_WHITE
+} ColorsUnified;
+#else
+//! create enum for our colors (so we user _RED  or TFT_RED
+//! THis way the code works without knowning the TFT names..
+typedef enum  {
+    RED_LED,
+    BLUE_LED,
+    GREEN_LED,
+    CYAN_LED,
+    YELLOW_LED,
+    WHITE_LED
+} ColorsUnified;
+#endif
+//! 7.24.25 return a (semi) random color
+ColorsUnified getRandomColor();
+//! returns a string for the color int
+String getColorString(ColorsUnified color);
+
+//! uses colors.. _GREEN_LED to be typed values
+void setLEDColor(ColorsUnified color);
 
 #endif /* MainModule_h */

@@ -33,10 +33,17 @@ static NimBLERemoteCharacteristic* _BLEClientCharacteristicFeed;
 //forward called on the end of the scan
 void scanEndedCB_BLEClient(NimBLEScanResults results);
 
+#ifdef M5UNIFIED
+static const NimBLEAdvertisedDevice* _advertisedDevice;
+#else
 static NimBLEAdvertisedDevice* _advertisedDevice;
+#endif
 //static uint32_t _scanTime = 0; /** 0 = scan forever */
 static bool _doConnect = false;
 static bool _isConnected_BLEClient = false;
+//! scan time in MS
+static uint32_t _scanTimeMs = 5000; /** scan time in milliseconds, 0 = scan forever */
+
 //try storing globally so we can disconnect..
 NimBLEClient *_pClient = nullptr;
 
@@ -87,7 +94,12 @@ boolean containsSkipAddress(String deviceInfo)
 /**  None of these are required as they will be handled by the library with defaults. **
  **                       Remove as you see fit for your needs                        */
 class ClientCallbacks : public NimBLEClientCallbacks {
-    void onConnect(NimBLEClient* pClient) {
+#ifdef M5UNIFIED
+    void onConnect(NimBLEClient* pClient) override
+#else
+    void onConnect(NimBLEClient* pClient)
+#endif
+    {
         SerialMin.printf("TIME: %d: ",getTimeStamp_mainModule());
         SerialMin.println(" BLE Connected");
         /** After connection we should change the parameters if we don't need fast response times.
@@ -104,23 +116,40 @@ class ClientCallbacks : public NimBLEClientCallbacks {
          [in]    latency          The number of packets allowed to skip (extends max interval).
          [in]    timeout          The timeout time in 10ms units before disconnecting.
          */
-        pClient->updateConnParams(120, 120, 0, 60);
+        //pClient->updateConnParams(120, 120, 0, 60);
         //tried: no different .. pClient->updateConnParams(120, 120, 5, 120);
 
         //set the connected flag
         _isConnected_BLEClient = true;
     };
     
-    void onDisconnect(NimBLEClient* pClient) {
+#ifdef M5UNIFIED
+    void onDisconnect(NimBLEClient* pClient, int reason) override {
         SerialMin.printf("TIME: %d: ",getTimeStamp_mainModule());
         //SerialLots.printf("Unix Time: %d\n", now);
-
+        SerialDebug.printf("%s Disconnected, reason = %d - Starting scan\n", pClient->getPeerAddress().toString().c_str(), reason);
+#else
+        void onDisconnect(NimBLEClient* pClient) {
+            SerialMin.printf("TIME: %d: ",getTimeStamp_mainModule());
+            //SerialLots.printf("Unix Time: %d\n", now);
+            
+            SerialMin.println(" BLE Disconnected - Starting scan");
+            SerialMin.print(pClient->getPeerAddress().toString().c_str());
+#endif
         SerialMin.println(" BLE Disconnected - Starting scan");
         SerialMin.print(pClient->getPeerAddress().toString().c_str());
         
         if (!stopAllProcesses_mainModule())
         {
+#ifdef M5UNIFIED_notworking_try_old
+            NimBLEDevice::getScan()->start(_scanTimeMs, false, true);
+
+            //! 6.6.25 @see https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md#advertising
+            // The callback parameter for NimBLEScan::start has been removed and the blocking overload of NimBLEScan::start has been replaced by an overload of NimBLEScan::getResults with the same parameters.
+            //NimBLEScanResults results = NimBLEDevice::getScan()->getResults(PSCAN_TIME, false); // note the time is now in milliseconds
+#else
             NimBLEDevice::getScan()->start(PSCAN_TIME, scanEndedCB_BLEClient);
+#endif
         }
         else
         {
@@ -132,29 +161,7 @@ class ClientCallbacks : public NimBLEClientCallbacks {
         _isConnected_BLEClient = false;
     };
     
-    /** Called when the peripheral requests a change to the connection parameters.
-     *  Return true to accept and apply them or false to reject and keep
-     *  the currently used parameters. Default will return true.
-     */
-    bool onConnParamsUpdateRequest(NimBLEClient* pClient, const ble_gap_upd_params* params) {
-        SerialMin.printf("TIME: %d: ",getTimeStamp_mainModule());
-        SerialMin.println(" onConnParamsUpdateRequest");
-        if (params->itvl_min < 24) { /** 1.25ms units */
-            return false;
-        }
-        else if (params->itvl_max > 40) { /** 1.25ms units */
-            return false;
-        }
-        else if (params->latency > 2) { /** Number of intervals allowed to skip */
-            return false;
-        }
-        else if (params->supervision_timeout > 100) { /** 10ms units */
-            return false;
-        }
-        
-        return true;
-    };
-    
+   
     /********************* Security handled here **********************
      ****** Note: these are the same return values as defaults ********/
     uint32_t onPassKeyRequest() {
@@ -169,26 +176,83 @@ class ClientCallbacks : public NimBLEClientCallbacks {
         /** Return false if passkeys don't match. */
         return true;
     };
-    
-    /** Pairing process complete, we can check the results in ble_gap_conn_desc */
-    void onAuthenticationComplete(ble_gap_conn_desc* desc) {
-        if (!desc->sec_state.encrypted) {
-            SerialDebug.println("Encrypt connection failed - disconnecting");
-            /** Find the client with the connection handle provided in desc */
-            NimBLEDevice::getClientByID(desc->conn_handle)->disconnect();
-            
-            //not connected
-            _isConnected_BLEClient = false;
+    /** Pairing process complete, we can check the results in connInfo */
+    //! 6.6.26 D-Day 82 years, move to version 2.x
+    //!@see https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md#ble-device
+#ifdef M5UNIFIED
+    void onAuthenticationComplete(NimBLEConnInfo& connInfo)    override
+    {
+        if (!connInfo.isEncrypted()) {
+            SerialDebug.printf("Encrypt connection failed - disconnecting\n");
+            /** Find the client with the connection handle provided in connInfo */
+            NimBLEDevice::getClientByHandle(connInfo.getConnHandle())->disconnect();
             return;
         }
-    };
-};
+    }
+#else
+        void onAuthenticationComplete(ble_gap_conn_desc* desc) {
+            if (!desc->sec_state.encrypted) {
+                SerialDebug.println("Encrypt connection failed - disconnecting");
+                /** Find the client with the connection handle provided in desc */
+                NimBLEDevice::getClientByID(desc->conn_handle)->disconnect();
+                
+                //not connected
+                _isConnected_BLEClient = false;
+                return;
+            }
+        };
+#endif
 
+}
+#ifdef M5UNIFIED
+    _clientCB_BLEClient;
+#else
+    ;
+#endif
 
+#ifdef M5UNIFIED
+//!6.6.26
+//!@see https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md#ble-device
+/*
+ NimBLEAdvertisedDeviceCallbacks Has been replaced by NimBLEScanCallbacks which contains the following methods:
+ 
+ NimBLEScanCallbacks::onResult, functions the same as the old NimBLEAdvertisedDeviceCallbacks::onResult but now takes aa const NimBLEAdvertisedDevice* instead of non-const.
+ NimBLEScanCallbacks::onScanEnd, replaces the scanEnded callback passed to NimBLEScan::start and now takes a const NimBLEScanResults& and int reason parameter.
+ NimBLEScanCallbacks::onDiscovered, This is called immediately when a device is first scanned, before any scan response data is available and takes a const NimBLEAdvertisedDevice* parameter.
+ */
+//class AdvertisedDeviceCallbacks : public  NimBLEScanCallbacks
+class ScanCallbacks : public NimBLEScanCallbacks
+
+#else
 /** Define a class to handle the callbacks when advertisments are received */
-class AdvertisedDeviceCallbacks : public NimBLEAdvertisedDeviceCallbacks {
+class AdvertisedDeviceCallbacks : public NimBLEAdvertisedDeviceCallbacks
+#endif
+{
+#ifdef M5UNIFIED_notworking
+    void onScanEnd(const NimBLEScanResults& result,int reason)
+    {
+        SerialLots.printf("onScanEnd: %d\n", reason);
+        //! added 6.17.26
+        NimBLEDevice::getScan()->start(_scanTimeMs, false, true);
+
+    }
+    void onDiscovered(const NimBLEAdvertisedDevice* parameter)
+    {
+        SerialLots.printf("onDiscovered:\n");
+
+    }
+    void onResult( NimBLEAdvertisedDevice* advertisedDevice)
+    //void onResult(const NimBLEAdvertisedDevice* advertisedDevice)
+
+#else
     
-    void onResult(NimBLEAdvertisedDevice* advertisedDevice) {
+#ifdef M5UNIFIED
+    void onResult(const NimBLEAdvertisedDevice* advertisedDevice) override
+#else
+    void onResult(NimBLEAdvertisedDevice* advertisedDevice)
+#endif
+#endif
+    {
         SerialLots.printf(" *** onResult adv, useBLEClient = %d\n", useBLEClient());
         if (!useBLEClient() || stopAllProcesses_mainModule())
 
@@ -371,7 +435,7 @@ class AdvertisedDeviceCallbacks : public NimBLEAdvertisedDeviceCallbacks {
             _doConnect = true;
         }
     };
-};
+} _scanCallbacks;
 
 
 /** Notification / Indication receiving handler callback */
@@ -380,11 +444,20 @@ void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData,
     std::string str = (isNotify == true) ? "Notification" : "Indication";
     str += " from ";
     /** NimBLEAddress and NimBLEUUID have std::string operators */
+#ifdef M5UNIFIED
+    //!6.6.26
+    //!@see https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md#ble-device
     str += std::string(pRemoteCharacteristic->getRemoteService()->getClient()->getPeerAddress());
     str += ": Service = " + std::string(pRemoteCharacteristic->getRemoteService()->getUUID());
     str += ", Characteristic = " + std::string(pRemoteCharacteristic->getUUID());
     str += ", Value = " + std::string((char*)pData, length);
-    SerialDebug.println(str.c_str());
+#else
+    str += std::string(pRemoteCharacteristic->getRemoteService()->getClient()->getPeerAddress());
+    str += ": Service = " + std::string(pRemoteCharacteristic->getRemoteService()->getUUID());
+    str += ", Characteristic = " + std::string(pRemoteCharacteristic->getUUID());
+    str += ", Value = " + std::string((char*)pData, length);
+#endif
+    SerialLots.println(str.c_str());
 #endif //SerialDebug
 }
 
@@ -394,16 +467,29 @@ void scanEndedCB_BLEClient(NimBLEScanResults results) {
     SerialLots.println("Scan Ended");
 }
 
+#ifdef M5UNIFIED
+#else
 /** Create a single global instance of the callback class to be used by all clients */
 static ClientCallbacks _clientCB_BLEClient;
-
+#endif
+    
 /** Handles the provisioning of clients and connects / interfaces with the server */
 bool connectToServer_BLEClient()
 {
     SerialCall.println("connectToServer_BLEClient");
     NimBLEClient* pClient = nullptr; //creates a new instance of a pointer to a client(1 for each server it connects to)
+#ifdef M5UNIFIED
+    //! 6.6.26
+    /*
+    NimBLEDevice::getClientListSize replaced with NimBLEDevice::getCreatedClientCount.
+    NimBLEDevice::getClientList was removed and NimBLEDevice::getConnectedClients can be used instead which returns a std::vector of pointers to the connected client instances. This was done because internally the clients are managed in a std::array which replaced the 'std::list`.
+     */
+    if (NimBLEDevice::getCreatedClientCount())
+#else
     /** Check if we have a client we should reuse first **/
-    if (NimBLEDevice::getClientListSize()) {  //this runs only if #clients>= 1...ie no client instance start yet
+    if (NimBLEDevice::getClientListSize())
+#endif
+    {  //this runs only if #clients>= 1...ie no client instance start yet
         /** Special case when we already know this device, we send false as the
          *  second argument in connect() to prevent refreshing the service database.
          *  This saves considerable time and power.
@@ -411,7 +497,7 @@ bool connectToServer_BLEClient()
         pClient = NimBLEDevice::getClientByPeerAddress(_advertisedDevice->getAddress()); //if the server was connected to before there should be an address stored for it -wha
         if (pClient) {
             if (!pClient->connect(_advertisedDevice, false)) {
-                SerialLots.println("Reconnect failed");
+                SerialTemp.println("Reconnect failed");
                 return false;
             }
             SerialDebug.println("Reconnected pClient");
@@ -424,31 +510,39 @@ bool connectToServer_BLEClient()
             pClient = NimBLEDevice::getDisconnectedClient(); //reusing a client that was created but is disconnected  -wha
             if (pClient)
             {
-                SerialLots.printf("Reusing a disconnected pClient: %s\n",pClient? pClient->getPeerAddress().toString().c_str():"NULL");
+                SerialTemp.printf("Reusing a disconnected pClient: %s\n",pClient? pClient->getPeerAddress().toString().c_str():"NULL");
             }
         }
     }
     
     /** No client to reuse? Create a new one. */
-    if (!pClient) { //if a client instance is created from above this will not be executed -wha
-//go back to >= 1 (4.22.22)
-//#define ONLY_DIFFERENCE_FROM_WORKING_VERSION
-#ifdef ONLY_DIFFERENCE_FROM_WORKING_VERSION
-        if (NimBLEDevice::getClientListSize() >= NIMBLE_MAX_CONNECTIONS)
-#else
-            if (NimBLEDevice::getClientListSize() >= 1 )    //wha -original example code used the max configuration of 3 --> NIMBLE_MAX_CONNECTIONS) {
-#endif
-            {
-                //SerialDebug.println("Max clients reached - no more connections available");
-                return false;
-            }
+    if (!pClient)
+    {
+        //if a client instance is created from above this will not be executed -wha
+        //go back to >= 1 (4.22.22)
         
+        //! 6.6.26
+        /*
+         NimBLEDevice::getClientListSize replaced with NimBLEDevice::getCreatedClientCount.
+         NimBLEDevice::getClientList was removed and NimBLEDevice::getConnectedClients can be used instead which returns a std::vector of pointers to the connected client instances. This was done because internally the clients are managed in a std::array which replaced the 'std::list`.
+         */
+#ifdef M5UNIFIED
+        if (NimBLEDevice::getCreatedClientCount() >= 1 )
+#else
+        if (NimBLEDevice::getClientListSize() >= 1 )    //wha -original example code used the max configuration of 3 --> NIMBLE_MAX_CONNECTIONS)
+#endif
+        {
+            SerialDebug.println("Max clients reached - no more connections available");
+            return false;
+        }
+        //! create a new client
         pClient = NimBLEDevice::createClient();
         
         SerialDebug.printf("***New client created(%d)\n", pClient);
-
+        
+        //! set callback
         pClient->setClientCallbacks(&_clientCB_BLEClient, false);
-
+        
         /** Set initial connection parameters: These settings are 15ms interval, 0 latency, 120ms timout.
          *  These settings are safe for 3 clients to connect reliably, can go faster if you have less
          *  connections. Timeout should be a multiple of the interval, minimum is 100ms.
@@ -463,7 +557,16 @@ bool connectToServer_BLEClient()
         [in]    scanInterval    The scan interval to use when attempting to connect in 0.625ms units.
         [in]    scanWindow    The scan window to use when attempting to connect in 0.625ms units.
 */
-        
+#ifdef M5UNIFIED
+        //! 6.8.26 set to 150 (from 51)
+        pClient->setConnectionParams(12, 12, 0, 150);
+        //try: no different
+        //pClient->setConnectionParams(12, 12, 10, 51);
+
+        /** Set how long we are willing to wait for the connection to complete (seconds), default is 3000.   (was 5)*/
+        pClient->setConnectTimeout(5 * 1000);
+        //pClient->setConnectTimeout(5); // * 1000);
+#else
         pClient->setConnectionParams(12, 12, 0, 51);
         //try: no different pClient->setConnectionParams(12, 12, 10, 51);
 
@@ -477,8 +580,10 @@ bool connectToServer_BLEClient()
         }
         Serial.printf("_advertisedDevice=%d\n",_advertisedDevice);
         
-        if (!pClient->connect(_advertisedDevice)) {
+#endif
 
+        if (!pClient->connect(_advertisedDevice))
+        {
             /** Created a client but failed to connect, don't need to keep it as it has no data */
             NimBLEDevice::deleteClient(pClient);
             SerialDebug.println("Failed to connect, deleted client");
@@ -487,20 +592,31 @@ bool connectToServer_BLEClient()
     }
 
     //try ..  doesn't seem to matter..
-    // deleteClient might delete ourself?
-    //_pClient = nullptr; (only useful in the code before 'return')
-    if (!pClient->isConnected()) {
-        if (!pClient->connect(_advertisedDevice)) {
-            SerialDebug.println("Failed to connect");
-            
-            //not connected
+    if (!pClient->isConnected())
+    {
+        if (!pClient->connect(_advertisedDevice))
+        {
+            SerialDebug.printf("Failed to connect, deleted client\n");
+
+            //!not connected
             _isConnected_BLEClient = false;
             return false;
         }
     }
+    SerialDebug.printf("Connected to: %s RSSI: %d\n", pClient->getPeerAddress().toString().c_str(), pClient->getRssi());
+
     _pClient = pClient;
-    
+#ifdef M5UNIFIED
+    //!6.6.26
+    /*
+     NimBLEDevice::getClientListSize replaced with NimBLEDevice::getCreatedClientCount.
+     NimBLEDevice::getClientList was removed and NimBLEDevice::getConnectedClients can be used instead which returns a std::vector of pointers to the connected client instances. This was done because internally the clients are managed in a std::array which replaced the 'std::list`.
+     */
+    SerialLots.printf("number clients=   %d \n\r", NimBLEDevice::getCreatedClientCount()); //
+
+#else
     SerialLots.printf("number clients=   %d \n\r", NimBLEDevice::getClientListSize()); //
+#endif
     SerialMin.printf("TIME: %d: ",getTimeStamp_mainModule());
     SerialMin.print(" - Connected to pClient: ");
     SerialMin.println(pClient->getPeerAddress().toString().c_str());
@@ -512,6 +628,9 @@ bool connectToServer_BLEClient()
     NimBLERemoteCharacteristic* pChr = nullptr;
     NimBLERemoteDescriptor* pDsc = nullptr;
 #define NEW_WAY
+    //! **** THATS WHY THE DEAD is there .. only our new ones have that..
+    //! This was added 2022 - for this specific reason
+    //! @see https://github.com/konacurrents/ESP_IOT/issues/161
 #ifdef NEW_WAY
     //!Try to get our new service == DEAD (for now.. this is not in the GEN3)
     pSvc = pClient->getService("DEAD");
@@ -938,6 +1057,7 @@ void sendCommandBLEClient_13orLess(String cmdString)
     }
 }
 
+#ifndef OLD
 //!the setup() and loop() passing the serviceName to look for..
 void setup_BLEClientNetworking(char *serviceName, char *serviceUUID, char *characteristicUUID)
 {
@@ -947,8 +1067,8 @@ void setup_BLEClientNetworking(char *serviceName, char *serviceUUID, char *chara
     //!start the bluetooth discovery..
     SerialDebug.println("Starting NimBLE BLEClientNetworking");
     /** Initialize NimBLE, no device name spcified as we are not advertising */
-    NimBLEDevice::init("");
-       // NimBLEDevice::init(serviceName);
+    //NimBLEDevice::init("");
+        NimBLEDevice::init(serviceName);
 
     //https://github.com/nkolban/esp32-snippets/issues/945
     //https://www.esp32.com/viewtopic.php?t=4546
@@ -971,10 +1091,36 @@ void setup_BLEClientNetworking(char *serviceName, char *serviceUUID, char *chara
      *  These are the default values, only shown here for demonstration.
      */
     //NimBLEDevice::setSecurityAuth(false, false, true);
+#ifdef use_security
+    //! 6.17.26 turn off
     NimBLEDevice::setSecurityAuth(/*BLE_SM_PAIR_AUTHREQ_BOND | BLE_SM_PAIR_AUTHREQ_MITM |*/ BLE_SM_PAIR_AUTHREQ_SC);
+#endif
     
+#ifdef M5UNIFIED_notworking
+    //!6.6.26
+    //!@see https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md#ble-device
+    /*
+     NimBLEDevice::setPower no longer takes the esp_power_level_t and esp_ble_power_type_t, instead only an integer value in dbm units is accepted, so instead of ESP_PWR_LVL_P9 an int8_t value of 9 would be used for the same result.
+     */
+    {
+        //int8_t value = 9;
+        int8_t value = 3; /** 3dbm */
+        SerialDebug.printf("NimBLEDevice::setPower %d\n", value);
+
+        NimBLEDevice::setPower(value);
+    }
+#else
+    
+#ifdef M5UNIFIED
+    /** Optional: set the transmit power, default is 3db */
+    //NimBLEDevice::setPower(ESP_PWR_LVL_P9); /** +9db */
+    NimBLEDevice::setPower(3); /** +9db */
+#else
     /** Optional: set the transmit power, default is 3db */
     NimBLEDevice::setPower(ESP_PWR_LVL_P9); /** +9db */
+#endif
+    
+#endif
     
     /** Optional: set any devices you don't want to get advertisments from */
     // NimBLEDevice::addIgnored(NimBLEAddress ("aa:bb:cc:dd:ee:ff"));
@@ -982,15 +1128,34 @@ void setup_BLEClientNetworking(char *serviceName, char *serviceUUID, char *chara
     /** create new scan */
     NimBLEScan* pScan = NimBLEDevice::getScan();
     
+#ifdef M5UNIFIED
+    //! 6.6.25 @see https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md#advertising
+    /*
+     NimBLEScan::setAdvertisedDeviceCallbacks(NimBLEAdvertisedDeviceCallbacks* callbacks, bool wantDuplicates) has been changed to NimBLEScan::setScanCallbacks(NimBLEScanCallbacks* callbacks, bool wantDuplicates);
+     */
+    
+    /** Set the callbacks to call when scan events occur, no duplicates */
+    //pScan->setScanCallbacks(new NimBLEScanCallbacks());
+    pScan->setScanCallbacks(&_scanCallbacks, false);
+
+
+#else
     /** create a callback that gets called when advertisers are found */
     pScan->setAdvertisedDeviceCallbacks(new AdvertisedDeviceCallbacks());
+#endif
     
     /** Set scan interval (how often) and window (how long) in milliseconds */
 //    pScan->setInterval(45);
 //    pScan->setWindow(15);
-    
+#ifdef not_bootstrap_NOT_NOW
     pScan->setInterval(PSCAN_INTERVAL);
     pScan->setWindow(PSCAN_WINDOW);
+#else
+    
+    /** Set scan interval (how often) and window (how long) in milliseconds */
+    pScan->setInterval(100);
+    pScan->setWindow(100);
+#endif
 
     
     /** Active scan will gather scan response data from advertisers
@@ -1000,10 +1165,60 @@ void setup_BLEClientNetworking(char *serviceName, char *serviceUUID, char *chara
     /** Start scanning for advertisers for the scan time specified (in seconds) 0 = forever
      *  Optional callback for when scanning stops.
      */
+#ifdef M5UNIFIED
+    //! 6.6.25 @see https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md#advertising
+    /* The callback parameter for NimBLEScan::start has been removed and the blocking overload of NimBLEScan::start has been replaced by an overload of NimBLEScan::getResults with the same parameters.
+     */
+    SerialDebug.println("Before pScan->getResults\n");
+    
+    /** Start scanning for advertisers */
+    pScan->start(_scanTimeMs);
+    
+   // NimBLEScanResults results = pScan->getResults(_scanTimeMs, false); // note the time is now in milliseconds
+
+    //NimBLEScanResults results = pScan->getResults(PSCAN_TIME, false); // note the time is now in milliseconds
+    SerialDebug.println("After pScan->getResults\n");
+
+#else
     pScan->start(PSCAN_TIME, scanEndedCB_BLEClient);
+#endif
     //M5.Beep.tone(1000);
     // M5.Beep.setVolume(90);  //???? not sure this call is working wha
 }
+#else
+//!the setup() and loop() passing the serviceName to look for..
+void setup_BLEClientNetworking(char *serviceName, char *serviceUUID, char *characteristicUUID)
+{
+    //!address to skip (for a number of times) .. how about 1 for now..
+    strcpy(_skipNameOrAddress_BLEClientNetworking,"");
+    
+    //!start the bluetooth discovery..
+    SerialDebug.println("Starting NimBLE BLEClientNetworking");
+    /** Initialize NimBLE and set the device name */
+    NimBLEDevice::init("NimBLE-Client");
+        
+    /** Optional: set the transmit power */
+    NimBLEDevice::setPower(3); /** 3dbm */
+    NimBLEScan* pScan = NimBLEDevice::getScan();
+    
+    /** Set the callbacks to call when scan events occur, no duplicates */
+    pScan->setScanCallbacks(&_scanCallbacks, false);
+    
+    /** Set scan interval (how often) and window (how long) in milliseconds */
+    pScan->setInterval(100);
+    pScan->setWindow(100);
+    
+    /**
+     * Active scan will gather scan response data from advertisers
+     *  but will use more energy from both devices
+     */
+    pScan->setActiveScan(true);
+    
+    /** Start scanning for advertisers */
+    pScan->start(_scanTimeMs);
+    SerialDebug.printf("Scanning for peripherals\n");
+}
+#endif
 
 //! try to disconnect..
 void disconnect_BLEClientNetworking()
@@ -1066,8 +1281,19 @@ void loop_BLEClientNetworking()
 #endif
         }
         _doConnect = false;
+#ifdef M5UNIFIED
+        //! 6.6.25 @see https://github.com/h2zero/NimBLE-Arduino/blob/master/docs/1.x_to2.x_migration_guide.md#advertising
+        /*
+         The callback parameter for NimBLEScan::start has been removed and the blocking overload of NimBLEScan::start ha
+         */
+       // NimBLEScanResults results = NimBLEDevice::getScan()->getResults(PSCAN_TIME, false); // note the time is now in milliseconds
+        
+        //! scan more ..
+        NimBLEDevice::getScan()->start(_scanTimeMs, false, true);
+#else
         //  0=stop scanning after first device found
         NimBLEDevice::getScan()->start(PSCAN_TIME, scanEndedCB_BLEClient); //resume scanning for more BLE servers
+#endif
     }
     
     //!note: https://github.com/espressif/esp-idf/issues/5105

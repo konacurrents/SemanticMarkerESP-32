@@ -10,43 +10,71 @@
 
 #include "BuzzerSensorClass.h"
 
+//! add here for now ..
+//boolean _pinValid_BuzzerSensorClass = true;
+
 
 BuzzerSensorClass::BuzzerSensorClass(char *config) : SensorClassType(config)
 {
     
-    printf("BuzzerSensorClass init %s\n", config);
+    SerialDebug.printf("BuzzerSensorClass init %s\n", config);
 }
 
 
 //!@see https://www.w3schools.com/cpp/cpp_class_methods.asp
 void BuzzerSensorClass::loop()
 {
-   
+    if (!_pinsValid)
+        return;
 }
 
 
 void BuzzerSensorClass::setup()
 {
     SerialDebug.printf("BuzzerSensorClass::setup(%d,%d)\n",_pin1, _pin2);
-    
+#ifdef NO_HARD_WIRE
     if (_pin1 == 0)
     {
         //! default to 21,33
         //! BuzzerSensorClass,23,33
+#ifdef ESP_M5_ATOM_S3
+        _pin1 = 39;
+        _pin2 = 38;
+#else
         _pin1 = 23;
         _pin2 = 33;
+#endif
     }
+#endif
 
-    //https://www.reddit.com/r/arduino/comments/1g89dlo/esp32_crashing_due_to_pinmode_and_fastled/
-    pinMode(_pin1, OUTPUT);
-    pinMode(_pin2, OUTPUT);
+ 
+    _pinsValid = registerPinUse_mainModule(_pin1,"Pin1","BuzzerSensorClass",false);
+    _pinsValid = _pinsValid && registerPinUse_mainModule(_pin2,"Pin2","BuzzerSensorClass",false);
+    if (!_pinsValid)
+    {
+        SerialError.println("*** BuzzerSensorClass invalid Pins");
+        return;
+    }
+    //! 7.14.26 try the power and pin, vs 2 pins
+    if (_pin1 == -1)
+    {
+        //! willl be the new PWR version
+        pinMode(_pin2, OUTPUT);
 
-    registerPinUse_mainModule(_pin1,"Pin1","BuzzerSensorClass",false);
-    registerPinUse_mainModule(_pin2,"Pin2","BuzzerSensorClass",false);
-
-    //! turn off..
-    digitalWrite(_pin1, LOW);
-    digitalWrite(_pin2, LOW);
+        // Active-low buzzer (connected between 3.3V and GPIO21)
+        digitalWrite(_pin2, HIGH);  // OFF
+    }
+    else
+    {
+        //https://www.reddit.com/r/arduino/comments/1g89dlo/esp32_crashing_due_to_pinmode_and_fastled/
+        pinMode(_pin1, OUTPUT);
+        pinMode(_pin2, OUTPUT);
+        
+        
+        //! turn off..
+        digitalWrite(_pin1, LOW);
+        digitalWrite(_pin2, LOW);
+    }
    
     SerialDebug.println("DONE BuzzerSensorClass::setup");
 }
@@ -67,12 +95,26 @@ void BuzzerSensorClass::setup()
 //! if using the GROVE, the right 2 pins would be 26, 32
 void BuzzerSensorClass::performBuzzer()
 {
+    if (!_pinsValid)
+        return;
+    //! 7.15.26 -- Adding a -1 pin which means the other pin is the PWR
     SerialDebug.printf("BuzzerSensorClass::performBuzzer(pin1=%d,pin2=%d)\n",_pin1, _pin2);
-    digitalWrite(_pin1, HIGH);
-    digitalWrite(_pin2, LOW);
-    delay(100);
-    digitalWrite(_pin1, LOW);
-    digitalWrite(_pin2, LOW);
+    if (_pin1 == -1)
+    {
+        // Turn buzzer ON
+        digitalWrite(_pin2, LOW);
+        delay(100);
+        // Turn buzzer OFF
+        digitalWrite(_pin2, HIGH);
+    }
+    else
+    {
+        digitalWrite(_pin1, HIGH);
+        digitalWrite(_pin2, LOW);
+        delay(100);
+        digitalWrite(_pin1, LOW);
+        digitalWrite(_pin2, LOW);
+    }
 }
 
 //! 5.15.25 try a special command local to this class

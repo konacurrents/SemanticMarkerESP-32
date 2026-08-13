@@ -50,7 +50,7 @@ MotorStepperClassType::~MotorStepperClassType()
 //! a known name (like DCMotorStepper, etc)
 char *MotorStepperClassType::classIdentity()
 {
-    SerialDebug.printf("MotorStepperClassType::classIdentity = %s\n", _identityString);
+    SerialLots.printf("MotorStepperClassType::classIdentity = %s\n", _identityString);
     return _identityString;
 }
 

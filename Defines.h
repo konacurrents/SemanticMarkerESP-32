@@ -1,5 +1,8 @@
 //
 //  Defines.h
+// 7.25.26 Trying non m5Unified with 2.1 libs M5StickCPlus
+//   WORKING ..
+// 7.31.26 now back to M5Unified and M5AtomS3
 //
 //  Created by Scott Moody on 3/8/22.
 //  NOW  APril 28, 2026 -- another year.. 
@@ -8,6 +11,9 @@
 
 #ifndef Defines_h
 #define Defines_h
+
+//! 8.12.26 support the Platform.io builds, uncomment to turn that on..
+//#define USE_PLATFORM_IO
 
 //! *******************************
 //! *** 7 main builds numbered below ****
@@ -35,8 +41,11 @@
 // ******** >>>>>  M5Atom <<<<  *******
 //! 4. M5 Atom  This includes QR and Socket, BOARD:  M5StickCPlus, Minimal SPIFFS withOTA
 //! BOARD = M5Stick-C-Plus,  type : make uploadFlashM5AtomLiteTEST
-#define ESP_M5_ATOM_LITE
-#define PARTITION_SCHEME (char*)"Board=M5StickCPlus,P=1.9 Minimal SPIFFS with OTA"
+//7.7.26
+// 7.13.26 .. see if can go back .. with 3.x libraries..
+// 7.31.26 back to M5UNIFIED
+//#define ESP_M5_ATOM_LITE
+//#define PARTITION_SCHEME (char*)"Board=M5StickCPlus,P=1.9 Minimal SPIFFS with OTA"
 
 //  ******** M5Camera ***
 //! 5. M5 Camera
@@ -45,8 +54,7 @@
 // NOW: 8.17.25 use M5StickCPlus - sadly no.. it compiles, but cannot create the pics ..
 // BUT the M5Atom works (it seems)
 //#define ESP_M5_CAMERA
-//#define PARTITION_SCHEME_NOT_WORKING (char*)"Board=M5StickCPlus,P=1.9 Minimal SPIFFS with OTA"
-//#define PARTITION_SCHEME (char*)"Board=M5TimerCam,P=1.9MB App Minimal SPIFFS with OTA"
+
 
 //  ******** M5Core2 the White one with display ***
 //! 6. M5Core2
@@ -55,22 +63,42 @@
 //! minimal SPIFFS (1.9MB APP, with OTA/190KB SPIFFS)
 //! https://docs.m5stack.com/en/api/core2/lcd_api
 //#define M5CORE2_MODULE
-//#define PARTITION_SCHEME (char*)"Board=M5Core2,P=1.9MB App Minimal SPIFFS with OTA"
 
 //  ******** ATOM S2 the White one with display and M5Unified .. ***
 //! 7 ESP_M5_ATOM_S3  (for the M5AtomS3 with a display)
 //!       Board: M5AtomS3 library Minimal spiffs (1.9MB App with OTA.190KB SPIFFS)
-//#define ESP_M5_ATOM_S3
+//! 7,7.26 try AtomS3
+//! 7.13.26 WORKING GREAT!!! on M5atomS3 not M5atom
+// 7.13.26 .. see if can go back .. with 3.x libraries..
+#define ESP_M5_ATOM_S3
 #ifdef ESP_M5_ATOM_S3
-#define PARTITION_SCHEME (char*)"Board=M5AtomS3 Unified,P=1.9MB App Minimal SPIFFS with OTA"
+//#define PARTITION_SCHEME (char*)"Board=M5AtomS3 Unified,P=1.9MB App Minimal SPIFFS with OTA"
+//! 7.9.26 add this..
+//#include "M5AtomS3.h"
 
-#define ESP_M5_ATOM_LITE
+#define PARTITION_SCHEME (char*)"Board=M5AtomS3 Unified,P= 8mb (3MB App 1.5 SPIFFS with OTA)"
+//#define PARTITION_SCHEME (char*)"Board=M5AtomS3 Unified,P=1.9MB App Minimal SPIFFS with OTA"
+
+#define M5UNIFIED
+// 7.31.26 not for Unified
+//#define ESP_M5_ATOM_LITE
 //#define ESP_M5_MINIMAL_SENSORS
+
+#else
+#define PARTITION_SCHEME (char*)"Board=M5StickCPlus,P=1.9 Minimal SPIFFS with OTA"
+
 #endif
 
 // *** Start of Configurations ***
 //! updated 2.1.1 for awhile, but today is 12.19.25
-#define M5STACK_VERSION "2.1.1"
+//! 6.9.26 convert to 3.x and M5Unified and 2.x 
+#ifdef M5UNIFIED
+#define M5STACK_VERSION "M5Unified 3.x, BLE 2.x"
+#else
+#define M5STACK_VERSION "not unified BLE 2.x, no FastLED yet.. 67%"
+#endif
+
+//#define M5STACK_VERSION "2.1.1"
 //#define M5STACK_VERSION "2.0.4"
 //#define DHAT not working.. with 2.1.0
 //#define M5STACK_VERSION "2.0.7"  //9.24.23  (didn't seem to have heap space to start BLE server)
@@ -92,7 +120,7 @@
 
 
 //!global to all releases (for now) used in Status for M5 (only 2 characters)
-#define VERSION_SHORT "v2"
+#define VERSION_SHORT "v3"
 
 //!used to force using the BLE Device name in SERVER( eg. PTFEEDER:ScoobyDoo)
 //NOT NOW 9.14.22 (no)
@@ -115,7 +143,7 @@
 
 
 
-//  ******************************* M5ATOM ******************************************
+//  ******************************* ESP_M5_ATOM_S3 || ESP_M5_ATOM_LITE ******************************************
 
 //!NOTE: M5_ATOM is define for the subset of ESP_M5 that is an ATOM
 //! This turns on features like the LED display
@@ -129,48 +157,44 @@
 //! ALSO: use the Minimal SPIFF, 1.9m app, OTA and 190KB spiff
 //! 2.25.23 Sketch uses 1497093 bytes (76%) of program storage space. Maximum is 1966080 bytes.
 //! 8.22.24 (seems to generate m5stack_stickc_plus.bin)   .. and size now 65%
-#ifdef ESP_M5_ATOM_LITE
 #ifdef ESP_M5_ATOM_S3
-#define VERSION "v7_31_25(2.0a)-M5_ATOM_S3"
-//#define VERSION "2025d_4.4V(1.0a)-8.30.24-M5_ATOM_S3"
-//previous: V(2.0a).11.21.24-UNIFIED_M5_ATOM_S3
-//!  "v8_16_25(5.12d)-ATOM_UNL2003_PTStepper_K_BUZ_SA_NOMOTOR_SPIFF_COLOR_GPS_TIME_KEYUNIT_QR_TIME"
+#define VERSION "v8_12_26(4.6c_local_webMain)-M5_ATOM_S3_AP_ANDROID_PLATFORM_CHAIN_LED_UNIFIED_BUZ_CHAIN_PINS_GROVE"
+//! released 8.2.26 'y'
+//#define VERSION "v8_2_26(4.3k)-M5_ATOM_S3_LED_UNIFIED_BUZ_CHAIN_PINS_GROVE"
+//! uses UNIFIED
+#define M5UNIFIED
+#endif
 
+#ifdef ESP_M5_ATOM_LITE
+//! ***** THIS IS MAIN "ATOM_LITE" *****   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom
+#define VERSION "v7_29_26(6.0f)-ATOM_M5_BTNB_SOME_AP_WIFI_NO_UNIFIED"
+#endif
 
-#else
-//! ***** THIS IS MAIN "ATOM" *****   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom
-//!
-#define VERSION "v4_28_26(5.22c)-ATOM_COM_NOT_NAME_CHAIN_JC_VAL_RUN_DC_SKI_SMART"
+//! 7.16.26 thunderstorms, lightning, rain. wild
+//! lets start on the library version of the web server
+//! up til now we have a copy of the web server ..
+#if defined(ESP_M5_ATOM_S3) || defined(ESP_M5_ATOM_LITE)
+//! 7.25.26 see if this compiles with 2.1 libs
+//8.12.26 see if it works with old libs.. and android
+//////#define USE_LIB_WEBSERVER
+//! 7.26.26 maybe LIB_WEBSERVER uses "override" and my code doesn't have it..
 
-//#define VERSION "v4_3_26(5.22b)-ATOM_NOT_NAME_CHAIN_JC_VAL_RUN_DC_SKI_SMART"
-//#define VERSION "v3_20_26(5.22b)-ATOM_CHAIN_JC_VAL_RUN_DC_SKI_SMART"
-
-//#define VERSION "v2_16_26(5.22a)-ATOM_VAL_RUN_DC_SKI_SMART"
-
-//#define VERSION "v02_7_26(5.20e)-ATOM_TIME_NFL_CHAIN_PARSE_HAT_MQTT_STATUS_LONGLONG_PTFEEDER"
-//#define VERSION "v01_30_26(5.20d)-ATOM_NFL_CHAIN_PARSE_HAT_MQTT_STATUS_LONGLONG_PTFEEDER"
-//#define VERSION "v01_01_26(5.20a)-ATOM_BLINK2_HAT_MQTT_STATUS_LONGLONG_PTFEEDER"
-
-//#define VERSION "v12_24_25(5.19c)-ATOM_BLINK_HAT_MQTT_STATUS_LONGLONG_PTFEEDER"
-
-//#define VERSION "v11_28_25(5.19a)-ATOM_HAT_MQTT_STATUS_LONGLONG_PTFEEDER"
-//#define VERSION "v10_27_25(5.17d)-ATOM_890_BUTTON_PTFEEDER_SSIDPASS_FRANCE_COLOR_2FEED_UNL2003_REFACTOR_NO_CAMERA"
-//#define VERSION "v9_15_25(5.15)-ATOM_NULL_SSIDPASS_FRANCE_COLOR_2FEED_UNL2003_REFACTOR_NO_CAMERA"
-
-//! ***** THIS IS MAIN "ATOM" *****   <<<<<<<<<<<< THIS ONE <<<<<<<<<<<<< M5Atom
-
-#endif //ESP_M5_ATOM_S3
-
+//! everyone is an ESP_M5 (vs ESP_32) and an M5_ATOM
 #define ESP_M5
 #define M5_ATOM
 
 //! 8.17.25 mix in the CAMERA .. 73%
 //#define USE_CAMERA_MODULE
 
+#ifdef ESP_M5_ATOM_S3
+//! 7.14.26 only ATOM_S# for now.. other would be the CORE2 or M5 Red
+//! 7.11.26 M5AtomS3 working .. now try display
+//! 7.16.26 not now ... figure this out later
+//#define USE_BUTTON_MODULE  //... ATOMQButtons.cpp  FOR NOW NOT!!  since sifferent than
+#define USE_DISPLAY_MODULE // .. no display
+#endif
 
-//#define USE_BUTTON_MODULE  ... ATOMQButtons.cpp
-//#define USE_DISPLAY_MODULE  .. no display
-
+//! both S3 and Lite are the following...
 #define USE_STEPPER_MODULE
 #define USE_UI_MODULE
 
@@ -182,10 +206,18 @@
 #define ATOM_QRCODE_MODULE
 //! including ATOM_SOCKET_MODULE now ...
 #define ATOM_SOCKET_MODULE
-//#else
 
+
+#ifdef ESP_M5_ATOM_S3
+//! 7.14.26 no fast led yet..
+//! 7.31.26 put back .. soon
+//! cant get KEY_PIN or DATA_PIN correct ..
+//#define USE_FAST_LED
+#else
 //! the ATOM uses FAST_LED (the light on top button, but not M5AtomS3)
-#define USE_FAST_LED
+//TRY WITHOUT 90% too big: 7.25.26
+//#define USE_FAST_LED
+#endif
 
 //! Sensors:  2.8.24 (30K above pacific)
 #define KEY_UNIT_SENSOR_CLASS
@@ -205,9 +237,7 @@
 //! 4.10.24 GPS sensor  (NOT WORKING .. but the Sensor GPS is working)
 //#define USE_GPS_SENSOR_CLASS
 
-//#endif // not M5AtomS3
-
-#endif //ESP_M5_ATOM_LITE
+#endif //ATOM_S3 || ESP_M5_ATOM_LITE
 
 //  ******************************* M5 red with display ******************************************
 
@@ -267,6 +297,9 @@
 //#define VERSION "Version-(2.13)-11.21.2022-ESP_M5_CAMERA_WEBPAGE_Timer"
 //#define VERSION "V(2.2e)-1.20.2024-ESP_M5_CAMERA_WEBPAGE_Timer_Groups_HTTPS_RTSP"
 #define VERSION "8.17.2025(v2.3)-M5ATOM_CAMERA_WEBPAGE_HTTPS_RTSP"
+
+//#define PARTITION_SCHEME_NOT_WORKING (char*)"Board=M5StickCPlus,P=1.9 Minimal SPIFFS with OTA"
+#define PARTITION_SCHEME (char*)"Board=M5TimerCam,P=1.9MB App Minimal SPIFFS with OTA"
 
 //! still getting xQueueGenericSend error on "status" and "feed" message
 #define ESP_M5
@@ -394,22 +427,27 @@
 //  ******************************* M5CORE2 ******************************************
 //! 1.22.24 M5CORE2 uses M5Core2 Library (not M5StackC-Plus)
 #ifdef M5CORE2_MODULE
-#define VERSION "2025v4.1.25-V(3.8a)-4.5.24-ESP_M5CORE2_OurM5Dsp_Touch_30KPacific_KeyUnit_ClickAudio_SPIFF"
+//! 8.6.26 after Seahawks Practice.. ty to get the M5Core2 working
+#define VERSION "v8.6.26-V(5.0)-ESP_M5CORE2_OurM5Dsp_Touch_30KPacific_KeyUnit_ClickAudio_SPIFF"
+#define PARTITION_SCHEME (char*)"Board=M5Core2,P=1.9MB App Minimal SPIFFS with OTA"
+
+//#define VERSION "2025v4.1.25-V(3.8a)-4.5.24-ESP_M5CORE2_OurM5Dsp_Touch_30KPacific_KeyUnit_ClickAudio_SPIFF"
 //#define VERSION "Version-(3.6)-3.17.24-ESP_M5CORE2_OurM5Dsp_Touch_30KPacific_KeyUnit_ChipID"
 #define ESP_M5
-#define USE_BUTTON_MODULE  ///... ATOMQButtons.cpp
-#define USE_DISPLAY_MODULE
+//#define USE_BUTTON_MODULE  ///... ATOMQButtons.cpp
+//#define USE_DISPLAY_MODULE
 
 //! 11.14.23 try "https" secure web call (to SemanticMarker.org/bot/...)
 //!  See https://GitHub.com/konacurrents/SemanticMarkerAPI for more info
-#define USE_REST_MESSAGING
+// 8.6.26 turn off for now..
+//#define USE_REST_MESSAGING
 
 //! from the ATOM code .. look at getting this working.
-#define USE_FAST_LED
+//#define USE_FAST_LED
 
 //! Sensors:  2.8.24 (30K above pacific)
 #define KEY_UNIT_SENSOR_CLASS
-#define USE_LED_BREATH
+//#define USE_LED_BREATH
 
 //! 4.2.24 try the audio .. but for the double click
 //#define USE_AUDIO_MODULE
@@ -418,6 +456,19 @@
 #define USE_SPIFF_MODULE
 #define USE_SPIFF_MQTT_SETTING
 #define USE_SPIFF_QRATOM_SETTING
+
+//! 8.6.26 add these ...
+//! 8.12.26 take off .. might fix Android issue
+//#define USE_LIB_WEBSERVER
+//! 7.26.26 maybe LIB_WEBSERVER uses "override" and my code doesn't have it..
+
+//! everyone is an ESP_M5 (vs ESP_32) and an M5_ATOM
+#define ESP_M5
+#define M5_ATOM
+
+//! add this 8.6.26
+#define ATOM_QRCODE_MODULE
+
 
 #endif //M5CORE2_MODULE
 
@@ -477,27 +528,47 @@ Error only one of ESP_M5 or ESP_32 or M5_ATOM or M5CORE2_MODULE must be defined
 //#define OLD_BLE_NO_ACK_APPROACH
 
 #ifdef ESP_M5
-#ifdef M5CORE2_MODULE
-#include <M5Core2.h>
-#else
+
+#  ifdef M5CORE2_MODULE
+//include <M5Core2.h>
+//#include <M5StickCPlus.h>
+
+#define M5UNIFIED
+#  endif
+
 //fix this... 4.25.24
-#ifdef  M5STICKCPLUS2
+#  ifdef  M5STICKCPLUS2
 #include <M5StickCPlus2.h>
-#else
+#  endif
+
 //! 8.30.24 add M5AtomS3
-#ifdef ESP_M5_ATOM_S3
-#include <M5AtomS3.h>
-#else
+#   ifdef ESP_M5_ATOM_S3
+//#include <M5AtomS3.h>
+#define M5UNIFIED
+
+#    endif
+
+
+//#ifdef NO_UNIFIED_WORK_7_14_OLD
+#    ifdef ESP_M5_ATOM_LITE
+//#pragma message ("ESP_M5_ATOM_LITE")
+//! 6.5.26 try unified (Bootstrap worked)
+//! 7.23.26 try without... use M5StickCPlus.h
+//#define M5UNIFIED
 #include <M5StickCPlus.h>
-#endif
+//#define ESP_M5_MINIMAL_SENSORS
+
+#      endif
+
+
+#ifdef M5UNIFIED
+#include "M5Unified.h"
 #endif
 
+#endif
 //! see https://github.com/m5stack/M5Stack/issues/97
 #undef min
-#endif //M5Core2
-#else
-#include <Arduino.h>
-#endif
+
 
 
 //Turn this on 1st time.. and testing..  AND if something drastic causes it to reboot always

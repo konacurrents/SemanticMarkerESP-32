@@ -12,12 +12,12 @@
 class KeyUnitSensorClass : public SensorClassType
 {
 public:
-	 //! constructor
+    //! constructor
     KeyUnitSensorClass(char *config);
-
-//! destructor
+    
+    //! destructor
     ~KeyUnitSensorClass();
-
+    
     //! Pure Virtual Function
     void loop();
     
@@ -27,9 +27,9 @@ public:
     //! 2.21.24 change color made public
     //! hope to call on FEED message received..
     void changeLedColor();
- 
+    
 #ifdef NOT_DEFINED
-
+    
     //! adding the messages as well
     //! 5.14.25 (Laura/Paul flying). 5.14.74 great Dead
     //! 8.28.23  Adding a way for others to get informed on messages that arrive
@@ -64,7 +64,9 @@ private:
     //! these are not initialized...
     int _scotty = 100;
     uint8_t _ledColor = 0;
+#ifdef USE_FAST_LED
     CRGB *_leds;        // Define the array of leds.  定义LED阵列.
+#endif
 };
 #endif
 #endif

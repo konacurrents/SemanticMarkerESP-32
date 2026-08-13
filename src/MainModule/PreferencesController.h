@@ -347,7 +347,7 @@ void printSensors_mainModule(SensorsStruct* sensors);
 
 #pragma mark CHAIN
 #pragma mark CHAIN STRUCT
-#define CHAIN_USE_MAX 15
+#define CHAIN_USE_MAX 20 //17
 
 #define BUTTON_ANY -1
 #define BUTTON_SHORT_PRESS 0

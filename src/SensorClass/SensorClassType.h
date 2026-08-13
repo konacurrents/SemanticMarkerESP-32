@@ -117,6 +117,9 @@ public:
     //! 12.19.25 add ability to know which kind of SensorClass we are
     //boolean isChainClass = false;
     
+    //! 8.8.26 state of the pins
+    boolean _pinsValid = false;
+
 private:
     
     //! callback storage

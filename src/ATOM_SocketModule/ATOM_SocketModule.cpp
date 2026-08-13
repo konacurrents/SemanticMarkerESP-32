@@ -69,6 +69,9 @@ void M5AtomSocketCallback(char *parameter, boolean flag)
     
 #ifdef USE_FAST_LED
     fillpix(L_YELLOW);
+#else
+    //! 8.2.26 LED working
+    setLEDColor(YELLOW_LED);
 #endif
     toggle_ATOM_SocketModule();
 
@@ -87,6 +90,9 @@ void set_ATOM_SocketModule(boolean flag)
         ATOM.SetPowerOn();
 #ifdef USE_FAST_LED
         fillpix(L_GREEN);
+#else
+        //! 8.2.26 LED working
+        setLEDColor(GREEN_LED);
 #endif
         //! 1.1.24 syntax:   socket=on  or socket=off (somewhere in the string..) .. this version, only string avaialble..
         storePreference_mainModule(PREFERENCE_ATOMS_SETTING, "socket=on");
@@ -97,6 +103,9 @@ void set_ATOM_SocketModule(boolean flag)
 #ifdef USE_FAST_LED
         fillpix(L_YELLOW);
         //or turn light off??
+#else
+        //! 8.2.26 LED working
+        setLEDColor(YELLOW_LED);
 #endif
         //! 1.1.24 syntax:   socket=on  or socket=off (somewhere in the string..)
         storePreference_mainModule(PREFERENCE_ATOMS_SETTING, "socket=off");
@@ -176,20 +185,16 @@ void setup_ATOM_SocketModule()
     else
         _isOn_ATOM_SocketModule = false;
     
-    //! TODO..
-#ifdef ESP_M5_ATOM_S3
-    M5.begin();
-#else
     SerialDebug.println("setup_ATOM_SocketModule.M5.begin");
-
-    M5.begin(true, false, true);
-#endif
     
     
 #ifdef USE_FAST_LED
     //!NOTE: this could probably be done by ESP_IOT.ino .. but for now keep here (and in the other ATOM code..)
     setup_M5Display();
     fillpix(L_GREEN);
+#else
+    //! 8.2.26 LED working
+    setLEDColor(GREEN_LED);
 #endif
     
     //! ijnit the ATOM Socket
@@ -240,7 +245,7 @@ void loop_ATOM_SocketModule()
     }
 #endif
     
-    M5.update();
+    espUpdate_mainModule(2); //7.26.26 //M5.update();
     //    checkButtonA_ATOM_SocketModule();
     checkButtonB_ATOM_SocketModule();
     
@@ -367,6 +372,9 @@ void loopCode_ATOM_SocketModule()
     {
 #ifdef USE_FAST_LED
         fillpix(L_RED);
+#else
+        //! 8.2.26 LED working
+        setLEDColor(RED_LED);
 #endif
         SerialDebug.printf("CLEAN CREDENTIALS and reboot to AP mode\n");
         

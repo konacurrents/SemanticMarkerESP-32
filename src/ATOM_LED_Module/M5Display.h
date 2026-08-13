@@ -3,6 +3,9 @@
 
 #include "../../Defines.h"
 
+//! the setup()   no loop()
+void setup_M5Display();
+
 #ifdef USE_FAST_LED
 
 //! CRGB is RGB
@@ -17,8 +20,6 @@
 
 #include <FastLED.h>
 
-//! the setup()   no loop()
-void setup_M5Display();
 
 void animation(uint8_t *buffptr, uint8_t amspeed, uint8_t ammode, int64_t amcount = -1);
 void displaybuff(uint8_t *buffptr, int8_t offsetx = 0, int8_t offsety = 0);

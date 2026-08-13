@@ -32,8 +32,18 @@
 boolean _shortPress_MainModule = false;
 boolean _longPress_MainModule = false;
 boolean _longLongPress_MainModule = false;
+boolean _doublePress_MainModule = false;
+
+//! 8.11.26 have B (the top of the display button on M5AtomS3
+//! 10.16.25 add buttons
+boolean _shortPressB_MainModule = false;
+boolean _longPressB_MainModule = false;
+boolean _longLongPressB_MainModule = false;
+boolean _doublePressB_MainModule = false;
+
 //!big button on front of M5StickC Plus
 void checkButtonA_MainModule();
+//! buttonB will set the _shortPressB .. fields
 void checkButtonB_MainModule();
 
 //! instances of the M5AtomClassType
@@ -72,7 +82,16 @@ M5AtomClassType *_whichM5AtomClassType;
 
 #pragma mark SensorClassType
 
+#ifdef ESP_M5_ATOM_S3
+//! 7.12.26 Ashton's 12th birthday  in Hawaii
+//! M5AtomS3 working .. now add more ...
 #define USE_SENSOR_CLASS
+// blowing up at ChainButtonClass::setup(19.22) ...  PINS are now:
+// blowing up at ChainButtonClass::setup(6,5) BLOWING STILL ...  PINS are now:
+
+#else
+#define USE_SENSOR_CLASS
+#endif
 #ifdef  USE_SENSOR_CLASS
 //! 5.14.25 
 #include "../SensorClass/SensorClassType.h"
@@ -114,6 +133,8 @@ void loopSensorClassTypeArray()
 
     if (sensorsStruct)
     {
+        //printSensors_mainModule(sensorsStruct);
+        
         //! all the sensors defined
         //! sensors is an array of sensor
         SensorStruct *sensors = sensorsStruct->sensors;
@@ -127,6 +148,7 @@ void loopSensorClassTypeArray()
             //! so the instantiator will now create a DUMMY SensorClass object .. so this works.
             //! The issue is there can be a sensor that doesn't exist so that slot is empty .. but the &sensors[i] BLOWS up
             SensorStruct* sensor = &sensors[i];
+            //SerialTemp.printf("sensor = %d\n", sensor);
 
             //! 11.28.25 KLUDGE .. for now only this sensor has a loop
          //   if (strcmp(sensor->sensorName, (char*)"PIRSensorClass")==0)
@@ -243,47 +265,13 @@ void initSensorClassTypeArray()
                     //! set the running sensor type for this instnce (currently only 1 per sensor type)
                     sensor->sensorClassType = whichSensorClassType;
                     
-#ifdef ALL_ARE_SENSOR_CLASS
-                    //! 12.20.25 Winter Solstice party, do some polymorphsm if different sub-class (ChainButtonClassType)
-                    //! @see https://forum.arduino.cc/t/casting-from-base-class-to-derived-class/849723/9
-                    //! not allowed ....
-                    //! @see https://stackoverflow.com/questions/307765/how-do-i-check-if-an-objects-type-is-a-particular-subclass-in-c
-                    //! 12.21.25 Eagles 2
-                    //! no static, no dynamic (now try typeid)
-                    //if (dynamic_cast<ChainButtonClass*>(whichSensorClassType) != nullptr)
-                    //if (static_cast<ChainButtonClass>(whichSensorClassType) != nullptr)
-                    switch (whichSensorClassType->type())
-                    {
-                        case Type::ChainButtonClassType:
-                            
-                            //! this is a ChainButton .. do something different..
-                            SerialDebug.printf("whichSensorClass == ChainButtonClassType\n");
-                            //! SET the other sensors
-                            //! TODO .. set it's values differently (no Pins)
-                            //! 1.22.26 2026
-                            //! set the messages and button definition..
-                            //! NOTE: the button number will have to be set as well.
-                            //! Actually there will be a lot of info for the button configuration
-                            //! already read into the SensorStruct
-                            break;
-                        case Type::SensorClassType:
-                            
-                            //! this is a ChainButton .. do something different..
-                            SerialDebug.printf("whichSensorClass == SensorClassType\n");
-                            //! call this setup and pin sets
-                            //! setup and then setPins..
-                            whichSensorClassType->setPinValues(sensor->pin1, sensor->pin2);
-                            //! TODO .. set it's values differently (no Pins)
-                            break;
-                    }
-#else
                     //! call this setup and pin sets
                     //! setup and then setPins..
                     whichSensorClassType->setPinValues(sensor->pin1, sensor->pin2);
                     //! 1.22.26 the Chain will read the button definitions at setup time and loop time
-#endif
                  
-                    
+                    SerialTemp.printf("sensor.setup(%s) = %d\n", whichSensorClassType->classIdentity(), whichSensorClassType);
+
                     //! call setup
                     whichSensorClassType->setup();
                     //! exit loop
@@ -291,34 +279,7 @@ void initSensorClassTypeArray()
                     break;
                 }
             }
-#ifdef NOT_OO_ENOUGH
-            if (strcmp(sensor->sensorName, "BuzzerSensorClass")==0)
-            {
-                //! init this class
-                _BuzzerSensorClass = new BuzzerSensorClass((char*)"BuzzerSensorClass");
-                //! store the class type instance
-                sensor->sensorClassType = _BuzzerSensorClass;
-                //! setup and then setPins..
-                _BuzzerSensorClass->setPinValues(sensor->pin1, sensor->pin2);
-                
-                //! call setup
-                _BuzzerSensorClass->setup();
-            }
-            //! 11.27.25 Turkey Day, Mt Out nice
-            //! adding the PIRSensorClass
-            else if (strcmp(sensor->sensorName, "PIRSensorClass")==0)
-            {
-                //! init this class
-                _PIRSensorClass = new PIRSensorClass((char*)"PIRSensorClass");
-                //! store the class type instance
-                sensor->sensorClassType = _PIRSensorClass;
-                //! setup and then setPins..
-                _PIRSensorClass->setPinValues(sensor->pin1, sensor->pin2);
-                
-                //! call setup
-                _PIRSensorClass->setup();
-            }
-#endif
+
             if (!foundMatchingClassType)
             {
                 SerialDebug.printf("Missing SensorClass definition: %s\n", sensor->sensorName);
@@ -451,6 +412,21 @@ void initGlobals_mainModule()
 void setup_mainModule()
 {
     SerialMin.println("setup_mainModule");
+    
+    //! change LED
+    setLEDColor(BLUE_LED);
+    
+#ifdef DONE_IN_INO
+    //! 7.9.26 add this. 20 mile bike ride .. felt good
+#ifdef ESP_M5_ATOM_S3
+    espBegin_mainModule(0); //7.26.26 //M5.Begin();
+#else
+    // Init Atom-Matrix(Initialize serial port, LED).
+    //M5.begin(true, false, true);
+    espBegin_mainModule(0); //7.26.26 //M5.Begin();
+#endif
+#endif
+    
 #ifdef BOOTSTRAP_CLEAN
     //!cleans the EPROM .. if things are really not working..
     cleanEPROM_mainModule();
@@ -502,22 +478,54 @@ void setup_mainModule()
     }
     
 #define NEW_SENSORS
+#ifdef USE_SENSOR_CLASS
     //! 5.14.25 use the Sensor types
     //! first we have N sensors
     //! then we get which ones the user wants (the SENSORS_SETTING)
     //! then we instantiate, and provide ping, etc.
     initSensorClassTypeArray();
+#endif
     
-#define TRY_DUPLICATES_works
+#define TRY_DUPLICATES_works //uncomment to try again..
 #ifdef  TRY_DUPLICATES
     {
         //! 8.32.25 added a test .. the '.' needs to run.. to see the error
-        registerPinUse_mainModule(22, "TestPin22", "MainModule", false);
-        registerPinUse_mainModule(27, "TestPin27", "MainModule", false);
+        boolean pinValid = registerPinUse_mainModule(22, "TestPin22", "MainModule", false);
+        pinValid = pinValid && registerPinUse_mainModule(27, "TestPin27", "MainModule", false);
+        if (!pinValid)
+        {
+            SerialError.println("*** invalidPins testing..");
+        }
     }
 #endif
     
     SerialDebug.println("END setup_mainModule");
+}
+
+//! main BEGIN and UPDATE .. everyone calls this .. and we can see if dont too many times
+//! 7.26.26
+//! the Beging aggregate
+void espBegin_mainModule(int num)
+{
+    SerialDebug.print(" **** ESP BEGIN: ");
+    SerialDebug.println(num);
+    
+#ifdef ESP_ATOM_S3
+    Atom.begin();
+#else
+    M5.begin();
+#endif
+    SerialDebug.println(" *** DONE M5.begin");
+}
+//! the Update aggrgate
+void espUpdate_mainModule(int num)
+{
+    SerialLots.printf("***ESP UPDATE(%d)\n",num);
+#ifdef ESP_ATOM_S3
+    Atom.update();
+#else
+    M5.update();
+#endif
 }
 
 #if defined(ESP_M5_CAMERA) || defined(ESP_32)
@@ -532,9 +540,14 @@ char _serialBuffer[300];
 //! called for the loop() of this plugin
 void loop_mainModule()
 {
-    //no op..
     
-  
+    //! 7.9.26 add this. 20 mile bike ride .. felt good
+#ifdef ESP_M5_ATOM_S3
+    espUpdate_mainModule(0); //AtomS3.update();
+#else
+    espUpdate_mainModule(0); //M5.update();
+#endif
+
     
 #if defined(ESP_M5_CAMERA) || defined(ESP_32)
     //!only do this menu update if there is no DisplayModule running the MVC loop
@@ -561,43 +574,106 @@ void loop_mainModule()
         // read string until meet newline character
         String command = Serial.readStringUntil('\n');
         
-        SerialDebug.println(command);
+        SerialDebug.printf("** SerialCommand: %s\n", command);
         //! save globally for the callback below..
         strcpy(_serialBuffer, command.c_str());
         
         if (command == "help")
         {
+            SerialTemp.println(VERSION);
+
             SerialDebug.println("Enter any Single Char or JSON msg, type '.' for commands");
             SerialDebug.println("r -- reboot");
             SerialDebug.println(". -- shows single char commands");
             SerialDebug.println("Example JSON to change WIFI (copy and modify with your values)");
             SerialDebug.println("   supports single quotes for values");
-            SerialDebug.println("{'ssid':'Bob', 'ssidPassword':'scott'}");
-            
+            SerialDebug.println("    Use to set your WIFI");
+            SerialDebug.println("{'ssid':'SunnyWhiteriver', 'ssidPassword':'sunny2021'}");
+            SerialDebug.println("{'ssid':'wes', 'ssidPassword':'wes'}");
+            SerialDebug.println();
+
+                        
+            //! 7.23.26 this callback only gets called if the BLE_Server is on.. so let's call it anyway without the callback.
+            //processClientCommandChar_mainModule('.');
         }
         else if (command == "r")
         {
             rebootDevice_mainModule();
         }
+        //! 8.10.26 Nice boat trip to Fox Island and Tanglewood
+        //! work on the TEST ideas
+        else if (command == "test1")
+        {
+            // do an ota of test1 ... ???
+            SerialDebug.println(" **** TODO: OTA for test1");
+        }
+        //! 8.11.26 reate test user
+        else if (command == "test")
+        {
+            SerialDebug.println("create TEST user");
+            SerialDebug.println("{'ssid':'SunnyWhiteriver', 'ssidPassword':'sunny2021'}");
+            SerialDebug.println("{'ssid':'wes', 'ssidPassword':'wes'}");
+            /*
+            {
+                "ssid" : "SunnyWhiteriver",
+                "ssidPassword" : "sunny2021",
+                "mqtt_topic": "usersP/bark/test",
+                "mqtt_user" : "test",
+                "deviceName" : "M5AtomTest",
+                "mqtt_password" : "test",
+                "mqtt_guestPassword" : "test",
+                "uuid" : "test",
+                "mqtt_port" : "1883",
+                "mqtt_server" : "idogwatch.com",
+                "mqtt_status" : "Success",
+                "location": "seattle, wa"
+            }
+             */
+            char credentials[400];
+            sprintf(credentials,
+                    "{'ssid':'SSID','ssidPassword':'PASS','mqtt_topic':'usersP/bar/test','mqtt_user':'test','deviceName':'M5Atomtest','mqtt_password':'test','mqtt_guestPassword':'test','uuid':'test','mqtt_port':'1883','mqtt_server':'idogwatch.com','location':'Seattle,Wa'}");
+            
+            
+            //!These are the ASYNC_CALL_PARAMETERS_MAX
+            //!NO: just change our credentials ...
+            //send to ourself.., recursively...
+            int val = processJSONMessageMQTT(credentials, TOPIC_TO_SEND);
+        }
         else
         {
-            //!call the callback specified from the caller (eg. NimBLE_PetTutor_Server .. or others)
-            callCallbackMain(CALLBACKS_BLE_SERVER, BLE_SERVER_CALLBACK_ONWRITE, _serialBuffer);
+            //! 8.7.26 w laura babe,
+            //! Tyler,  if BLEServer is on .. send the serial buffer ..
+            //! if not serial server .. then accept single commands .. and go right there .. basically to turn on the server
+            if (getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE))
+            {
+                //!call the callback specified from the caller (eg. NimBLE_PetTutor_Server .. or others)
+                callCallbackMain(CALLBACKS_BLE_SERVER, BLE_SERVER_CALLBACK_ONWRITE, _serialBuffer);
+            }
+            else
+                //! 7.23.26 this callback only gets called if the BLE_Server is on.. so let's call it anyway without the callback.
+                processClientCommandChar_mainModule(_serialBuffer[0]);
+
         }
     }
     
 #pragma mark button processing
 #ifdef USE_BUTTON_MODULE
+    //! duplicate here for now...
+    checkButtonA_MainModule();
+
 #else
     //! 10.16.25 add the M5.update here...
-    M5.update();
+    //! 7.14.26 THIS no-work, cannot do update 2 times.. the butotns won't work.
+  //  M5.update();
     
     //! 10.16.25 Mt out .. looks like storm comming
     //! implement the buttonA here..
     //!big button on front of M5StickC Plus
     checkButtonA_MainModule();
     //! 10.16.25 seems the big button on M5ATOM is Button B ..
+    //! the LED push button...  (WE HAVE TO SUPPORT A,B,C buttons .. )
     checkButtonB_MainModule();
+    //! now process single button .. merged
     if (_shortPress_MainModule)
     {
         buttonA_ShortPress_mainModule();
@@ -614,8 +690,10 @@ void loop_mainModule()
     }
 #endif
     
+#ifdef USE_SENSOR_CLASS
     //! 11.27.25 Turkey Day, loop
     loopSensorClassTypeArray();
+#endif
 }
 
 
@@ -847,7 +925,7 @@ boolean isTrueString_mainModule(String valCmdString)
 //! It's up to the receiver to decide if it has to be specified
 void messageSetVal_mainModule(char *setName, char* valValue, boolean deviceNameSpecified)
 {
-    SerialCall.printf("messageSetVal(%s,%s)\n", setName, valValue);
+    SerialTemp.printf("messageSetVal(%s,%s)\n", setName, valValue);
     // THE IDEA WOULD be a callback is avaialble..
     //FOR now.. just ifdef
 #ifdef M5_ATOM
@@ -855,8 +933,10 @@ void messageSetVal_mainModule(char *setName, char* valValue, boolean deviceNameS
     if (_whichM5AtomClassType)
         _whichM5AtomClassType->messageSetVal_M5AtomClassType(setName, valValue, deviceNameSpecified);
 
+#ifdef USE_SENSOR_CLASS
     //! 1.24.26 call the same on the SensorClassType
     messageSetVal_SensorClassTypeArray(setName, valValue, deviceNameSpecified);
+#endif
     
 #endif //M5_ATOM
     
@@ -924,9 +1004,11 @@ void feedMessageCallback(char *message)
         SerialLots.println("after send feed via ble");
     }
     
+#ifdef TOO_MUCH_7_10_26
     //! 11.26.25 try the #STATUS on every feed
     SerialDebug.println("FEED now send STATUS");
     sendMessageMQTT((char*)"#STATUS");
+#endif
 }
 
 //!moved here 4.25.22 (entirely from ESP_IOT.ino)
@@ -1162,7 +1244,12 @@ void poweroff_mainModule()
 #ifndef M5STICKCPLUS2
 
 #ifndef ESP_M5_ATOM_S3
+    
+#ifdef M5UNIFIED
+    //! 6.5.26
+#else
     M5.Axp.PowerOff();
+#endif
 #endif
 #endif
 #endif
@@ -1373,7 +1460,10 @@ void main_dispatchSyncCommand(int syncCallCommand)
                     buzzerSensor->sensorClassType->messageLocal_SensorClassType((char*)"click");
                 }
                 else
-                    SerialDebug.println("NO BuzzerSensorClass defined");
+                {
+                    SerialDebug.println("NO BuzzerSensorClass defined ..turn off");
+                    savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE, false);
+                }
             }
         }
             break;
@@ -1395,6 +1485,7 @@ boolean _asyncCallFlagsParameters[ASYNC_CALL_PARAMETERS_MAX];
 //!initialize the async call flags (with and without parameters)
 void initAsyncCallFlags()
 {
+    SerialTemp.printf("initAsyncCallFlags(%d,%d)\n", ASYNC_CALL_MAX, ASYNC_CALL_PARAMETERS_MAX);
     for (int i = 0; i < ASYNC_CALL_MAX; i++)
     {
         _asyncCallFlags[i] = false;
@@ -1468,7 +1559,7 @@ void invokeAsyncCommands()
         boolean asyncCallFlag = _asyncCallFlagsParameters[i];
         if (asyncCallFlag)
         {
-            SerialCall.printf("invokeAsyncCommands(%d)\n", i);
+            SerialTemp.printf("invokeAsyncCommands(%d)\n", i);
             _asyncCallFlagsParameters[i] = false;
             switch (i)
             {
@@ -2022,6 +2113,10 @@ void main_printModuleConfiguration()
     SerialMin.println(F("[x] ESP_M5_SMART_CLICKER_CONFIGURATION"));
 #else
     SerialMin.println(F("[ ] ESP_M5_SMART_CLICKER_CONFIGURATION"));
+#endif
+    //! 7.9.26 Nice summer.. up and dow, 20 mile bike today..
+#ifdef ESP_M5_ATOM_S3
+    SerialMin.println(F("[x] ESP_M5_ATOM_S3"));
 #endif
 #ifdef ESP_M5_ATOM_LITE
     SerialMin.println(F("[x] ESP_M5_ATOM_LITE"));
@@ -2687,12 +2782,7 @@ void processClientCommandChar_mainModule(char cmd)
             SerialDebug.println("Setting tilt = OFF");
             savePreferenceBoolean_mainModule(PREFERENCE_SENSOR_TILT_VALUE, false);
         } break;
-        case 'R':
-        {
-            SerialDebug.println("Clean Credentials");
-            //! dispatches a call to the command specified. This is run on the next loop()
-            main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_CREDENTIALS);
-        } break;
+   
             //!6.20.25
 #ifdef NOT_SUPPORTED_RIGHT_NOW
         case 'O':
@@ -2702,9 +2792,13 @@ void processClientCommandChar_mainModule(char cmd)
             main_dispatchAsyncCommand(ASYNC_CALL_OTA_UPDATE);
         } break;
 #endif
+#define SUPPORT_MINI_CLEAN
+#ifdef SUPPORT_MINI_CLEAN
+            //! 7.16.26 SpaceX 1 sec stoppage
+            //! only suport Clean Credentials
         case 'X':
         {
-            SerialDebug.println("Clean EPROM.. ");
+            SerialDebug.println("Clean EPROM.. so it's first time again");
             //! dispatches a call to the command specified. This is run on the next loop()
             main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_EPROM);
         } break;
@@ -2718,6 +2812,16 @@ void processClientCommandChar_mainModule(char cmd)
             //! send to ourself
             sendMessageNoChangeMQTT((char*)cleanWIFI);
                         
+        } break;
+#else
+        case 'X':
+        case 'x':
+#endif
+        case 'R':
+        {
+            SerialDebug.println("Clean Credentials");
+            //! dispatches a call to the command specified. This is run on the next loop()
+            main_dispatchAsyncCommand(ASYNC_CALL_CLEAN_CREDENTIALS);
         } break;
             
             //!NOTE: the gateway is auto selected for now. A future version might manually set it in other situations (eg. my iPhone app should have a flag to not be a gateway at time)
@@ -2956,6 +3060,33 @@ void processClientCommandChar_mainModule(char cmd)
             //!retrieves from constant location
             performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/Bootstrap/ESP_M5_BOOTSTRAP.ino.m5stack_stickc_plus.bin");
         } break;
+#pragma mark M5AtomS3 OTA
+            //! 7.10.26 M5AtomS3 (without display)
+            //        SerialDebug.println("   y -  _m5atomS3");
+            //        SerialDebug.println("   Y -  _mm5atomS3Daily");
+            //! must be first..
+        case 'y':
+        {
+            SerialDebug.println(" *** performing m5atomS3 OTA Update");
+            
+            //!retrieves from constant location
+            performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5AtomS3/ESP_IOT.ino.m5stick_c_plus.bin");
+        }break;
+        case 'Y':
+        {
+            SerialDebug.println(" *** performing m5atomS3 OTA Update - DAILY");
+            
+            //!retrieves from constant location
+            performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5AtomS3/daily/ESP_IOT.ino.m5stick_c_plus.bin");
+        }break;
+            //! 8.11.26 added the platform.io bin (which Wes creates)
+        case '+':
+        {
+            SerialDebug.println(" *** performing m5atomS3_platform.io OTA Update - DAILY");
+            
+            //!retrieves from constant location
+            performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5AtomS3/platform.io/daily/ESP_IOT.ino.m5stick_c_plus.bin");
+        }break;
             //! 8.18.25
         case '8':
         {
@@ -2986,6 +3117,9 @@ void processClientCommandChar_mainModule(char cmd)
             CRGB randomColor = getRandomColor();
             fillpix(randomColor);
             delay(50);
+#else
+            //! 8.2.26 random LED color
+            setLEDColor(getRandomColor());
 #endif
         }
             break;
@@ -2999,7 +3133,42 @@ void processClientCommandChar_mainModule(char cmd)
             sendMessageNoChangeMQTT((char*)sendCapture);
             
         }
+#pragma mark BLE_SETTINGS
+            //! 8.11.26 BLE Server and Client on/off
+        case '!':
+        {
+            SerialDebug.println("       ! -  BLE_Client on");
+            savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE, true);
+            //! reboot .. so the sensors are set..
+            rebootDevice_mainModule();
+        }
             break;
+        case '@':
+        {
+            SerialDebug.println("       @ -  BLE_Client off");
+            savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE, false);
+            //! reboot .. so the sensors are set..
+            rebootDevice_mainModule();
+        }
+            break;
+        case '#':
+        {
+            SerialDebug.println("       # -  BLE_Server on");
+            savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE, true);
+            //! reboot .. so the sensors are set..
+            rebootDevice_mainModule();
+        }
+            break;
+        case '$':
+        {
+            SerialDebug.println("       $ -  BLE_Server off");
+            savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE, false);
+            //! reboot .. so the sensors are set..
+            rebootDevice_mainModule();
+        }
+            break;
+            
+#pragma mark HELP
         case '.':
         {
             
@@ -3008,7 +3177,7 @@ void processClientCommandChar_mainModule(char cmd)
             boolean val = getPreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE);
             //! toggle spiff on/off
             boolean spiffFlag = getPreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_SETTING);
-            
+            SerialTemp.println(VERSION);
             SerialMin.println("Valid Commands: ");
             SerialMin.println("         . = help, this message");
             SerialMin.println("         p = poweroff if can");
@@ -3034,7 +3203,7 @@ void processClientCommandChar_mainModule(char cmd)
             SerialMin.println("         G == Gateway On");
             SerialMin.println("         g == Gateway Off");
             SerialMin.println("         R == clean credentials");
-            SerialMin.println("         X == clean EPROM");
+            SerialMin.println("         X == clean EPROM <<<< FIRST TIME DO THIS <<<< 7.26.26");
             SerialMin.println("         x == clean SSID from EPROM");
             SerialMin.println("         r == reboot ");
             //!6.20.25
@@ -3080,12 +3249,31 @@ void processClientCommandChar_mainModule(char cmd)
 #ifdef NOT_SUPPORTED_RIGHT_NOW
             SerialMin.println("         O == OTA update");
 #else
-            SerialMin.println("    OTA Updates of M5Atom  ");
+            SerialMin.println("    OTA Updates of M5AtomLite -board M5StickCPlus ");
             SerialMin.println("         5 == m5atom DEV OTA update");
             SerialMin.println("         6 == m5atom DAILY TEST DEV OTA update");
             SerialMin.println("         7 == go back to m5atom BOOTSTRAP");
 
+            //! 7.10.26 M5AtomS3 (without display)
+            SerialDebug.println("   OTA updates for M5AtomS3 - board M5AtomS3");
+            SerialDebug.println("       y -  _m5atomS3");
+            SerialDebug.println("       Y -  _mm5atomS3Daily");
+            SerialDebug.println();
+            //! 8.11.26 M5AtomS3_platformIO
+            SerialDebug.println("   OTA updates for M5AtomS3 - board M5AtomS3 - platform.io");
+            SerialDebug.println("       + -  _mm5atomS3Daily_platform.io");
+            SerialDebug.println();
 #endif
+            //! 8.11.26 BLE Server and Client on/off
+            SerialDebug.println("   Turn On/Off BLE Server and Client");
+            SerialDebug.println("       ! -  BLE_Client on");
+            SerialDebug.println("       @ -  BLE_Client off");
+            SerialDebug.println("       # -  BLE_Server on");
+            SerialDebug.println("       $ -  BLE_Server off");
+            SerialDebug.println("       test -- create test user ");
+
+            SerialDebug.println();
+            
             SerialMin.println();
             SerialMin.println("Full API at: https://github.com/konacurrents/SemanticMarkerAPI");
             SerialMin.println();
@@ -3128,7 +3316,21 @@ void setConfiguration_mainModule(char* configurationName)
 #ifdef DONT_ADD_TO_SENSORS
         setSensorsString_mainModule((char*)"BuzzerSensorClass,21,25,PTStepperClass,23,33");
 #else
-        setSensorsString_mainModule((char*)"BuzzerSensorClass,21,25");
+#ifdef ESP_M5_ATOM_S3
+        //! 7.12.26 Ashton's 12th birtyday, Bike ride 20
+        //! seems the AtomS3 blows UP with 19,22
+        //! now they are 39, 38
+        //! now -1, 39
+        setSensorsString_mainModule((char*)"BuzzerSensorClass,-1,39");
+
+#else
+     //   setSensorsString_mainModule((char*)"BuzzerSensorClass,21,25");
+        //! try -1 and 21 ...
+        //! 7.14.26 warm day, fluffing up hay in field
+        
+         setSensorsString_mainModule((char*)"BuzzerSensorClass,-1,21");
+
+#endif
 
 #endif
         //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
@@ -3155,6 +3357,9 @@ void setConfiguration_mainModule(char* configurationName)
         //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
         savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
 
+        //!if set, the BLE client OFF
+        savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE,false);
+
         //! reboot .. so the sensors are set..
         rebootDevice_mainModule();
     }
@@ -3164,10 +3369,21 @@ void setConfiguration_mainModule(char* configurationName)
     else if (strcmp(configurationName, "ChainButtonClass")==0)
     {
         //! poweroff
-        SerialDebug.println("Default ChainButtonClass  **** NEED WORK ****");
+        SerialDebug.println("Default ChainButtonClass  **** hardcoded button messages ****");
         //resetSensorToDefault_mainModule();
+#ifdef ESP_M5_ATOM_S3
+        //! 7.12.26 Ashton's 12th birtyday, Bike ride 20
+        //! seems the AtomS3 blows UP with 19,22
+        //! now they are G6 and G5
+        //setSensorsString_mainModule((char*)"ChainButtonClass,6,5");
+        //! 8.7.26 w Laura, swap pins .. RXD, TXD
+        //! 8.8.26 Row Jimmy, Bike warm nice. less smoke, put back the 6,5 pins..
+        setSensorsString_mainModule((char*)"ChainButtonClass,6,5");
+
+#else
         //! 7.30.25 changing to the HDriver's board
         setSensorsString_mainModule((char*)"ChainButtonClass,19,22");
+#endif
         
         //! 7.31.25 if Scanner or QR then pin 22 used .. so make M5HDriver (basically don't have a sensor)
         savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5AtomNoModule");
@@ -3203,6 +3419,7 @@ void setConfiguration_mainModule(char* configurationName)
         //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
         savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
         
+        //! this initializes as well as prints (I think) 8.8.26
         processClientCommandChar_mainModule('.');
 
         //! reboot .. so the sensors are set..
@@ -3724,6 +3941,23 @@ void setup_Sensors_mainModule()
     //! find the current atomKind. which is a string
     char *atomKind = getPreferenceATOMKind_MainModule();
     
+#pragma mark DEBUG_7_9_26
+    {
+        if (!atomKind || strlen(atomKind) ==0)
+        {
+            SerialDebug.println(" **** no atomKind set .. use M5AtomNoModule");
+            atomKind = (char*)"M5AtomNoModule";
+        }
+        SerialDebug.printf("**** setting M5AtomNoModule %s\n", atomKind);
+        // still don't get it.. but for motor lets change this...
+//        atomKind = "M5AtomNoModule";
+//        processClientCommandChar_mainModule('3');
+    }
+//    SerialDebug.println(" **** no atomKind set .. use M5AtomNoModule");
+//    atomKind = "M5AtomNoModule";
+//    SerialDebug.println(" **** no atomKind set .. use M5AtomNoModule");
+#pragma mark endDebug
+    
     //! find which one..
     for (int i=0; i<NUM_M5ATOM_CLASS; i++)
     {
@@ -3762,7 +3996,9 @@ void setup_Sensors_mainModule()
         _whichM5AtomClassType->setup_M5AtomClassType();
     
     // end atom
-
+#pragma mark DEBUG_7_9_26
+    //SerialDebug.println("** DEBUG: xxx");
+    
 #elif defined(M5BUTTON_MODULE)
     setup_M5ButtonModule();
 #endif
@@ -3819,7 +4055,10 @@ void buttonA_LongPress_mainModule()
 void buttonA_LongLongPress_mainModule()
 {
 #ifdef USE_BUTTON_MODULE
-    buttonA_LongLongPress();
+    //buttonA_LongLongPress();
+    //! 7.11.26 nedw M5AtomS3a  NOT: let's turn off USE_BUTTON for now
+    //buttonA_LongLongPress_mainModule();
+
 #endif
 #ifdef M5CORE2_MODULE
     buttonA_LongLongPress_M5Core2Module();
@@ -3831,6 +4070,10 @@ void buttonA_LongLongPress_mainModule()
     {
         SerialDebug.println("buttonA_LongLongPress_mainModule");
         _whichM5AtomClassType->buttonA_LongLongPress_M5AtomClassType();
+    }
+    else
+    {
+        SerialDebug.println(" *** buttonA_LongLongPress undefined ****");
     }
     
 #elif defined(M5BUTTON_MODULE)
@@ -3870,26 +4113,85 @@ void checkButtonA_MainModule()
     _shortPress_MainModule = false;
     _longPress_MainModule = false;
     _longLongPress_MainModule = false;
-#ifdef ESP_M5
-
+#ifdef M5UNIFIED
     //!NOTE: ths issue is the timer is interruped by the scanner.. so make long-long very long..
     //was 1000  (from 500)
-    if (M5.BtnA.wasReleasefor(4500))
+    if (M5.BtnA.wasPressed())
     {
         //        buttonA_longPress_MainModule();
-        SerialDebug.println("MainModule **** LONG LONG PRESS ***");
+        SerialDebug.println("MainModule M5.BtnA **** wasPressed ***");
+        _shortPress_MainModule = true;
+    }
+    else if (M5.BtnA.wasReleasefor(4500))
+    {
+        //        buttonA_longPress_MainModule();
+        SerialDebug.println("MainModule M5.BtnA **** LONG LONG PRESS ***");
         _longLongPress_MainModule = true;
     }
     else if (M5.BtnA.wasReleasefor(1000))
     {
         //        buttonA_longPress_MainModule();
-        SerialDebug.println("MainModule **** LONG PRESS ***");
+        SerialDebug.println("MainModule M5.BtnA **** LONG PRESS ***");
         _longPress_MainModule = true;
     }
     else if (M5.BtnA.wasReleased())
     {
         //        buttonA_shortPress_MainModule();
-        SerialDebug.println("MainModule **** SHORT PRESS ***");
+        SerialDebug.println("MainModule M5.BtnA **** wasReleased ***");
+        _shortPress_MainModule = true;
+    }
+#elif defined(ESP_M5_ATOM_S3)
+    //!NOTE: ths issue is the timer is interruped by the scanner.. so make long-long very long..
+    //was 1000  (from 500)
+    if (AtomS3.BtnA.wasPressed())
+    {
+        //        buttonA_longPress_MainModule();
+        SerialDebug.println("MainModule M5.BtnA **** wasPressed ***");
+        _shortPress_MainModule = true;
+    }
+    else if (AtomS3.BtnA.wasReleasefor(4500))
+    {
+        //        buttonA_longPress_MainModule();
+        SerialDebug.println("MainModule M5.BtnA **** LONG LONG PRESS ***");
+        _longLongPress_MainModule = true;
+    }
+    else if (AtomS3.BtnA.wasReleasefor(1000))
+    {
+        //        buttonA_longPress_MainModule();
+        SerialDebug.println("MainModule M5.BtnA **** LONG PRESS ***");
+        _longPress_MainModule = true;
+    }
+    else if (AtomS3.BtnA.wasReleased())
+    {
+        //        buttonA_shortPress_MainModule();
+        SerialDebug.println("MainModule M5.BtnA **** wasReleased ***");
+        _shortPress_MainModule = true;
+    }
+#else
+    //!NOTE: ths issue is the timer is interruped by the scanner.. so make long-long very long..
+    //was 1000  (from 500)
+    if (M5.BtnA.wasPressed())
+    {
+        //        buttonA_longPress_MainModule();
+        SerialDebug.println("MainModule M5.BtnA **** wasPressed ***");
+        _shortPress_MainModule = true;
+    }
+    else if (M5.BtnA.wasReleasefor(4500))
+    {
+        //        buttonA_longPress_MainModule();
+        SerialDebug.println("MainModule M5.BtnA **** LONG LONG PRESS ***");
+        _longLongPress_MainModule = true;
+    }
+    else if (M5.BtnA.wasReleasefor(1000))
+    {
+        //        buttonA_longPress_MainModule();
+        SerialDebug.println("MainModule M5.BtnA **** LONG PRESS ***");
+        _longPress_MainModule = true;
+    }
+    else if (M5.BtnA.wasReleased())
+    {
+        //        buttonA_shortPress_MainModule();
+        SerialDebug.println("MainModule M5.BtnA **** wasReleased ***");
         _shortPress_MainModule = true;
     }
 #endif
@@ -3897,9 +4199,16 @@ void checkButtonA_MainModule()
 //!big button on front of M5StickC Plus
 void checkButtonB_MainModule()
 {
-    _shortPress_MainModule = false;
-    _longPress_MainModule = false;
-    _longLongPress_MainModule = false;
+    //! OOPS:: these override the A_versions....
+    //! just ADD to the state..
+    if (true)
+    {
+        _shortPressB_MainModule = false;
+        _longPressB_MainModule = false;
+        _longLongPressB_MainModule = false;
+        _doublePressB_MainModule = false;
+
+    }
 #ifdef ESP_M5
     
     //!NOTE: ths issue is the timer is interruped by the scanner.. so make long-long very long..
@@ -3907,20 +4216,29 @@ void checkButtonB_MainModule()
     if (M5.BtnB.wasReleasefor(4500))
     {
         //        buttonA_longPress_MainModule();
-        SerialDebug.println("MainModule **** LONG LONG PRESS ***");
+        SerialDebug.println("MainModule M5.BtnB **** LONG LONG PRESS ***");
         _longLongPress_MainModule = true;
     }
     else if (M5.BtnB.wasReleasefor(1000))
     {
         //        buttonA_longPress_MainModule();
-        SerialDebug.println("MainModule **** LONG PRESS ***");
+        SerialDebug.println("MainModule M5.BtnB **** LONG PRESS ***");
         _longPress_MainModule = true;
     }
     else if (M5.BtnB.wasReleased())
     {
         //        buttonA_shortPress_MainModule();
-        SerialDebug.println("MainModule **** SHORT PRESS ***");
-        _shortPress_MainModule = true;
+        SerialDebug.println("MainModule M5.BtnB **** SHORT PRESS ***");
+        _shortPressB_MainModule = true;
+    }
+    /// Returns true when some time has passed since the button was double clicked.
+    //!@see bool wasDoubleClicked(void) const { return _currentState == state_decide_click_count && _clickCount == 2; }
+
+    else if (M5.BtnB.wasDoubleClicked())
+    {
+        //! one idea:  double press is like single press. then long preess is A's long press? But need B to more through menues of display
+        SerialDebug.println("MainModule M5.BtnB **** DOUBLE PRESS ***");
+        _doublePressB_MainModule = true;
     }
 #endif
 }
@@ -3982,10 +4300,76 @@ PinUseStruct* getPinUseStruct_mainModule()
 //! pin is the actual number, pinName is the local name (eg. IN1_PIN or VIN_PIN).
 //! moduleName is the module in the code,
 //! isI2C is whether this is a I2C bus (which we aren't using much yet)
-void registerPinUse_mainModule(long pin, String pinName, String moduleName, boolean isI2C)
+//! //! 7.13.26 Ballon morning .. field haying
+//! return Boolean saying the pin was Valid of Invalie
+boolean registerPinUse_mainModule(long pin, String pinName, String moduleName, boolean isI2C)
 {
     char pinUseSample[100];
     sprintf(pinUseSample,"PIN_USE: %2d = %s, %s %s", pin, pinName.c_str(), moduleName.c_str(), isI2C?"(I2C)":"");
+    
+    //! check if pins are valid ..
+    boolean validPins = true;
+#ifdef ESP_M5_ATOM_S3
+    switch (pin)
+    {
+        case -1: // support this as a power
+        case 0: //main button hod 2s
+        case 1: //Port.A
+        case 2: //Port.A
+        case 4: //IR
+        case 5:
+        case 6:
+        case 7:
+        case 8:
+        case 39:
+        case 38:
+        case 41: //BTN
+        case 34: //LCD-RST
+        case 21: //MOSI
+        case 17: //SCK
+        case 15: //CS
+        case 33: //RS
+        case 16: //BL
+        case 35: //RGB ??
+            validPins = true;
+            break;
+        default:
+            validPins = false;
+            break;
+    }
+#else
+    switch (pin)
+    {
+        case -1: // support this as a power
+        case 0: //Main button hod 2s ???
+        case 26: //Port.A
+        case 32: //Port.A
+        case 12: //IR
+        case 22:
+        case 19:
+        case 23:
+        case 25:
+        case 39: //BTN
+            // don't know these ...
+        case 34: //LCD-RST ??
+        case 21: //MOSI
+        case 17: //SCK
+        case 15: //CS
+        case 33: //RS
+        case 16: //BL
+        case 27: //LED ??
+      //  case 2: //?? added 7.25.26
+            validPins = true;
+            break;
+        default:
+            validPins = false;
+    }
+#endif
+    if (!validPins)
+    {
+        SerialError.printf("**** Invalid pin: %d, %s\n", pin, pinUseSample);
+        return false;
+    }
     //! 5.3.25 create storage here
     char *pinUse = (char*)calloc(strlen(pinUseSample)+1, sizeof(char));
     strcpy(pinUse, pinUseSample);
@@ -4005,8 +4389,128 @@ void registerPinUse_mainModule(long pin, String pinName, String moduleName, bool
     }
     
     SerialDebug.printf("** PIN_USE: %s = %d, module=%s %s\n", pinName.c_str(), pin, moduleName.c_str(), isI2C?"(I2C)":"");
+    
+    return true;
 }
 
+#pragma mark LED Buttons
+#ifdef M5UNIFIED
+
+//! these are the constanst for the colors
+// TFT_WHITE, TFT_CYAN, TFT_RED, TFT_YELLOW, TFT_BLUE, TFT_GREEN
 
 
+long _randomColorIndex = 0;
+#define MAX_COLORS 6
+//! 7.24.25 return a (semi) random color
+int getRandomColorUnified() {
+    _randomColorIndex = (++_randomColorIndex) % MAX_COLORS;
+    int color = TFT_BLUE;
+    switch (_randomColorIndex) {
+        case 0:
+            color = TFT_WHITE;
+            break;
+        case 1:
+            color = TFT_CYAN;
+            break;
+        case 2:
+            color = TFT_RED;
+            break;
+        case 3:
+            color = TFT_YELLOW;
+            break;
+        case 4:
+            color = TFT_BLUE;
+            break;
+            
+        default:
+        case 5:
+            color = TFT_GREEN;
+            break;
+    }
+    return color;
+}
+//! returns a string for the color int
+String getColorStringUnified(int color)
+{
+    String colorString = "TFT_RED";
+    switch (color) {
+        case TFT_WHITE: colorString = "TFT_WHITE"; break;
+        case TFT_CYAN: colorString = "TFT_CYAN"; break;
+        case TFT_RED: colorString = "TFT_RED"; break;
+        case TFT_YELLOW: colorString = "TFT_YELLOW"; break;
+        case TFT_BLUE: colorString = "TFT_BLUE"; break;
+            
+        default:
+        case TFT_GREEN: colorString = "TFT_GREEN"; break;
+    }
+    return colorString;
+}
+//!this is the M5UNIFIED version ...
+//! uses the color numbers TFT_GREEN, etc
+void setLEDColorUnified(int color)
+{
+    SerialLots.printf("setLEDColorUnified%s)\n", getColorStringUnified(color));
+    M5.Led.setAllColor(color);
+}
+#endif
+
+//! 7.24.25 return a (semi) random color
+ColorsUnified getRandomColor()
+{
+    _randomColorIndex = (++_randomColorIndex) % MAX_COLORS;
+    ColorsUnified color = RED_LED;
+    switch (_randomColorIndex) {
+        case 0:
+            color = WHITE_LED;
+            break;
+        case 1:
+            color = CYAN_LED;
+            break;
+        case 2:
+            color = RED_LED;
+            break;
+        case 3:
+            color = YELLOW_LED;
+            break;
+        case 4:
+            color = BLUE_LED;
+            break;
+        default:
+        case 5:
+            color = GREEN_LED;
+            break;
+    }
+    return color;
+}
+//! returns a string for the color int
+String getColorString(ColorsUnified color)
+{
+    String colorString = "RED_LED";
+    switch (color) {
+        case RED_LED: colorString = "RED_LED"; break;
+        case BLUE_LED: colorString = "BLUE_LED"; break;
+        case GREEN_LED: colorString = "GREEN_LED"; break;
+        case YELLOW_LED: colorString = "YELLOW_LED"; break;
+        case CYAN_LED: colorString = "CYAN_LED"; break;
+            
+        default:
+        case WHITE_LED: colorString = "WHITE_LED"; break;
+    }
+    return colorString;
+}
+
+//! uses colors.. _GREEN to be typed values
+void setLEDColor(ColorsUnified color)
+{
+    SerialDebug.printf("setLEDColor(%s)\n", getColorString(color));
+#ifdef M5UNIFIED
+    // M5.Led.setAllColor(color);
+    setLEDColorUnified((int)color);
+#else
+    //! Anyone?
+    SerialDebug.printf("setLEDColor(%s) NOT IMPLEMENTED\n", getColorString(color));
+#endif
+    
+}
 

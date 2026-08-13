@@ -2,7 +2,15 @@
 #ifdef USE_FAST_LED
 #include "LED_DisPlay.h"
 
+#ifdef ESP_M5_ATOM_S3
+#define DATA_PIN 35 //GEO =35 ???
+
+//#define DATA_PIN 22
+//!@see https://www.reddit.com/r/FastLED/comments/1qlrq3e/errors_while_uploading_the_code/
+#else
 #define DATA_PIN 27
+#endif
+
 
 /**
  * Code is from M5Atom.h object, but refactored to be it's own object

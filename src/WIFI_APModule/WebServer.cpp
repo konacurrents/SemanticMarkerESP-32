@@ -23,7 +23,8 @@
 
 
 #include "../../Defines.h"
-
+#ifdef USE_LIB_WEBSERVER
+#else
 #include <Arduino.h>
 #include <libb64/cencode.h>
 #include "WiFiServer.h"
@@ -526,3 +527,4 @@ String WebServer::_responseCodeToString(int code) {
     default:  return "";
   }
 }
+#endif

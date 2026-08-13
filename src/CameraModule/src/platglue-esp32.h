@@ -3,7 +3,7 @@
 
 #ifdef USE_CAMERA_MODULE
 
-#include <Arduino.h>
+//#include <Arduino.h>
 #include <WiFiClient.h>
 #include <WiFiUdp.h>
 #include <sys/socket.h>

@@ -36,11 +36,19 @@ String _hostIP = "KnowledgeShark.org";
 //! Non https. For HTTPS 443. As of today, HTTPS doesn't work.
 int _port = 80;
 
+#ifdef MESSY_VERSION
+//! 7.16.26 Thurnderstorms, replace the following with the set below..
 //! for the ESP_M5 there are different builds (some with same m5stick_c_plus.bin names so they are
 //! NOTE: these are for the installed "main" executables. The SMART web page provides names for the others
 #ifdef ESP_M5
-//!location of bin file
+#ifdef ESP_M5_ATOM_S3
+String _binName = "/OTA/TEST/M5AtomS3/ESP_IOT.ino.m5stick_c_plus.bin"; // bin file name with a slash in front.
+#elif  defined(ESP_M5_ATOM_LITE)
+String _binName = "/OTA/TEST/M5Atom/ESP_IOT.ino.m5stick_c_plus.bin"; // bin file name with a slash in front.
+#else
+//!location of bin file original M5 stick 
 String _binName = "/OTA/ESP_IOT.ino.m5stick_c_plus.bin"; // bin file name with a slash in front.
+#endif
 #endif
 #ifdef ESP_32
 #ifdef BOARD
@@ -52,7 +60,22 @@ String _binName = "/OTA/ESP_IOT.ino.esp32.bin"; // bin file name with a slash in
 #endif
 #endif
 //TODO note: this needs an ESP_M5 version and others ...
+#else // not messy
+//!@see https://github.com/konacurrents/ESP_IOT/issues/433
 
+#ifdef ESP_M5_ATOM_S3
+String _binName = "/OTA/TEST/M5AtomS3/ESP_IOT.ino.m5stick_c_plus.bin"; // bin file name with a slash in front.
+#elif  defined(ESP_M5_ATOM_LITE)
+String _binName = "/OTA/TEST/M5Atom/ESP_IOT.ino.m5stick_c_plus.bin"; // bin file name with a slash in front.
+#elif defined(ESP_M5)
+String _binName = "/OTA/ESP_IOT.ino.m5stick_c_plus.bin"; // bin file name with a slash in front.
+#elif defined(ESP_32) && defined(BOARD)
+String _binName = "/OTA/OTA_Board/ESP_IOT.ino.esp32.bin"; // bin file name with a slash in front.
+#else
+String _binName = "/OTA/ESP_IOT.ino.esp32.bin"; // bin file name with a slash in front.
+#endif
+
+#endif
 //! Utility to extract header value from headers
 String getHeaderValue(String header, String headerName) {
   return header.substring(strlen(headerName.c_str()));

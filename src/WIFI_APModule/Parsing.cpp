@@ -20,6 +20,8 @@
 */
 
 #include "../../Defines.h"
+#ifdef USE_LIB_WEBSERVER
+#else
 #include <Arduino.h>
 #include "WiFiServer.h"
 #include "WiFiClient.h"
@@ -606,3 +608,4 @@ bool WebServer::_parseFormUploadAborted(){
     _currentHandler->upload(*this, _currentUri, _currentUpload);
   return false;
 }
+#endif

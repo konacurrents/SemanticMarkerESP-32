@@ -572,7 +572,7 @@ String createSemanticAddress()
         _currentSemanticMarkerAddress = _currentSemanticMarkerAddress.substring(0,maxLenForIphone);
     }
 
-    SerialTemp.println(_currentSemanticMarkerAddress);
+    SerialCall.println(_currentSemanticMarkerAddress);
     return _currentSemanticMarkerAddress;
 }
 
@@ -813,10 +813,11 @@ void setupESP_M5()
     
     M5.begin(true, true, true, false);
     */
+#ifdef DONE_IN_MAIN
     M5.begin( /*LCDEnable*/true,  /*SDEnable*/true,  /*SerialEnable*/ true,
            /*I2CEnable*/ false,  /*mode*/ kMBusModeOutput,
            /*SpeakerEnable*/ true);
-    
+#endif
     //! see if this lets battery work on M5 Core2 v1.1
     //! 2.11.24 Super Bowl day
     //! STILL NOT WORKING on the v1.1 device
@@ -958,13 +959,14 @@ void loop_displayModule()
         _markerTimer = 0;
         if (_semanticMarkerShown)
         {
+#pragma mark DEBUG_7_12
             SerialCall.println("loop_displayModule: redrawSemanticMarker(KEEP_SAME)");
 
             //!see if this works .. vs too flickering.. (if so we have to slow it down..)
             redrawSemanticMarker_displayModule(KEEP_SAME);
         }
     }
-    
+        
 #ifdef M5CORE2_MODULE
     //! try to show where the 3 buttons are below the following box..
     M5.Lcd.drawRect(50, 235, 10, 3, WHITE);
@@ -1725,7 +1727,7 @@ void redrawSemanticMarker_displayModule(boolean startNew)
     {
         //! this draws QR but using the lastDocFollowSemanticMarker
 #define QRAVATAR
-#ifdef ESP_M5
+#ifdef ESP_M5stepper
 #ifdef M5CORE2_MODULE
         //! DON"T rotate -- for the M5Core2 display
 #else
@@ -1763,10 +1765,16 @@ void redrawSemanticMarker_displayModule(boolean startNew)
             //try brightness
             setBrightness_displayModule(0);
 
+#ifdef ESP_M5_ATOM_S3
+            //! 7.11.26 Eagles in nest ..
+            M5.Lcd.qrcode(_currentSemanticMarkerAddress,0,0,100, SEMANTIC_MARKER_QR_VERSION);
+
+#else
             //!Draws a SemanticMarker&trade; (using QR code)
             //!Create a QR code with a width of 135 QR code  at (0, 100).  在(0,0)处创建一个宽为135二维码
             //!Please select the appropriate QR code version according to the number of characters.  请根据字符数量选择合适的二维码版本
             M5.Lcd.qrcode(_currentSemanticMarkerAddress,0,100,135, SEMANTIC_MARKER_QR_VERSION);
+#endif
 #ifdef QRAVATAR
             //try to draw a character in the middle ...  (D, etc)
             String smChar = _semanticTitle.substring(0,1);
@@ -2257,5 +2265,30 @@ int getLoopTimer_displayModule()
 void resetLoopTimer_displayModule()
 {
     _loopCounter_displayModule = 0;
+}
+//! 1.24.24 Adding scrolling text (if that window on the M5Core2 is shown)
+void addToScrollingText_displayModule(String textString)
+{
+
+}
+//! 1.24.24 Goto the scrolling text mode ..
+void toggleShowingScrollingTextMode_displayModule()
+{
+    
+}
+//! 1.24.24 Goto the scrolling text mode .. if flag  -- saves value
+void setShowingScrollingTextMode_displayModule(boolean flag)
+{
+    
+}
+//! 2.27.24 make the button seem to be touched
+//void showButtonTouched_displayModule();
+//! 2.29.24 Leap Year day
+//! Returns whether the Scrolling Text window is shown
+//! 1.24.24 as alternate display windows are introducted,
+//! let others know and don't overright stuff..
+boolean inAlternateDisplay_displayModule()
+{
+    return false;
 }
 #endif

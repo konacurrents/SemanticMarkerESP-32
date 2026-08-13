@@ -24,7 +24,14 @@
  Time Range: 2.5 msec to 10240 msec */
 #define PSCAN_INTERVAL 45
 #define PSCAN_WINDOW   15
+#ifdef M5UNIFIED
+#define PSCAN_TIME 10000 // 5 sec
+//! 6.17.26 shortened time. 0 DOESN"T WORK FOR SURE
+//#define PSCAN_TIME 1000 // 1 sec .. seems to work
+
+#else
 #define PSCAN_TIME   0  /* scan forever*/
+#endif
 
 //from example.. 
 //#define PSCAN_INTERVAL 1349

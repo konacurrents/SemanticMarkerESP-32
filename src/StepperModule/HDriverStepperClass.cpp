@@ -85,49 +85,30 @@ void HDriverStepperClass::setup_MotorStepper()
     registerPinUse_mainModule(VIN_PIN, "VIN_PIN", "HDriverStepperClass", false);
     registerPinUse_mainModule(FAULT_PIN, "FAULT_PIN", "HDriverStepperClass", false);
     
-#define NOT_TRY_ON_FIRST_FEED
-#ifdef  NOT_TRY_ON_FIRST_FEED
+
+    //! 6.5.26
+    //! @see https://docs.espressif.com/projects/arduino-esp32/en/latest/migration_guides/2.x_to_3.0.html#ledc
+    //! ledcSetup and ledcAttachPin removed ..
+#ifdef M5UNIFIED
+    bool val = ledcAttach(IN1_PIN, _freq_HDriverStepper, _resolution_HDriverStepper);
+    val = ledcAttach(IN2_PIN, _freq_HDriverStepper, _resolution_HDriverStepper);
+#else
     ledcSetup(_ledChannel1_HDriverStepper, _freq_HDriverStepper, _resolution_HDriverStepper);
     ledcSetup(_ledChannel2_HDriverStepper, _freq_HDriverStepper, _resolution_HDriverStepper);
     ledcAttachPin(IN1_PIN, _ledChannel1_HDriverStepper);
     ledcAttachPin(IN2_PIN, _ledChannel2_HDriverStepper);
+#endif
     pinMode(VIN_PIN, INPUT);
     pinMode(FAULT_PIN, INPUT);
     _isSetup_HDriverStepper = true;
-#endif
     //clearPins_HDriverStepper();                     // Go turn all motor pins off
 }
 
-#ifdef NOT_TRY_ON_FIRST_FEED
-#else
-//! 3.26.25 try to only setup on the first feed
-void setup_again()
-{
-    if (!_isSetup_HDriverStepper)
-    {
-        _isSetup_HDriverStepper = true;
-        ledcSetup(_ledChannel1_HDriverStepper, _freq_HDriverStepper, _resolution_HDriverStepper);
-        ledcSetup(_ledChannel2_HDriverStepper, _freq_HDriverStepper, _resolution_HDriverStepper);
-        ledcAttachPin(IN1_PIN, _ledChannel1_HDriverStepper);
-        ledcAttachPin(IN2_PIN, _ledChannel2_HDriverStepper);
-        pinMode(VIN_PIN, INPUT);
-        pinMode(FAULT_PIN, INPUT);
-    }
-}
-#endif
+
 //!This will advance the stepper clockwise once by the angle specified in SetupStepper. Example 16 pockets in UNO is 22.5 degrees
 //!This is the FEED message .. the comments mention the Stepper Motor .. which this isn't
 void HDriverStepperClass::start_MotorStepper()
 {
-    SerialDebug.println("HDriverStepperClass::start_MotorStepper");
-
-#ifdef  NOT_TRY_ON_FIRST_FEED
-#else
-    //! 3.26.25 try to only setup on the first feed
-    setup_again();
-#endif
-
-    
     SerialDebug.println("**************** HDriverStepperStepper::Starting HDriverStepper *******************");
     //! 5.15.25 try the async CLICK
     //! click call  5.26.25 SYNC version

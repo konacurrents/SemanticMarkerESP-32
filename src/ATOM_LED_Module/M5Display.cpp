@@ -1,8 +1,12 @@
 #include "../../Defines.h"
-
-#ifdef USE_FAST_LED
-
 #include "M5Display.h"
+
+#ifdef M5UNIFIED
+void setup_M5Display()
+{
+    SerialDebug.println("setup_M5Display");
+}
+#else
 #include "LED_DisPlay.h"
 //! the LED DIsplay Object
 LED_DisPlay _dis;
@@ -11,13 +15,13 @@ boolean _M5DisplaySetup = false;
 void setup_M5Display()
 {
     SerialDebug.println("setup_M5Display");
-  _dis.begin();
-  _dis.setTaskName("LEDs");
-  _dis.setTaskPriority(2);
-  _dis.setCore(1);
-  _dis.start();
-   
-  _M5DisplaySetup = true;
+    _dis.begin();
+    _dis.setTaskName("LEDs");
+    _dis.setTaskPriority(2);
+    _dis.setCore(1);
+    _dis.start();
+    
+    _M5DisplaySetup = true;
     
 }
 

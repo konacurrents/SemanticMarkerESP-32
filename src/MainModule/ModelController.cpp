@@ -443,6 +443,7 @@ void invokeToggleGen3_ModelController()
 void updateMenuState(ModelKindEnum modelKind)
 {
     ModelStateStruct *deviceState = getModel(modelKind);
+#pragma mark DEBUG_7_12
     SerialCall.printf("updateMenuState(%d) \n", modelKind);
     
     switch (modelKind)

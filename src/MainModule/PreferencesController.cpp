@@ -430,6 +430,7 @@ char* getPreference_mainModule(int preferenceID)
     _preferencesMainModule.begin(PREFERENCES_EPROM_MAIN_NAME, true);  //read
     
     strcpy(_preferenceBuffer, _preferencesMainModule.getString( _preferenceMainModuleLookupEPROMNames[preferenceID]).c_str());
+#define TOOMUCH
 #ifdef TOOMUCH
     SerialLots.printf("getPreference_mainModule[%d] = %s\n", preferenceID, _preferenceBuffer);
 #endif
@@ -566,6 +567,16 @@ void readPreferences_mainModule()
     //!intiialize the preferences arrays from EPROM. This also updates the defaults
     //! BUT: the caches below are from the value retrieved (and defult if need be)
     initPreferencesMainModule();
+    
+    //! try this 7.25.26 TDF 2nd last stage.. Laura/Paul at Dysney land
+    if (false)
+    {
+        SerialDebug.println(" **** SETTING SOME PREFES for PTStepper ****");
+        savePreference_mainModule(PREFERENCE_ATOM_KIND_SETTING, "M5HDriver");
+        savePreference_mainModule(PREFERENCE_SENSOR_PLUGS_SETTING, "PTStepper");
+        savePreference_mainModule(PREFERENCE_SENSORS_SETTING, "BuzzerSensorClass,-1,21");
+
+    }
     
     //!start the read-write of the EPROM
     _preferencesMainModule.begin(PREFERENCES_EPROM_MAIN_NAME, false);  //readwrite..
@@ -721,7 +732,7 @@ void initPreferencesMainModule()
                 _preferenceMainModuleLookupDefaults[i] = (char*)"0";
 #else
                 _preferenceMainModuleLookupDefaults[i] = (char*)"1";
-#endif // ESP_M5_ATOM_LITE
+#endif
                 
 #else
                 _preferenceMainModuleLookupDefaults[i] = (char*)"0";
@@ -863,16 +874,14 @@ void initPreferencesMainModule()
             case PREFERENCE_DEVICE_NAME_SETTING:
                 _preferenceMainModuleLookupEPROMNames[i] =
                 (char*) EPROM_DEVICE_NAME_SETTING;
-#ifdef ESP_M5
-#ifdef ESP_M5_CAMERA
+# ifdef ESP_M5_CAMERA
                 _preferenceMainModuleLookupDefaults[i] = (char*)"M5Camera";
-#else
-#ifdef ESP_M5_ATOM_LITE
-                _preferenceMainModuleLookupDefaults[i] = (char*)"M5Atom";
-#else
+# elif defined(ESP_M5_ATOM_S3)
+                _preferenceMainModuleLookupDefaults[i] = (char*)"M5AtomS3";
+# elif defined(ESP_M5_ATOM_LITE)
+                _preferenceMainModuleLookupDefaults[i] = (char*)"M5AtomLite";
+# elif defined(ESP_M5)
                 _preferenceMainModuleLookupDefaults[i] = (char*)"M5";
-#endif //ESP_m5
-#endif //ESP_M5_Camera
 #else
                 _preferenceMainModuleLookupDefaults[i] = (char*)"ESP32";
 #endif
@@ -1278,37 +1287,44 @@ void printPreferenceValues_mainModule()
     SerialTemp.println("");
 
     
-    //! 1.24.26 Clear day .. 2 eagles again on walk
-    printChainSensors_mainModule(getChainUseStruct_mainModule());
+    if (false)
+        //! 1.24.26 Clear day .. 2 eagles again on walk
+        printChainSensors_mainModule(getChainUseStruct_mainModule());
     
-    //! 7.31.25
-    SerialTemp.println(" *** Example JSON messages you can modify and paste into serial monitor, no DEV required");
-    //! TODO: add preference to not support this??
-    //! show example JSON  (break up as getPreference re-uses same string...
-    SerialTemp.printf("{\"set\":\"sensors\",\"val\":\"%s\"}", (char*)"BuzzerSensorClass,19,22,L9110S_DCStepperClass,21,25");
-    SerialTemp.println();
-//    SerialTemp.printf("{\"set\":\"sensors\",\"val\":\"%s\"}", (char*)"BuzzerSensorClass,21,25,ULN2003_StepperClass,23,33");
-//    SerialTemp.println();
-    SerialTemp.printf("{\"set\":\"sensors\",\"val\":\"%s\"}", (char*)"PIRSensorClass,23,33");
-    SerialTemp.println();
-    SerialTemp.printf("{\"set\":\"sensorPlugs\",\"val\":\"L9110S_DCStepperClass\"}");
-    SerialTemp.println();
-    SerialTemp.printf("{\"set\":\"M5AtomKind\",\"val\":\"M5HDriver\"}");
-    SerialTemp.println();
-//    SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"0.25\"} ");
-//    SerialTemp.println();
-//    SerialTemp.printf("{\"set\":\"stepperRPM\",\"val\":\"15.0\"}");
-//    SerialTemp.println();
-//    SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"2048.0\"}");
-//    SerialTemp.println();
-    SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"150\"}  --new Feeder");
-    SerialTemp.println();
-
-    
-    SerialDebug.println("{\"ssid\":\"Bob\", \"ssidPassword\":\"scott\"}");
-    SerialDebug.println("{\"set\":\"2feed\", \"val\":\"1\"}");
-    SerialDebug.println("{\"set\":\"BLEUseDeviceName\", \"val\":\"off\"}");
-
+    if (false)
+    {
+        
+        //! 7.31.25
+        SerialTemp.println(" *** Example JSON messages you can modify and paste into serial monitor, no DEV required");
+        //! TODO: add preference to not support this??
+        //! show example JSON  (break up as getPreference re-uses same string...
+        SerialTemp.printf("{\"set\":\"sensors\",\"val\":\"%s\"}", (char*)"BuzzerSensorClass,19,22,L9110S_DCStepperClass,21,25");
+        SerialTemp.println();
+        //    SerialTemp.printf("{\"set\":\"sensors\",\"val\":\"%s\"}", (char*)"BuzzerSensorClass,21,25,ULN2003_StepperClass,23,33");
+        //    SerialTemp.println();
+        SerialTemp.printf("{\"set\":\"sensors\",\"val\":\"%s\"}", (char*)"PIRSensorClass,23,33");
+        SerialTemp.println();
+        SerialTemp.printf("{\"set\":\"sensorPlugs\",\"val\":\"L9110S_DCStepperClass\"}");
+        SerialTemp.println();
+        SerialTemp.printf("{\"set\":\"M5AtomKind\",\"val\":\"M5HDriver\"}");
+        SerialTemp.println();
+        //    SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"0.25\"} ");
+        //    SerialTemp.println();
+        //    SerialTemp.printf("{\"set\":\"stepperRPM\",\"val\":\"15.0\"}");
+        //    SerialTemp.println();
+        //    SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"2048.0\"}");
+        //    SerialTemp.println();
+        SerialTemp.printf("{\"set\":\"stepperAngle\",\"val\":\"250\"}  --new Feeder");
+        SerialTemp.println();
+        
+        
+        SerialDebug.println("{\"ssid\":\"Bob\", \"ssidPassword\":\"scott\"}");
+        //SerialDebug.println("{\"set\":\"2feed\", \"val\":\"1\"}");
+        SerialDebug.println("{\"set\":\"BLEUseDeviceName\", \"val\":\"off\"}");
+        SerialDebug.println("FEED ALL");
+        SerialDebug.println("{\"cmd\":\"feed\"}");
+        
+    }
     
     //! 7.31.25 PIN USE
     PinUseStruct* pinUseStruct = getPinUseStruct_mainModule();
@@ -1318,7 +1334,7 @@ void printPreferenceValues_mainModule()
     {
         SerialTemp.println(pinUseStruct->pinUseArray[i]);
     }
-    SerialTemp.printf(" *** PIN Count = %d\n", pinUseStruct->pinUseCount);
+    SerialLots.printf(" *** PIN Count = %d\n", pinUseStruct->pinUseCount);
     
     //! this needs to have a long pin in the array as well
     //! 8.30.25 check if duplicates
@@ -1336,7 +1352,7 @@ void printPreferenceValues_mainModule()
             {
                 // do whatever you do in case of a duplicate
                 duplicatePins = true;
-                SerialDebug.printf("*** ERROR: DUPLICATE PIN: %d, (%s) == (%s)\n",pin1, pinUseStruct->pinUseArray[i], pinUseStruct->pinUseArray[j]);
+                SerialError.printf("*** ERROR: DUPLICATE PIN: %d, (%s) == (%s)\n",pin1, pinUseStruct->pinUseArray[i], pinUseStruct->pinUseArray[j]);
             }
         }
     }
@@ -1438,7 +1454,12 @@ int getM5ATOMKind_MainModule()
 //! remove the PRINT
 
 //! the memory for the sensorsEPROM
+#ifdef ESP_M5_ATOM_S3
+//! 7.12.26 lots of room
+char _sensorsEPROM[1000];
+#else
 char _sensorsEPROM[500];
+#endif
 
 
 //! array of sensorStruct
@@ -1467,7 +1488,10 @@ void printSensors_mainModule(SensorsStruct* sensors)
     SerialDebug.printf(" ******** \n");
     for (int i=0; i< count; i++)
     {
+        SerialDebug.println(" print sensor 1");
         printSensor_mainModule(&sensors->sensors[i]);
+        SerialDebug.println(" DONE print sensor 1");
+
     }
     SerialDebug.printf(" ******** \n");
 }
@@ -1610,6 +1634,8 @@ SensorsStruct *parseSensorString_mainModule(char* sensorsString)
         //! 2 pass, first count, 2nd parseSensorString_mainModule
         
         //! look for tokens, comma seperated
+        //! 7.14.26 nice day. almost 45th wedding anniversery with Laura Babe.. 18th.
+        //! this will support ,-1,32  (the -1 syntax)
         for (char *token= strtok(str,","); token!= NULL; token= strtok(NULL, ","))
         {
             int indexInSensor = arrayIndex / max;
@@ -1636,13 +1662,17 @@ SensorsStruct *parseSensorString_mainModule(char* sensorsString)
                 {
                     if (secondPass)
                     {
+                        //! 7.14.26 this should work with -1  (which we are using for 1 pin is PWR)
                         int pin = atoi(token);
+#ifdef ESP_M5_ATOM_S3
+#else
                         if (pin == 16 || pin == 17)
                         {
                             //!@see https://www.reddit.com/r/arduino/comments/1g89dlo/esp32_crashing_due_to_pinmode_and_fastled/
                             SerialDebug.printf("*** BAD PIN: %d, setting to 22 ***\n", pin);
                             pin = 22;
                         }
+#endif
                         //SerialDebug.printf("Pin1= %d\n", pin);
                         sensorItems[indexInSensor].pin1= pin;
                     }
@@ -1652,12 +1682,16 @@ SensorsStruct *parseSensorString_mainModule(char* sensorsString)
                 {
                     if (secondPass)
                     {
+                        //! 7.14.26 this should work with -1  (which we are using for 1 pin is PWR)
                         int pin = atoi(token);
+#ifdef ESP_M5_ATOM_S3
+#else
                         if (pin == 16 || pin == 17)
                         {
                             SerialDebug.printf("*** BAD PIN: %d, setting to 22 ***\n", pin);
                             pin = 22;
                         }
+#endif
                         //SerialDebug.printf("Pin2= %d\n", pin);
                         sensorItems[indexInSensor].pin2= pin;
                     }
@@ -1681,7 +1715,7 @@ SensorsStruct *parseSensorString_mainModule(char* sensorsString)
 
 #pragma mark CHAIN_STRUCT
 /**
- #define CHAIN_USE_MAX 15
+ 
  typedef struct {
  //! number of chain
  int chainUseCount;
@@ -1753,7 +1787,8 @@ ChainUseStruct* parseChainSensorString_mainModuleNEW(char *chainUseString)
     int arrayIndex = 0;
     
     //! needed to copy sensorsString.. as the code below broke the callers' value to "https:" .. SIDE EFFECT
-#define MAX_CHAIN_STRING 400
+    //! upded length 8.8.26 after Bike Ride, Less Smoke,
+#define MAX_CHAIN_STRING 600
     char str[MAX_CHAIN_STRING];
     char strCopy[MAX_CHAIN_STRING];
     if (strlen(chainUseString) > MAX_CHAIN_STRING)
@@ -1973,8 +2008,9 @@ void initChainSensorStringsFromEPROM_mainModule()
         //char *str = "BC,1,1,feed,,$localhost, BC,1,2,feed,,, BC,2,2,SM_Matrix,6,$dev, BC,2,3, togglesocket,,M5AtomSocket, YC, 
     }
     
-    //!test...
-    testParse();
+    if (false)
+        //!test...
+        testParse();
     
     //! request the chain buttons if SMART
     requestChainSMARTButtons();
@@ -2256,13 +2292,13 @@ void registerChain_mainModule(String classType, int buttonNumber, int pressKind,
     
     if (_chainUseStruct->chainUseCount >= CHAIN_USE_MAX)
     {
-        SerialError.printf("*** ERROR .. too many CHAINS defined ***");
+        SerialError.printf("*** ERROR .. too many CHAINS defined ***\n");
         return;
     }
     
     char chainUseSample[100];
     sprintf(chainUseSample,"CHAIN_USE: %s btn=%2d press=%d set= %s, val=%s dev=%s",classType, buttonNumber,pressKind, setString.c_str(), valString.c_str(), deviceString.c_str());
-    SerialDebug.println(chainUseSample);
+    SerialLots.println(chainUseSample);
     
     //! storage is supposed to have been created .. but this line blows ..
     SerialLots.printf("chainButtonStruct = %d, count = %d\n", _chainUseStruct,_chainUseStruct? _chainUseStruct->chainUseCount:-1);
