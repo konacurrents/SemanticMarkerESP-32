@@ -824,7 +824,8 @@ void initPreferencesMainModule()
                 break;
             case PREFERENCE_STEPPER_BUZZER_VALUE:
                 _preferenceMainModuleLookupEPROMNames[i] = (char*) EPROM_STEPPER_BUZZER_VALUE;
-                _preferenceMainModuleLookupDefaults[i] = (char*)"1";
+                //! 8.15.26 default to the buzzer OFF
+                _preferenceMainModuleLookupDefaults[i] = (char*)"0";
                 break;
             case PREFERENCE_STEPPER_FEEDS_PER_JACKPOT:
                 _preferenceMainModuleLookupEPROMNames[i] = (char*) EPROM_STEPPER_FEEDS_PER_JACKPOT_VALUE;
@@ -890,6 +891,12 @@ void initPreferencesMainModule()
                 //!set with message: set:bleusedevicename,val:on/off
             case PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING:
                 _preferenceMainModuleLookupEPROMNames[i] = (char*) EPROM_BLE_SERVER_USE_DEVICE_NAME_SETTING;
+                //! 8.18.26 set default OFF
+#define DEFAULT_OFF_BLE_NAME
+#ifdef  DEFAULT_OFF_BLE_NAME
+                _preferenceMainModuleLookupDefaults[i] = (char*)"0";
+
+#else
                 //! 12.8.22 setting to TRUE as default
                 _preferenceMainModuleLookupDefaults[i] = (char*)"1";
 #ifdef ESP_M5
@@ -900,6 +907,7 @@ void initPreferencesMainModule()
                 _preferenceMainModuleLookupDefaults[i] = (char*)"1";
                 //_preferenceMainModuleLookupDefaults[i] = (char*)"0";
 
+#endif
 #endif
                 break;
                 //!set with message: set:bleusepaireddevicename,val:on/off

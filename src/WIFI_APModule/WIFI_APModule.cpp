@@ -331,6 +331,29 @@ void WIFI_startWebServer()
         //Output AP address (you can change the address you want through _WIFIapIP at the beginning).  输出AP地址(可通过开头的_WIFIapIP更改自己想要的地址)
         SerialDebug.print(WiFi.softAPIP());
         
+#pragma mark ANDROID WEB TEST
+        //! 8.18.16 some mroe to test WIFI not working on Android
+        //! @see https://github.com/konacurrents/ESP_IOT/issues/455#issuecomment-5320075972
+#define ANDROID_WEB_TEST
+#ifdef  ANDROID_WEB_TEST
+        WIFI_webServer.on("/generate_204",[]() {
+            WIFI_webServer.send(204, "text/plain", "");
+        });
+        WIFI_webServer.on("/gen_204", [](){
+            WIFI_webServer.send(204, "text/plain", "");
+        });
+        WIFI_webServer.on("/hotspot-detect.html",[]() {
+            WIFI_webServer.send(200, "text/html",
+                                "<TITLE>Success</TITLE>Success");
+        });
+        WIFI_webServer.on("/connecttest.txt",[]() {
+            WIFI_webServer.send(200, "text/plain", "Microsoft Connect Test");
+        });
+        WIFI_webServer.on("/ncsi.txt", [](){
+            WIFI_webServer.send(200, "text/plain", "Microsoft NCSI");
+        });
+#endif
+        
         /********* ROOT == notFound *****************/
         WIFI_webServer.onNotFound([]() {
             SerialDebug.println("WIFI_webServer.onNotFound");
@@ -361,8 +384,11 @@ void WIFI_startWebServer()
             //!add the javascript
             s += getJavascriptString();
             
+#ifdef NOT_AGAIN
+            //! 8.16.26 only do this one time..
             //!this re-calculates the WIFI list
             rediscoverWIFIList();
+#endif
 
             SerialDebug.print("settings touched, ssid_last = ");
             SerialDebug.println(_WIFI_ssid_last);
@@ -370,7 +396,7 @@ void WIFI_startWebServer()
 
    
 #ifdef ESP_M5_ATOM_S3
-            s += "<h1>Wi-Fi Settings for ESP-M5 ATOM S3 Device 2026</h1>";
+            s += "<h1>Wi-Fi Settings for ESP-M5 ATOM S3 Device 8.18.2026</h1>";
 #elif defined(ESP_M5)
             s += "<h1>Wi-Fi Settings for ESP-M5(M5AtomLite) Device 2026</h1>";
 #else // ESP_32
@@ -696,7 +722,9 @@ void WIFI_setupMode() {
     SerialDebug.println("wifi_apModule.WIFI_setupMode");
     
     //Set Wi-Fi mode to WIFI_MODE_STA.  设置Wi-Fi模式为WIFI_MODE_STA
-    WiFi.mode(WIFI_MODE_STA);
+    //WiFi.mode(WIFI_MODE_STA);
+    WiFi.mode(WIFI_MODE_APSTA);   // AP + STA so a later scan cannot kill the AP
+
     
     //Disconnect wifi connection.  断开wifi连接
     WiFi.disconnect();
@@ -710,14 +738,11 @@ void WIFI_setupMode() {
     
     SerialTemp.print("_WIFIapIP ");
     SerialTemp.println(_WIFIapIP);
-#define TRY_ANDROID_no
-#ifdef TRY_ANDROID
+
     //Set WiFi to soft-AP mode.  设置WiFi为soft-AP模式
-    WiFi.mode(WIFI_MODE_AP);
-#else
+   
     //create an access point
     WiFi.softAPConfig(_WIFIapIP, _WIFIapIP, IPAddress(255, 255, 255, 0));
-#endif
     
     //Turn on Ap mode.  开启Ap模式
     //WiFi.softAP(_apSSID);
@@ -731,22 +756,7 @@ void WIFI_setupMode() {
      );
 
      */
-#ifdef TRY_ANDROID
-    if (usePassword)
-    {
-        //! add the password
-        WiFi.softAP(_apSSID, "password");
-    }
-    else
-    {
-        WiFi.softAP(_apSSID);
-    }
-    //! @see https://github.com/espressif/arduino-esp32/issues/4423#issuecomment-1172296941
-    //! try disconnect, and a differet softAP 4,0,8 ??
-    WiFi.disconnect();
-    //create an access point
-    WiFi.softAPConfig(_WIFIapIP, _WIFIapIP, IPAddress(255, 255, 255, 0));
-#else
+
     if (usePassword)
     {
         //! add the password
@@ -757,8 +767,10 @@ void WIFI_setupMode() {
         WiFi.softAP(_apSSID);
     }
     //Set WiFi to soft-AP mode.  设置WiFi为soft-AP模式
-    WiFi.mode(WIFI_MODE_AP);
-#endif
+    //WiFi.mode(WIFI_MODE_AP);
+    // Do NOT call WiFi.mode() again after softAP().
+
+    rediscoverWIFIList();         // scan once now, cache the SSID list
 
     //Open the web service.  打开Web服务
     WIFI_startWebServer();
@@ -777,11 +789,8 @@ String WIFI_makePage(String title, String contents) {
     SerialTemp.printf("1.Length = %d\n", contents.length());
 
     String s = "<!DOCTYPE html><html><head>";
-    //s += "<meta name=\"viewport\" content=\"width=device-width,user-scalable=0\">";
-    s += "<meta name=\"viewport\" content=\"width=device-width,user-scalable=0\"";
-
-    s += " HTTP-EQUIV=\"REFRESH\" url=\"http://192.168.4.1\">";
-
+    s += "<meta name=\"viewport\" content=\"width=device-width,user-scalable=0\">";
+    
     s += "<title>";
     s += title;
     s += "</title></head><body>";

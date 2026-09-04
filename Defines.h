@@ -158,7 +158,16 @@
 //! 2.25.23 Sketch uses 1497093 bytes (76%) of program storage space. Maximum is 1966080 bytes.
 //! 8.22.24 (seems to generate m5stack_stickc_plus.bin)   .. and size now 65%
 #ifdef ESP_M5_ATOM_S3
-#define VERSION "v8_12_26(4.6c_local_webMain)-M5_ATOM_S3_AP_ANDROID_PLATFORM_CHAIN_LED_UNIFIED_BUZ_CHAIN_PINS_GROVE"
+//! 8.18.26  other things with AP mode might fix this
+#define USE_LIB_WEBSERVER
+
+#ifdef  USE_LIB_WEBSERVER
+#define VERSION "v8_18_26(5.0b_AP_LIB_WEB)-M5_ATOM_S3_AP_ANDROID_UNIFIED_BUZ_CHAIN_PINS_GROVE"
+#else
+#define VERSION "v8_18_26(5.0b_AP)-M5_ATOM_S3_AP_ANDROID_PLATFORM_CHAIN_LED_UNIFIED_BUZ_CHAIN_PINS_GROVE"
+#endif
+
+//#define VERSION "v8_12_26(4.6c_local_webMain)-M5_ATOM_S3_AP_ANDROID_PLATFORM_CHAIN_LED_UNIFIED_BUZ_CHAIN_PINS_GROVE"
 //! released 8.2.26 'y'
 //#define VERSION "v8_2_26(4.3k)-M5_ATOM_S3_LED_UNIFIED_BUZ_CHAIN_PINS_GROVE"
 //! uses UNIFIED
@@ -176,7 +185,8 @@
 #if defined(ESP_M5_ATOM_S3) || defined(ESP_M5_ATOM_LITE)
 //! 7.25.26 see if this compiles with 2.1 libs
 //8.12.26 see if it works with old libs.. and android
-//////#define USE_LIB_WEBSERVER
+//! 8.18.26  other things with AP mode might fix this
+///#define USE_LIB_WEBSERVER
 //! 7.26.26 maybe LIB_WEBSERVER uses "override" and my code doesn't have it..
 
 //! everyone is an ESP_M5 (vs ESP_32) and an M5_ATOM

@@ -574,7 +574,7 @@ void loop_mainModule()
         // read string until meet newline character
         String command = Serial.readStringUntil('\n');
         
-        SerialDebug.printf("** SerialCommand: %s\n", command);
+        SerialDebug.printf("** SerialCommand: '%s'\n", command);
         //! save globally for the callback below..
         strcpy(_serialBuffer, command.c_str());
         
@@ -650,8 +650,11 @@ void loop_mainModule()
                 callCallbackMain(CALLBACKS_BLE_SERVER, BLE_SERVER_CALLBACK_ONWRITE, _serialBuffer);
             }
             else
+            {
+                SerialDebug.println(" *** only single character supported since BLE_Server off, type '#' to turn on");
                 //! 7.23.26 this callback only gets called if the BLE_Server is on.. so let's call it anyway without the callback.
                 processClientCommandChar_mainModule(_serialBuffer[0]);
+            }
 
         }
     }
@@ -2183,7 +2186,7 @@ void main_printModuleConfiguration()
     SerialMin.println(F("[ ] BOARD"));
 #endif
 #ifdef USE_SPIFF_MODULE
-    SerialMin.printf("[%d] USE_SPIFF_MODULE/_SETTING\n",  getPreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_SETTING));
+    SerialMin.printf("[x] USE_SPIFF_MODULE/_SETTING on=%d\n",  getPreferenceBoolean_mainModule(PREFERENCE_USE_SPIFF_SETTING));
 #else
     SerialMin.println("[ ] USE_SPIFF_MODULE");
 #endif
@@ -2222,7 +2225,11 @@ void main_printModuleConfiguration()
 #if (SERIAL_DEBUG_MINIMAL)
     SerialMin.println(F("[x] SERIAL_DEBUG_MINIMAL"));
 #endif
-    
+#ifdef USE_LIB_WEBSERVER
+    SerialMin.println("[x] USE_LIB_WEBSERVER");
+#else
+    SerialMin.println("[ ] USE_LIB_WEBSERVER");
+#endif
     //!and print any preferences to show
     printPreferenceValues_mainModule();
 }
@@ -3033,6 +3040,19 @@ void processClientCommandChar_mainModule(char cmd)
         {
             setConfiguration_mainModule((char*)"PTStepper");
         } break;
+            //! 8.18.26 use this for the mode of a released PTStepper
+            case '=':
+        {
+            SerialDebug.println("Setting modes for (a) PTStepper with (b) E mode 8.18.26");
+            //! E mode first . don't use the DEVICE_NAME
+            savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,false);
+
+           //! do the PTStepper but first set the E mode
+            setConfiguration_mainModule((char*)"PTStepper");
+            
+            //! cannot do anything else, as the line above reoots the computer
+        }
+            break;
         case '4':
         {
             setConfiguration_mainModule((char*)"M5AtomCamera");
@@ -3086,6 +3106,14 @@ void processClientCommandChar_mainModule(char cmd)
             
             //!retrieves from constant location
             performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5AtomS3/platform.io/daily/ESP_IOT.ino.m5stick_c_plus.bin");
+        }break;
+            //! 8.15.26 add - for the released version
+        case '-':
+        {
+            SerialDebug.println(" *** performing m5atomS3_platform.io OTA Update - RELEASED");
+            
+            //!retrieves from constant location
+            performOTAUpdate((char*)"http://KnowledgeShark.org", (char*)"OTA/TEST/M5AtomS3/platform.io/ESP_IOT.ino.m5stick_c_plus.bin");
         }break;
             //! 8.18.25
         case '8':
@@ -3244,6 +3272,7 @@ void processClientCommandChar_mainModule(char cmd)
             SerialMin.println("         8 == SMART Button, Clicker");
             SerialMin.println("         9 == M5TinyGPS, Clicker");
             SerialMin.println("         0 == M5AtomScanner, Clicker");
+            SerialMin.println("         = == E mode, then PTStepper (3)");
 
 
 #ifdef NOT_SUPPORTED_RIGHT_NOW
@@ -3261,7 +3290,9 @@ void processClientCommandChar_mainModule(char cmd)
             SerialDebug.println();
             //! 8.11.26 M5AtomS3_platformIO
             SerialDebug.println("   OTA updates for M5AtomS3 - board M5AtomS3 - platform.io");
-            SerialDebug.println("       + -  _mm5atomS3Daily_platform.io");
+            SerialDebug.println("       +   _mm5atomS3 Daily_platform.io");
+            SerialDebug.println("       -   _mm5atomS3 Released _platform.io");
+
             SerialDebug.println();
 #endif
             //! 8.11.26 BLE Server and Client on/off
@@ -3346,18 +3377,21 @@ void setConfiguration_mainModule(char* configurationName)
         //! tumbler
         savePreferenceInt_mainModule(PREFERENCE_STEPPER_KIND_VALUE, STEPPER_IS_TUMBLER);
         
+        //! 8.18.26 default buzzer OFF
+        savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_BUZZER_VALUE, false);
+
         //! 9.5.25 set the 2step OFF for now
         savePreferenceBoolean_mainModule(PREFERENCE_STEPPER_2FEED_SETTING, false);
 
         //! 10.24.25 also set BLE client and serve on,
         //! RAIN .. atosmopheric river
-        //savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE, true);
         savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_SERVER_VALUE, true);
         
         //!if set, the BLE Server (like PTFeeder) will tack on the device name (or none if not defined).
-        savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
+        //!8.18.26 don't set it either way, use E if want other..
+        //savePreferenceBoolean_mainModule(PREFERENCE_BLE_SERVER_USE_DEVICE_NAME_SETTING,true);
 
-        //!if set, the BLE client OFF
+        //!if set, the BLE client OFF 8.18.26
         savePreferenceBoolean_mainModule(PREFERENCE_MAIN_BLE_CLIENT_VALUE,false);
 
         //! reboot .. so the sensors are set..

@@ -207,7 +207,6 @@ void setup()
         registerCallbackMain(CALLBACKS_BLE_SERVER, BLE_SERVER_CALLBACK_ONWRITE, &onWriteBLEServerCallback);
         //*** The callback for "onWrite" of the bluetooth "onWrite'
         registerCallbackMain(CALLBACKS_BLE_SERVER, BLE_SERVER_CALLBACK_STATUS_MESSAGE, &onStatusMessageBLEServerCallback);
-        registerCallbackMain(CALLBACKS_BLE_SERVER, BLE_SERVER_CALLBACK_STATUS_MESSAGE, &onStatusMessageBLEServerCallback);
         
         {
             //! 10.10.25 #405 #406
